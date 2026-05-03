@@ -1,3 +1,24 @@
+// Funciones de apoyo para el procesamiento de imágenes
+const esc = (s) => {
+    if (!s) return "";
+    return s.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+function buildImageHTML(src, caption, width = '100%') {
+    return `
+    <div class="image-container" style="width: ${width}; margin: 10px auto; text-align: center;">
+        <img src="${src}" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: block; margin: 0 auto;">
+        <div class="image-caption" contenteditable="true" style="font-style: italic; color: #555; margin-top: 5px; padding: 5px;">
+            ${esc(caption)}
+        </div>
+    </div><p></p>`;
+}
+
 /* ══════════════════════════════════════════════════════════════
    GENERADOR DE MANIOBRAS DE PARQUE — CBCM
    Cargado con Babel Standalone (sin Node.js / sin bundler)
@@ -42,7 +63,8 @@ function embedVideoUrl(url) {
 
 function renderImage(url) {
   if (!url || !url.trim()) return "";
-  return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${mEsc(url.trim())}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
+  // Usamos tu nueva función buildImageHTML para el diseño pro
+  return buildImageHTML(url.trim(), "Esquema de la maniobra");
 }
 
 /* ─── HTML GENERATOR ────────────────────────────────────────── */
@@ -354,6 +376,87 @@ function GeneradorManiobras() {
     });
   };
 
+// Nueva función para gestionar el arrastre de imágenes al formulario
+  const handleImageDrop = (e, campo) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const base64 = canvas.toDataURL(file.type, 0.82);
+          
+          // Añadimos la imagen al array correspondiente (recursos o desarrollo)
+          setD(prev => ({
+            ...prev,
+            [campo]: [...prev[campo].filter(i => i.trim() !== ""), base64]
+          }));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+const handleImageUpload = (e, campo) => {
+  const file = e.target.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+
+  reader.onload = (event) => {
+    const img = new Image();
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 1200;
+
+      let width = img.width;
+      let height = img.height;
+
+      if (width > MAX_WIDTH) {
+        height *= MAX_WIDTH / width;
+        width = MAX_WIDTH;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64 = canvas.toDataURL(file.type, 0.82);
+
+      setD(prev => ({
+        ...prev,
+        [campo]: [...prev[campo].filter(i => i.trim() !== ""), base64]
+      }));
+    };
+
+    img.src = event.target.result;
+  };
+
+  reader.readAsDataURL(file);
+
+  // reset input para poder subir misma imagen otra vez
+  e.target.value = "";
+};
+
   /* ── Insertar en el editor principal ── */
   const insertInEditor = () => {
     if (typeof window.insertHTMLAtCursor === 'function') {
@@ -443,7 +546,17 @@ function GeneradorManiobras() {
       <Divider />
       <div>
         <Label>Imágenes (URLs)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleImageUpload(e, "recursosImagenes")}
+  style={{ marginBottom: "10px" }}
+/>
+        <div
+  style={{ display:"flex", flexDirection:"column", gap:"8px" }}
+  onDrop={(e) => handleImageDrop(e, "recursosImagenes")}
+  onDragOver={(e) => e.preventDefault()}
+>
           {d.recursosImagenes.map((img, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center" }}>
               <div style={{ flex:"1" }}>
@@ -500,7 +613,17 @@ function GeneradorManiobras() {
       <Divider />
       <div>
         <Label>Imágenes del desarrollo (URLs)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleImageUpload(e, "desarrolloImagenes")}
+  style={{ marginBottom: "10px" }}
+/>
+        <div
+  style={{ display:"flex", flexDirection:"column", gap:"8px" }}
+  onDrop={(e) => handleImageDrop(e, "desarrolloImagenes")}
+  onDragOver={(e) => e.preventDefault()}
+>
           {d.desarrolloImagenes.map((img, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center" }}>
               <div style={{ flex:"1" }}>
@@ -824,3 +947,101 @@ function GeneradorManiobras() {
   const root = ReactDOM.createRoot(el);
   root.render(<GeneradorManiobras />);
 })();
+
+
+/* ============================================================
+   SISTEMA DE PROCESAMIENTO Y COMPRESIÓN DE IMÁGENES (BASE64)
+   ============================================================ */
+
+/**
+ * Escapa caracteres HTML para evitar errores en el pie de foto
+ */
+const esc = (s) => {
+    if (!s) return "";
+    return s.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+/**
+ * Genera el HTML de la imagen con estilos de contenedor
+ */
+function buildImageHTML(src, caption, width = '100%') {
+    return `
+    <div class="image-container" style="width: ${width}; margin: 10px auto; text-align: center;">
+        <img src="${src}" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: block; margin: 0 auto;">
+        <div class="image-caption" contenteditable="true" style="font-style: italic; color: #555; margin-top: 5px; padding: 5px;">
+            ${esc(caption)}
+        </div>
+    </div><p></p>`;
+}
+
+/**
+ * Comprime la imagen y la inserta en el editor
+ */
+function compressAndInsertImage(file, width = '100%', caption = 'Descripción de la imagen') {
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+
+            // Configuración de redimensión (Máximo 1200px de ancho para mantener calidad/peso)
+            const MAX_WIDTH = 1200;
+            let targetWidth = img.width;
+            let targetHeight = img.height;
+
+            if (img.width > MAX_WIDTH) {
+                targetWidth = MAX_WIDTH;
+                targetHeight = (img.height * MAX_WIDTH) / img.width;
+            }
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+            // Determinar formato y comprimir (0.82 es el punto dulce de calidad)
+            const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+            const compressedBase64 = canvas.toDataURL(mimeType, 0.82);
+
+            // Insertar en el editor (Asume que usas document.execCommand o inserción directa)
+            const html = buildImageHTML(compressedBase64, caption, width);
+            document.execCommand('insertHTML', false, html);
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+/**
+ * Inicializa los eventos de arrastrar y soltar en el editor
+ */
+function setupImageEvents(editorId) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+
+    editor.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        editor.style.backgroundColor = '#f0f7ff'; // Feedback visual
+    });
+
+    editor.addEventListener('dragleave', () => {
+        editor.style.backgroundColor = '';
+    });
+
+    editor.addEventListener('drop', (e) => {
+        e.preventDefault();
+        editor.style.backgroundColor = '';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+            compressAndInsertImage(files[0], '100%', 'Esquema de maniobra: ' + files[0].name);
+        }
+    });
+}
