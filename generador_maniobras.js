@@ -368,6 +368,48 @@ function GeneradorManiobras() {
 
   const generate = () => { setHtml(generateHTML(d)); setTab(8); setPreview(false); setInserted(false); };
 
+  const resetAll = () => {
+    if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
+    const t = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    setD({
+      titulo: "", subtitulo: "", itCode: "",
+      descripcion: "", objetivo: "", destinatarios: "", escenario: "",
+      epis: ["", "", ""],
+      materiales: ["", "", "", ""],
+      recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
+      recursosVideos: [""],
+      organizacion: "",
+      jt1: "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
+      jt2: "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS.",
+      refDoc: "",
+      videos: [""],
+      desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
+      pasos: ["", "", "", "", "", ""],
+      precauciones: "", recordad: "",
+      planSOS: {
+        senal: "SEÑAL DE EMERGENCIA: 3 REPETICIONES DE LA PALABRA «EMERGENCIA»",
+        intro1: "En caso de accidente durante el desarrollo de la práctica, cualquier integrante podrá alertar con la señal indicada. A partir de ese momento, todo el personal paraliza su actuación con seguridad y sigue las instrucciones de los instructores.",
+        intro2: "Cuando haya personal disperso en el terreno, se dispondrá necesariamente de emisoras.",
+        leveTitulo: "Accidente Leve",
+        leveItems: [
+          "Primera atención básica con medios disponibles (botiquín, DESA, etc.).",
+          "Avisar al médico de alerta si afecta a personal del CBCM.",
+          "Si se necesitan recursos de guardia: aviso inmediato a CECOP (918 354 918)."
+        ],
+        graveTitulo: "Accidente Grave o Muy Grave",
+        graveItems: [
+          "Todo lo previsto para accidente leve.",
+          "Traslado de aviso al 112."
+        ],
+        cierre: "En ambos casos, el Parte de Accidente/Suceso (PAS) se realizará conforme a la normativa interna del CBCM."
+      },
+      cecop: "918 354 918",
+      riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
+      revision: t,
+    });
+    setHtml(""); setTab(0); setPreview(false); setInserted(false); setCopied(false);
+  };
+
   const copy = () => {
     navigator.clipboard.writeText(html).then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 2500);
@@ -892,6 +934,11 @@ function GeneradorManiobras() {
               color: tab === TABS.length - 1 ? "#d1d5db" : "#6b7280",
               cursor: tab === TABS.length - 1 ? "not-allowed" : "pointer", whiteSpace:"nowrap" }}>
             Siguiente →
+          </button>
+          <button onClick={resetAll}
+            style={{ padding:"8px 14px", fontSize:"12px", fontWeight:"700", border:"1.5px solid #fca5a5",
+              borderRadius:"6px", background:"#fff", color:"#B22222", cursor:"pointer", whiteSpace:"nowrap" }}>
+            🗑 Borrar todo
           </button>
         </div>
       </div>
