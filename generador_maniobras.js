@@ -40,9 +40,12 @@ function embedVideoUrl(url) {
   return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;border-radius:4px;margin-bottom:14px;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div>`;
 }
 
-function renderImage(url) {
-  if (!url || !url.trim()) return "";
-  return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${mEsc(url.trim())}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
+function renderImage(item) {
+  // Acepta tanto string (legacy) como objeto {mode, url, src, name}
+  const src = typeof item === "string" ? item.trim()
+    : item.mode === "file" ? item.src : (item.url || "").trim();
+  if (!src) return "";
+  return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
 }
 
 /* ─── HTML GENERATOR ────────────────────────────────────────── */
@@ -53,7 +56,10 @@ function generateHTML(d) {
   const matItems = d.materiales.filter(m => m.trim())
     .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
 
-  const recImagenesHtml = d.recursosImagenes.filter(img => img.trim()).map(img => renderImage(img)).join("\n");
+  const recImagenesHtml = d.recursosImagenes.filter(img => {
+    if (typeof img === "string") return img.trim();
+    return img.mode === "file" ? img.src : img.url.trim();
+  }).map(img => renderImage(img)).join("\n");
   const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const stepRows = d.pasos.filter(p => p.trim()).map((p, i) => `
@@ -74,7 +80,10 @@ function generateHTML(d) {
             <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.medida)}</td>
           </tr>`).join("");
 
-  const desImagenesHtml = d.desarrolloImagenes.filter(img => img.trim()).map(img => renderImage(img)).join("\n");
+  const desImagenesHtml = d.desarrolloImagenes.filter(img => {
+    if (typeof img === "string") return img.trim();
+    return img.mode === "file" ? img.src : img.url.trim();
+  }).map(img => renderImage(img)).join("\n");
   const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const recordadBlock = d.recordad.trim()
@@ -291,14 +300,14 @@ function GeneradorManiobras() {
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
-    recursosImagenes: [""],
+    recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     recursosVideos: [""],
     organizacion: "",
     jt1: "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
     jt2: "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS.",
     refDoc: "",
     videos: [""],
-    desarrolloImagenes: [""],
+    desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     pasos: ["", "", "", "", "", ""],
     precauciones: "", recordad: "",
     planSOS: {
@@ -331,6 +340,23 @@ function GeneradorManiobras() {
   const updRisk = (i, f, v) => setD(p => {
     const a = [...p.riesgos]; a[i] = { ...a[i], [f]: v }; return { ...p, riesgos: a };
   });
+
+  /* ── Handlers imagen con soporte URL + archivo local ── */
+  const updImg = (key, i, field, val) => setD(p => {
+    const a = [...p[key]]; a[i] = { ...a[i], [field]: val }; return { ...p, [key]: a };
+  });
+  const handleImgFile = (key, i, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => setD(p => {
+      const a = [...p[key]];
+      a[i] = { ...a[i], src: e.target.result, name: file.name };
+      return { ...p, [key]: a };
+    });
+    reader.readAsDataURL(file);
+  };
+  const addImg = (key) => setD(p => ({ ...p, [key]: [...p[key], { mode: "url", url: "", src: "", name: "" }] }));
+  const remImg = (key, i) => setD(p => ({ ...p, [key]: p[key].filter((_, j) => j !== i) }));
 
   const updSos = (f, v) => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: v } }));
   const updSosArr = (f, i, v) => setD(p => {
@@ -442,18 +468,47 @@ function GeneradorManiobras() {
       </div>
       <Divider />
       <div>
-        <Label>Imágenes (URLs)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+        <Label>Imágenes</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
           {d.recursosImagenes.map((img, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={img} onChange={v => updArr("recursosImagenes", i, v)} placeholder="https://ejemplo.com/imagen.jpg" />
+            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+                {/* toggle URL / Archivo */}
+                <div style={{ display:"flex", gap:"4px" }}>
+                  {["url", "file"].map(mode => (
+                    <button key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
+                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
+                        borderRadius:"4px", cursor:"pointer",
+                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
+                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
+                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                      {mode === "url" ? "URL" : "Archivo local"}
+                    </button>
+                  ))}
+                </div>
+                {d.recursosImagenes.length > 1 && <RemBtn onClick={() => remImg("recursosImagenes", i)} />}
               </div>
-              {d.recursosImagenes.length > 1 && <RemBtn onClick={() => remArr("recursosImagenes", i)} />}
+              {img.mode === "url" ? (
+                <Inp value={img.url} onChange={v => updImg("recursosImagenes", i, "url", v)} placeholder="https://ejemplo.com/imagen.jpg" />
+              ) : (
+                <div>
+                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
+                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
+                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
+                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
+                    <input type="file" accept="image/*" style={{ display:"none" }}
+                      onChange={e => handleImgFile("recursosImagenes", i, e.target.files[0])} />
+                  </label>
+                  {img.src && (
+                    <img src={img.src} alt="preview"
+                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
-        <AddBtn onClick={() => addArr("recursosImagenes")} label="＋ Añadir imagen" />
+        <AddBtn onClick={() => addImg("recursosImagenes")} label="＋ Añadir imagen" />
       </div>
       <Divider />
       <div>
@@ -499,18 +554,47 @@ function GeneradorManiobras() {
       
       <Divider />
       <div>
-        <Label>Imágenes del desarrollo (URLs)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+        <Label>Imágenes del desarrollo</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
           {d.desarrolloImagenes.map((img, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={img} onChange={v => updArr("desarrolloImagenes", i, v)} placeholder="https://ejemplo.com/esquema.jpg" />
+            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+                {/* toggle URL / Archivo */}
+                <div style={{ display:"flex", gap:"4px" }}>
+                  {["url", "file"].map(mode => (
+                    <button key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
+                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
+                        borderRadius:"4px", cursor:"pointer",
+                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
+                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
+                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                      {mode === "url" ? "URL" : "Archivo local"}
+                    </button>
+                  ))}
+                </div>
+                {d.desarrolloImagenes.length > 1 && <RemBtn onClick={() => remImg("desarrolloImagenes", i)} />}
               </div>
-              {d.desarrolloImagenes.length > 1 && <RemBtn onClick={() => remArr("desarrolloImagenes", i)} />}
+              {img.mode === "url" ? (
+                <Inp value={img.url} onChange={v => updImg("desarrolloImagenes", i, "url", v)} placeholder="https://ejemplo.com/esquema.jpg" />
+              ) : (
+                <div>
+                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
+                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
+                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
+                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
+                    <input type="file" accept="image/*" style={{ display:"none" }}
+                      onChange={e => handleImgFile("desarrolloImagenes", i, e.target.files[0])} />
+                  </label>
+                  {img.src && (
+                    <img src={img.src} alt="preview"
+                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
-        <AddBtn onClick={() => addArr("desarrolloImagenes")} label="＋ Añadir imagen" />
+        <AddBtn onClick={() => addImg("desarrolloImagenes")} label="＋ Añadir imagen" />
       </div>
 
       <Divider />
