@@ -494,19 +494,19 @@ function GeneradorManiobras() {
       <SectionTitle>Información General</SectionTitle>
       <Hint>Secciones 1 a 4 del documento generado.</Hint>
       <div><Label required>1 · Descripción</Label>
-        <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={5}
+        <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={10}
           placeholder="Qué se monta, qué se verifica, aspectos técnicos clave..." /></div>
       <Divider />
       <div><Label required>2 · Objetivo Pedagógico</Label>
-        <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={4}
+        <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={10}
           placeholder="ej: Comprobar ventajas e inconvenientes de un bombeo en serie desde un hidrante" /></div>
       <Divider />
       <div><Label required>3 · Destinatarios</Label>
-        <Txt value={d.destinatarios} onChange={v => upd("destinatarios", v)} rows={2}
+        <Txt value={d.destinatarios} onChange={v => upd("destinatarios", v)} rows={10}
           placeholder="ej: Personal operativo de guardia" /></div>
       <Divider />
       <div><Label required>4 · Escenario</Label>
-        <Txt value={d.escenario} onChange={v => upd("escenario", v)} rows={4}
+        <Txt value={d.escenario} onChange={v => upd("escenario", v)} rows={10}
           placeholder="ej: La práctica se desarrollará en el hidrante de abastecimiento del parque" /></div>
       <Divider />
       <div>
