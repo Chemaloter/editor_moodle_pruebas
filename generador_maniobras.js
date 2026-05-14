@@ -451,22 +451,68 @@ function GeneradorManiobras() {
         <Inp value={d.titulo} onChange={v => upd("titulo", v)} placeholder="ej: BOMBEO EN SERIE DESDE HIDRANTE" /></div>
       <div><Label>Subtítulo (opcional)</Label>
         <Inp value={d.subtitulo} onChange={v => upd("subtitulo", v)} placeholder="ej: Verificación de presión de red y riesgo de cavitación" /></div>
-     <div style={{ marginBottom:"10px" }}>
-  <label style={{
-    display:"flex",
-    alignItems:"center",
-    gap:"8px",
-    fontSize:"14px"
-  }}>
-    <input
-      type="checkbox"
-      checked={d.mostrarIT}
-      onChange={e => upd("mostrarIT", e.target.checked)}
-    />
+<div style={{ marginBottom:"14px" }}>
 
-    Mostrar instrucción técnica
-  </label>
-</div> 
+  <button
+    type="button"
+    onClick={() => upd("mostrarIT", !d.mostrarIT)}
+    style={{
+      width:"100%",
+      border:"1px solid " + (d.mostrarIT ? "#b91c1c" : "#d1d5db"),
+      background:d.mostrarIT ? "#fef2f2" : "#f9fafb",
+      color:d.mostrarIT ? "#991b1b" : "#374151",
+      borderRadius:"10px",
+      padding:"12px 14px",
+      cursor:"pointer",
+      transition:"all .2s ease",
+      display:"flex",
+      alignItems:"center",
+      justifyContent:"space-between",
+      fontSize:"14px",
+      fontWeight:"600"
+    }}
+  >
+
+    <div style={{
+      display:"flex",
+      alignItems:"center",
+      gap:"10px"
+    }}>
+
+      <div style={{
+        width:"18px",
+        height:"18px",
+        borderRadius:"999px",
+        border:"2px solid " + (d.mostrarIT ? "#b91c1c" : "#9ca3af"),
+        background:d.mostrarIT ? "#b91c1c" : "#ffffff",
+        display:"flex",
+        alignItems:"center",
+        justifyContent:"center",
+        color:"#ffffff",
+        fontSize:"11px",
+        fontWeight:"bold"
+      }}>
+        {d.mostrarIT ? "✓" : ""}
+      </div>
+
+      <span>
+        Incluir instrucción técnica en el documento
+      </span>
+
+    </div>
+
+    <div style={{
+      fontSize:"12px",
+      fontWeight:"700",
+      letterSpacing:"0.5px",
+      color:d.mostrarIT ? "#b91c1c" : "#6b7280"
+    }}>
+      {d.mostrarIT ? "ACTIVADO" : "OCULTO"}
+    </div>
+
+  </button>
+
+</div>
      <div><Label required>Código instrucción técnica</Label>
         <Inp value={d.itCode} onChange={v => upd("itCode", v)} placeholder="ej: IT.JUT1.102" /></div>
     </div>,
