@@ -296,7 +296,7 @@ function GeneradorManiobras() {
   const [inserted, setInserted] = useState(false);
 
   const [d, setD] = useState({
-    titulo: "", subtitulo: "", itCode: "",
+    titulo: "", subtitulo: "",showIT: true, itCode: "",
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
