@@ -20,18 +20,28 @@ function badgeStyle(g) {
   return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#e8f5e9;color:#1b5e20;";
 }
 
-/* Función para embeber vídeos de forma responsiva */
+/* Función para embeber vídeos de forma responsiva (CORREGIDA) */
 function embedVideoUrl(url) {
   if (!url || !url.trim()) return "";
   let src = url.trim();
   
-  if (src.includes("youtube.com/watch")) {
-    const urlParams = new URLSearchParams(src.split("?")[1]);
-    src = "https://www.youtube.com/embed/" + urlParams.get("v");
-  } else if (src.includes("youtu.be/")) {
-    src = "https://www.youtube.com/embed/" + src.split("youtu.be/")[1].split("?")[0];
-  } else if (src.includes("vimeo.com/")) {
-    src = "https://player.vimeo.com/video/" + src.split("vimeo.com/")[1].split("?")[0];
+  try {
+    if (src.includes("youtube.com/watch")) {
+      const queryParams = src.split("?")[1];
+      if (queryParams) {
+        const urlParams = new URLSearchParams(queryParams);
+        const v = urlParams.get("v");
+        if (v) src = "https://www.youtube.com/embed/" + v;
+      }
+    } else if (src.includes("youtu.be/")) {
+      const part = src.split("youtu.be/")[1];
+      if (part) src = "https://www.youtube.com/embed/" + part.split("?")[0];
+    } else if (src.includes("vimeo.com/")) {
+      const part = src.split("vimeo.com/")[1];
+      if (part) src = "https://player.vimeo.com/video/" + part.split("?")[0];
+    }
+  } catch (e) {
+    console.warn("Error al procesar URL de vídeo:", e);
   }
 
   if (src.match(/\.(mp4|webm|ogg)$/i)) {
@@ -41,14 +51,13 @@ function embedVideoUrl(url) {
 }
 
 function renderImage(item) {
-  // Acepta tanto string (legacy) como objeto {mode, url, src, name}
   const src = typeof item === "string" ? item.trim()
     : item.mode === "file" ? item.src : (item.url || "").trim();
   if (!src) return "";
   return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
 }
 
-/* ─── HTML GENERATOR ────────────────────────────────────────── */
+/* ─── HTML GENERATOR (CORREGIDO) ────────────────────────────────────────── */
 function generateHTML(d) {
   const epiItems = d.epis.filter(e => e.trim())
     .map(e => `<li style="margin-bottom:4px;">${mEsc(e)}</li>`).join("\n              ");
@@ -56,10 +65,12 @@ function generateHTML(d) {
   const matItems = d.materiales.filter(m => m.trim())
     .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
 
+  // Uso de || "" para evitar cuelgues si img.url es undefined
   const recImagenesHtml = d.recursosImagenes.filter(img => {
     if (typeof img === "string") return img.trim();
-    return img.mode === "file" ? img.src : img.url.trim();
+    return img.mode === "file" ? img.src : (img.url || "").trim();
   }).map(img => renderImage(img)).join("\n");
+  
   const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const stepRows = d.pasos.filter(p => p.trim()).map((p, i) => `
@@ -82,8 +93,9 @@ function generateHTML(d) {
 
   const desImagenesHtml = d.desarrolloImagenes.filter(img => {
     if (typeof img === "string") return img.trim();
-    return img.mode === "file" ? img.src : img.url.trim();
+    return img.mode === "file" ? img.src : (img.url || "").trim();
   }).map(img => renderImage(img)).join("\n");
+  
   const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const recordadBlock = d.recordad.trim()
@@ -93,8 +105,7 @@ function generateHTML(d) {
   const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
   const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
 
-  return `<!-- MANIOBRA DE PARQUE - CBCM -->
-<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;max-width:860px;margin:0 auto;box-sizing:border-box;">
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;max-width:860px;margin:0 auto;box-sizing:border-box;">
 
   <table style="width:100%;border-collapse:collapse;overflow:hidden;background-color:#B22222;color:#ffffff;" cellpadding="0" cellspacing="0">
     <tr>
@@ -103,31 +114,7 @@ function generateHTML(d) {
         <div style="font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">PR&Aacute;CTICA: ${mEsc(d.titulo)}</div>
         <div style="font-size:12px;margin-top:4px;opacity:0.85;">${mEsc(d.subtitulo)}</div>
       </td>
-     ${d.mostrarIT ? `
-<td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">
-  INSTRUCCI&Oacute;N T&Eacute;CNICA<br>
-
-  <div style="margin-top:8px;">
-    ${d.itCodes
-      .filter(it => it.trim())
-      .map(it => `
-        <div style="
-          background:rgba(255,255,255,0.12);
-          border:1px solid rgba(255,255,255,0.25);
-          border-radius:4px;
-          padding:6px 8px;
-          margin-bottom:6px;
-          font-size:12px;
-          font-weight:bold;
-          letter-spacing:0.5px;
-        ">
-          ${mEsc(it)}
-        </div>
-      `).join("")}
-  </div>
-
-</td>
-` : ""}
+      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA<br><span style="font-weight:bold;font-size:13px;letter-spacing:1px;">${mEsc(d.itCode)}</span></td>
     </tr>
   </table>
 
@@ -241,7 +228,7 @@ ${recordadBlock}      </div>
 </div>`;
 }
 
-/* ─── UI COMPONENTS ─────────────────────────────────────────── */
+/* ─── UI COMPONENTS (CORREGIDOS añadiendo type="button") ─── */
 const TABS = [
   { label: "1 · Cabecera",     short: "Cab."      },
   { label: "2 · Info General", short: "Info"      },
@@ -292,14 +279,14 @@ const Txt = ({ value, onChange, placeholder, rows = 3 }) => (
   />
 );
 const AddBtn = ({ onClick, label }) => (
-  <button onClick={onClick} style={{ marginTop:"8px", fontSize:"12px", fontWeight:"700",
+  <button type="button" onClick={onClick} style={{ marginTop:"8px", fontSize:"12px", fontWeight:"700",
     color:"#B22222", border:"1px solid #fca5a5", borderRadius:"6px",
     padding:"5px 12px", background:"none", cursor:"pointer" }}>
     {label}
   </button>
 );
 const RemBtn = ({ onClick }) => (
-  <button onClick={onClick} title="Eliminar" style={{ marginLeft:"8px", width:"24px", height:"24px",
+  <button type="button" onClick={onClick} title="Eliminar" style={{ marginLeft:"8px", width:"24px", height:"24px",
     flexShrink:"0", display:"flex", alignItems:"center", justifyContent:"center",
     color:"#d1d5db", background:"none", border:"none", fontSize:"20px",
     lineHeight:"1", cursor:"pointer" }}>
@@ -320,7 +307,7 @@ function GeneradorManiobras() {
   const [inserted, setInserted] = useState(false);
 
   const [d, setD] = useState({
-    titulo: "", subtitulo: "",mostrarIT: false, itCodes: [""],
+    titulo: "", subtitulo: "", itCode: "",
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
@@ -396,7 +383,7 @@ function GeneradorManiobras() {
     if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
     const t = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     setD({
-      titulo: "", subtitulo: "",mostrarIT: false, itCodes: [""],
+      titulo: "", subtitulo: "", itCode: "",
       descripcion: "", objetivo: "", destinatarios: "", escenario: "",
       epis: ["", "", ""],
       materiales: ["", "", "", ""],
@@ -463,165 +450,19 @@ function GeneradorManiobras() {
   const panels = [
 
     /* 0 · Cabecera */
-    <div style={spY}>
+    <div style={spY} key="tab0">
       <SectionTitle>Cabecera del documento</SectionTitle>
       <Hint>Identificación de la maniobra y su código de instrucción técnica.</Hint>
       <div><Label required>Título de la práctica</Label>
         <Inp value={d.titulo} onChange={v => upd("titulo", v)} placeholder="ej: BOMBEO EN SERIE DESDE HIDRANTE" /></div>
       <div><Label>Subtítulo (opcional)</Label>
         <Inp value={d.subtitulo} onChange={v => upd("subtitulo", v)} placeholder="ej: Verificación de presión de red y riesgo de cavitación" /></div>
-<div style={{ marginBottom:"18px" }}>
-
-  <button
-    type="button"
-    onClick={() => upd("mostrarIT", !d.mostrarIT)}
-    style={{
-      width:"100%",
-      border:"1px solid " + (d.mostrarIT ? "#b91c1c" : "#d1d5db"),
-      background:d.mostrarIT ? "#fef2f2" : "#f9fafb",
-      color:d.mostrarIT ? "#991b1b" : "#374151",
-      borderRadius:"10px",
-      padding:"14px 16px",
-      cursor:"pointer",
-      transition:"all .2s ease",
-      display:"flex",
-      alignItems:"center",
-      justifyContent:"space-between",
-      fontSize:"14px",
-      fontWeight:"600"
-    }}
-  >
-
-    <div style={{
-      display:"flex",
-      alignItems:"center",
-      gap:"12px"
-    }}>
-
-      <div style={{
-        width:"20px",
-        height:"20px",
-        borderRadius:"999px",
-        border:"2px solid " + (d.mostrarIT ? "#b91c1c" : "#9ca3af"),
-        background:d.mostrarIT ? "#b91c1c" : "#ffffff",
-        display:"flex",
-        alignItems:"center",
-        justifyContent:"center",
-        color:"#ffffff",
-        fontSize:"12px",
-        fontWeight:"bold"
-      }}>
-        {d.mostrarIT ? "✓" : ""}
-      </div>
-
-      <span>
-        Activa esta opción si necesitas añadir instrucciones técnicas de referencia
-      </span>
-
-    </div>
-
-  </button>
-
-  {d.mostrarIT && (
-
-    <div style={{
-      marginTop:"14px",
-      border:"1px solid #e5e7eb",
-      borderRadius:"10px",
-      padding:"14px",
-      background:"#fafafa"
-    }}>
-
-      <Label>Instrucciones técnicas</Label>
-
-      {d.itCodes.map((item, i) => (
-
-        <div
-          key={i}
-          style={{
-            display:"flex",
-            gap:"10px",
-            marginBottom:"10px",
-            alignItems:"center"
-          }}
-        >
-
-          <div style={{ flex:1 }}>
-
-            <Inp
-              value={item}
-              onChange={v => {
-                const arr = [...d.itCodes];
-                arr[i] = v;
-                setD(p => ({ ...p, itCodes: arr }));
-              }}
-              placeholder={`Instrucción técnica ${i + 1}`}
-            />
-
-          </div>
-
-          {d.itCodes.length > 1 && (
-
-            <button
-              type="button"
-              onClick={() => {
-                setD(p => ({
-                  ...p,
-                  itCodes: p.itCodes.filter((_, j) => j !== i)
-                }));
-              }}
-              style={{
-                border:"none",
-                background:"#fee2e2",
-                color:"#991b1b",
-                width:"36px",
-                height:"36px",
-                borderRadius:"8px",
-                cursor:"pointer",
-                fontWeight:"bold",
-                fontSize:"16px"
-              }}
-            >
-              ×
-            </button>
-
-          )}
-
-        </div>
-
-      ))}
-
-      <button
-        type="button"
-        onClick={() => {
-          setD(p => ({
-            ...p,
-            itCodes: [...p.itCodes, ""]
-          }));
-        }}
-        style={{
-          marginTop:"4px",
-          border:"1px dashed #b91c1c",
-          background:"#ffffff",
-          color:"#b91c1c",
-          padding:"10px 14px",
-          borderRadius:"8px",
-          cursor:"pointer",
-          fontWeight:"600",
-          width:"100%"
-        }}
-      >
-        ＋ Añadir instrucción técnica
-      </button>
-
-    </div>
-
-  )}
-
-</div>
+      <div><Label required>Código instrucción técnica</Label>
+        <Inp value={d.itCode} onChange={v => upd("itCode", v)} placeholder="ej: IT.JUT1.102" /></div>
+    </div>,
 
     /* 1 · Info General */
-    <div style={spY}>
+    <div style={spY} key="tab1">
       <SectionTitle>Información General</SectionTitle>
       <Hint>Secciones 1 a 4 del documento generado.</Hint>
       <div><Label required>1 · Descripción</Label>
@@ -642,7 +483,7 @@ function GeneradorManiobras() {
     </div>,
 
     /* 2 · Recursos */
-    <div style={spY}>
+    <div style={spY} key="tab2">
       <SectionTitle>Recursos</SectionTitle>
       <Hint>EPIs, materiales y recursos multimedia necesarios para la maniobra.</Hint>
       <div>
@@ -688,7 +529,7 @@ function GeneradorManiobras() {
                 {/* toggle URL / Archivo */}
                 <div style={{ display:"flex", gap:"4px" }}>
                   {["url", "file"].map(mode => (
-                    <button key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
+                    <button type="button" key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
                         borderRadius:"4px", cursor:"pointer",
                         borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
@@ -740,7 +581,7 @@ function GeneradorManiobras() {
     </div>,
 
     /* 3 · Organización */
-    <div style={spY}>
+    <div style={spY} key="tab3">
       <SectionTitle>Organización del Grupo</SectionTitle>
       <Hint>Define la estructura y las funciones del personal durante la maniobra.</Hint>
       <div><Label required>Descripción general</Label>
@@ -757,7 +598,7 @@ function GeneradorManiobras() {
     </div>,
 
     /* 4 · Desarrollo */
-    <div style={spY}>
+    <div style={spY} key="tab4">
       <SectionTitle>Desarrollo Explicativo</SectionTitle>
       <Hint>Referencia, multimedia, pasos secuenciales y precauciones de la maniobra.</Hint>
       <div><Label>Documentación de referencia</Label>
@@ -774,7 +615,7 @@ function GeneradorManiobras() {
                 {/* toggle URL / Archivo */}
                 <div style={{ display:"flex", gap:"4px" }}>
                   {["url", "file"].map(mode => (
-                    <button key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
+                    <button type="button" key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
                         borderRadius:"4px", cursor:"pointer",
                         borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
@@ -856,7 +697,7 @@ function GeneradorManiobras() {
     </div>,
 
     /* 5 · Plan SOS */
-    <div style={spY}>
+    <div style={spY} key="tab5">
       <SectionTitle>Plan SOS</SectionTitle>
       <Hint>Edición completa de los parámetros del Plan SOS del anexo.</Hint>
       <div><Label required>Señal de Emergencia</Label>
@@ -911,7 +752,7 @@ function GeneradorManiobras() {
     </div>,
 
     /* 6 · Riesgos */
-    <div style={spY}>
+    <div style={spY} key="tab6">
       <SectionTitle>Evaluación de Riesgos</SectionTitle>
       <Hint>Añade una fila por cada riesgo identificado.</Hint>
       {d.riesgos.map((r, i) => (
@@ -921,7 +762,7 @@ function GeneradorManiobras() {
             <span style={{ fontSize:"11px", fontWeight:"700", color:"#9ca3af",
               textTransform:"uppercase", letterSpacing:"0.08em" }}>Riesgo {i + 1}</span>
             {d.riesgos.length > 1 && (
-              <button onClick={() => remArr("riesgos", i)}
+              <button type="button" onClick={() => remArr("riesgos", i)}
                 style={{ fontSize:"12px", color:"#f87171", background:"none", border:"none",
                   fontWeight:"600", cursor:"pointer" }}>Eliminar</button>
             )}
@@ -967,7 +808,7 @@ function GeneradorManiobras() {
     </div>,
 
     /* 7 · Pie */
-    <div style={spY}>
+    <div style={spY} key="tab7">
       <SectionTitle>Pie de Página</SectionTitle>
       <Hint>Fecha de revisión y teléfono CECOP para referencias directas.</Hint>
       <div>
@@ -982,7 +823,7 @@ function GeneradorManiobras() {
     </div>,
 
     /* 8 · Generar */
-    <div style={spY}>
+    <div style={spY} key="tab8">
       <SectionTitle>HTML generado para Moodle</SectionTitle>
       <Hint>Insértalo directamente en el editor, o copia el código y pégalo en el editor HTML de Moodle.</Hint>
       {!html ? (
@@ -995,21 +836,21 @@ function GeneradorManiobras() {
         <div style={spY}>
           {/* Botones de acción */}
           <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
-            <button onClick={insertInEditor}
+            <button type="button" onClick={insertInEditor}
               style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
                 fontWeight:"700", border:"none", cursor:"pointer",
                 background: inserted ? "#16a34a" : "#B22222",
                 color:"#fff", transition:"background 0.2s" }}>
               {inserted ? "✓ ¡Insertado en el editor!" : "⬆️ Insertar en el editor"}
             </button>
-            <button onClick={copy}
+            <button type="button" onClick={copy}
               style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
                 fontWeight:"700", border:"none", cursor:"pointer",
                 background: copied ? "#16a34a" : "#374151",
                 color:"#fff", transition:"background 0.2s" }}>
               {copied ? "✓ ¡Copiado!" : "📋 Copiar al portapapeles"}
             </button>
-            <button onClick={() => setPreview(p => !p)}
+            <button type="button" onClick={() => setPreview(p => !p)}
               style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
                 fontWeight:"600", border:"1.5px solid #e5e7eb", cursor:"pointer",
                 background:"#fff", color:"#374151" }}>
@@ -1061,7 +902,7 @@ function GeneradorManiobras() {
         flexShrink:"0", overflowX:"auto" }}>
         <div style={{ display:"flex", minWidth:"max-content" }}>
           {TABS.map((t, i) => (
-            <button key={i} onClick={() => setTab(i)}
+            <button type="button" key={i} onClick={() => setTab(i)}
               style={{ padding:"10px 12px", fontSize:"12px", fontWeight:"600",
                 whiteSpace:"nowrap", border:"none", borderBottom:"2px solid",
                 cursor:"pointer", transition:"all 0.15s", background:"transparent",
@@ -1085,19 +926,19 @@ function GeneradorManiobras() {
         borderTop:"1px solid #e5e7eb", padding:"10px 16px", zIndex:"10" }}>
         <div style={{ maxWidth:"720px", margin:"0 auto",
           display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px" }}>
-          <button onClick={() => setTab(t => Math.max(0, t - 1))} disabled={tab === 0}
+          <button type="button" onClick={() => setTab(t => Math.max(0, t - 1))} disabled={tab === 0}
             style={{ padding:"8px 16px", fontSize:"13px", border:"1.5px solid #e5e7eb",
               borderRadius:"6px", background:"#fff", color: tab === 0 ? "#d1d5db" : "#6b7280",
               cursor: tab === 0 ? "not-allowed" : "pointer", whiteSpace:"nowrap" }}>
             ← Anterior
           </button>
-          <button onClick={generate}
+          <button type="button" onClick={generate}
             style={{ flex:"1", maxWidth:"240px", padding:"10px", background:"#B22222",
               color:"#fff", fontSize:"13px", fontWeight:"700", border:"none",
               borderRadius:"6px", cursor:"pointer" }}>
             ⚡ Generar HTML
           </button>
-          <button onClick={() => setTab(t => Math.min(TABS.length - 1, t + 1))}
+          <button type="button" onClick={() => setTab(t => Math.min(TABS.length - 1, t + 1))}
             disabled={tab === TABS.length - 1}
             style={{ padding:"8px 16px", fontSize:"13px", border:"1.5px solid #e5e7eb",
               borderRadius:"6px", background:"#fff",
@@ -1105,7 +946,7 @@ function GeneradorManiobras() {
               cursor: tab === TABS.length - 1 ? "not-allowed" : "pointer", whiteSpace:"nowrap" }}>
             Siguiente →
           </button>
-          <button onClick={resetAll}
+          <button type="button" onClick={resetAll}
             style={{ padding:"8px 14px", fontSize:"12px", fontWeight:"700", border:"1.5px solid #fca5a5",
               borderRadius:"6px", background:"#fff", color:"#B22222", cursor:"pointer", whiteSpace:"nowrap" }}>
             🗑 Borrar todo
@@ -1117,11 +958,19 @@ function GeneradorManiobras() {
   );
 }
 
-/* ─── MOUNT ─────────────────────────────────────────────────── */
+/* ─── MOUNT (CORREGIDO ESPERANDO AL DOM) ─────────────────────────────────────────────────── */
 (function mountGenerador() {
-  const el = document.getElementById('maniobras-root');
-  if (!el) return;
-  /* React 18 createRoot */
-  const root = ReactDOM.createRoot(el);
-  root.render(<GeneradorManiobras />);
+  function init() {
+    const el = document.getElementById('maniobras-root');
+    if (!el) return;
+    const root = ReactDOM.createRoot(el);
+    root.render(<GeneradorManiobras />);
+  }
+
+  // Asegurar que el DOM existe antes de intentar montarlo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
