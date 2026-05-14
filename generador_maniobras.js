@@ -103,10 +103,29 @@ function generateHTML(d) {
         <div style="font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">PR&Aacute;CTICA: ${mEsc(d.titulo)}</div>
         <div style="font-size:12px;margin-top:4px;opacity:0.85;">${mEsc(d.subtitulo)}</div>
       </td>
-      ${d.mostrarIT ? `
+     ${d.mostrarIT ? `
 <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">
   INSTRUCCI&Oacute;N T&Eacute;CNICA<br>
-  <span style="font-weight:bold;font-size:13px;letter-spacing:1px;">${mEsc(d.itCode)}</span>
+
+  <div style="margin-top:8px;">
+    ${d.itCodes
+      .filter(it => it.trim())
+      .map(it => `
+        <div style="
+          background:rgba(255,255,255,0.12);
+          border:1px solid rgba(255,255,255,0.25);
+          border-radius:4px;
+          padding:6px 8px;
+          margin-bottom:6px;
+          font-size:12px;
+          font-weight:bold;
+          letter-spacing:0.5px;
+        ">
+          ${mEsc(it)}
+        </div>
+      `).join("")}
+  </div>
+
 </td>
 ` : ""}
     </tr>
@@ -301,7 +320,7 @@ function GeneradorManiobras() {
   const [inserted, setInserted] = useState(false);
 
   const [d, setD] = useState({
-    titulo: "", subtitulo: "",mostrarIT: true, itCode: "",
+    titulo: "", subtitulo: "",mostrarIT: false, itCodes: [""],
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
@@ -377,7 +396,7 @@ function GeneradorManiobras() {
     if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
     const t = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     setD({
-      titulo: "", subtitulo: "",mostrarIT: true, itCode: "",
+      titulo: "", subtitulo: "",mostrarIT: false, itCodes: [""],
       descripcion: "", objetivo: "", destinatarios: "", escenario: "",
       epis: ["", "", ""],
       materiales: ["", "", "", ""],
@@ -451,7 +470,7 @@ function GeneradorManiobras() {
         <Inp value={d.titulo} onChange={v => upd("titulo", v)} placeholder="ej: BOMBEO EN SERIE DESDE HIDRANTE" /></div>
       <div><Label>Subtítulo (opcional)</Label>
         <Inp value={d.subtitulo} onChange={v => upd("subtitulo", v)} placeholder="ej: Verificación de presión de red y riesgo de cavitación" /></div>
-<div style={{ marginBottom:"14px" }}>
+<div style={{ marginBottom:"18px" }}>
 
   <button
     type="button"
@@ -462,7 +481,7 @@ function GeneradorManiobras() {
       background:d.mostrarIT ? "#fef2f2" : "#f9fafb",
       color:d.mostrarIT ? "#991b1b" : "#374151",
       borderRadius:"10px",
-      padding:"12px 14px",
+      padding:"14px 16px",
       cursor:"pointer",
       transition:"all .2s ease",
       display:"flex",
@@ -476,12 +495,12 @@ function GeneradorManiobras() {
     <div style={{
       display:"flex",
       alignItems:"center",
-      gap:"10px"
+      gap:"12px"
     }}>
 
       <div style={{
-        width:"18px",
-        height:"18px",
+        width:"20px",
+        height:"20px",
         borderRadius:"999px",
         border:"2px solid " + (d.mostrarIT ? "#b91c1c" : "#9ca3af"),
         background:d.mostrarIT ? "#b91c1c" : "#ffffff",
@@ -489,33 +508,117 @@ function GeneradorManiobras() {
         alignItems:"center",
         justifyContent:"center",
         color:"#ffffff",
-        fontSize:"11px",
+        fontSize:"12px",
         fontWeight:"bold"
       }}>
         {d.mostrarIT ? "✓" : ""}
       </div>
 
       <span>
-        Incluir instrucción técnica en el documento
+        Activa esta opción si necesitas añadir instrucciones técnicas de referencia
       </span>
 
     </div>
 
-    <div style={{
-      fontSize:"12px",
-      fontWeight:"700",
-      letterSpacing:"0.5px",
-      color:d.mostrarIT ? "#b91c1c" : "#6b7280"
-    }}>
-      {d.mostrarIT ? "ACTIVADO" : "OCULTO"}
-    </div>
-
   </button>
 
+  {d.mostrarIT && (
+
+    <div style={{
+      marginTop:"14px",
+      border:"1px solid #e5e7eb",
+      borderRadius:"10px",
+      padding:"14px",
+      background:"#fafafa"
+    }}>
+
+      <Label>Instrucciones técnicas</Label>
+
+      {d.itCodes.map((item, i) => (
+
+        <div
+          key={i}
+          style={{
+            display:"flex",
+            gap:"10px",
+            marginBottom:"10px",
+            alignItems:"center"
+          }}
+        >
+
+          <div style={{ flex:1 }}>
+
+            <Inp
+              value={item}
+              onChange={v => {
+                const arr = [...d.itCodes];
+                arr[i] = v;
+                setD(p => ({ ...p, itCodes: arr }));
+              }}
+              placeholder={`Instrucción técnica ${i + 1}`}
+            />
+
+          </div>
+
+          {d.itCodes.length > 1 && (
+
+            <button
+              type="button"
+              onClick={() => {
+                setD(p => ({
+                  ...p,
+                  itCodes: p.itCodes.filter((_, j) => j !== i)
+                }));
+              }}
+              style={{
+                border:"none",
+                background:"#fee2e2",
+                color:"#991b1b",
+                width:"36px",
+                height:"36px",
+                borderRadius:"8px",
+                cursor:"pointer",
+                fontWeight:"bold",
+                fontSize:"16px"
+              }}
+            >
+              ×
+            </button>
+
+          )}
+
+        </div>
+
+      ))}
+
+      <button
+        type="button"
+        onClick={() => {
+          setD(p => ({
+            ...p,
+            itCodes: [...p.itCodes, ""]
+          }));
+        }}
+        style={{
+          marginTop:"4px",
+          border:"1px dashed #b91c1c",
+          background:"#ffffff",
+          color:"#b91c1c",
+          padding:"10px 14px",
+          borderRadius:"8px",
+          cursor:"pointer",
+          fontWeight:"600",
+          width:"100%"
+        }}
+      >
+        ＋ Añadir instrucción técnica
+      </button>
+
+    </div>
+
+  )}
+
 </div>
-     <div><Label required>Código instrucción técnica</Label>
-        <Inp value={d.itCode} onChange={v => upd("itCode", v)} placeholder="ej: IT.JUT1.102" /></div>
-    </div>,
 
     /* 1 · Info General */
     <div style={spY}>
