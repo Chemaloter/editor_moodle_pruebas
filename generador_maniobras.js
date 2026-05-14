@@ -20,7 +20,7 @@ function badgeStyle(g) {
   return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#e8f5e9;color:#1b5e20;";
 }
 
-/* Función para embeber vídeos de forma responsiva (CORREGIDA) */
+/* Función para embeber vídeos de forma responsiva */
 function embedVideoUrl(url) {
   if (!url || !url.trim()) return "";
   let src = url.trim();
@@ -57,7 +57,7 @@ function renderImage(item) {
   return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
 }
 
-/* ─── HTML GENERATOR (CORREGIDO) ────────────────────────────────────────── */
+/* ─── HTML GENERATOR ────────────────────────────────────────── */
 function generateHTML(d) {
   const epiItems = d.epis.filter(e => e.trim())
     .map(e => `<li style="margin-bottom:4px;">${mEsc(e)}</li>`).join("\n              ");
@@ -65,7 +65,6 @@ function generateHTML(d) {
   const matItems = d.materiales.filter(m => m.trim())
     .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
 
-  // Uso de || "" para evitar cuelgues si img.url es undefined
   const recImagenesHtml = d.recursosImagenes.filter(img => {
     if (typeof img === "string") return img.trim();
     return img.mode === "file" ? img.src : (img.url || "").trim();
@@ -105,6 +104,14 @@ function generateHTML(d) {
   const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
   const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
 
+  // Bloque condicional y múltiple para Instrucciones Técnicas
+  const validItCodes = d.itCodes.filter(c => c.trim());
+  let itCodeHtml = "";
+  if (validItCodes.length > 0) {
+    const codesStr = validItCodes.map(c => `<div style="font-weight:bold;font-size:13px;letter-spacing:1px;margin-top:4px;">${mEsc(c)}</div>`).join("");
+    itCodeHtml = `\n      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
+  }
+
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;max-width:860px;margin:0 auto;box-sizing:border-box;">
 
   <table style="width:100%;border-collapse:collapse;overflow:hidden;background-color:#B22222;color:#ffffff;" cellpadding="0" cellspacing="0">
@@ -113,8 +120,7 @@ function generateHTML(d) {
       <td style="padding:12px 16px;vertical-align:middle;">
         <div style="font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">PR&Aacute;CTICA: ${mEsc(d.titulo)}</div>
         <div style="font-size:12px;margin-top:4px;opacity:0.85;">${mEsc(d.subtitulo)}</div>
-      </td>
-      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA<br><span style="font-weight:bold;font-size:13px;letter-spacing:1px;">${mEsc(d.itCode)}</span></td>
+      </td>${itCodeHtml}
     </tr>
   </table>
 
@@ -228,7 +234,7 @@ ${recordadBlock}      </div>
 </div>`;
 }
 
-/* ─── UI COMPONENTS (CORREGIDOS añadiendo type="button") ─── */
+/* ─── UI COMPONENTS ─── */
 const TABS = [
   { label: "1 · Cabecera",     short: "Cab."      },
   { label: "2 · Info General", short: "Info"      },
@@ -307,7 +313,7 @@ function GeneradorManiobras() {
   const [inserted, setInserted] = useState(false);
 
   const [d, setD] = useState({
-    titulo: "", subtitulo: "", itCode: "",
+    titulo: "", subtitulo: "", itCodes: [""],
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
@@ -383,7 +389,7 @@ function GeneradorManiobras() {
     if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
     const t = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     setD({
-      titulo: "", subtitulo: "", itCode: "",
+      titulo: "", subtitulo: "", itCodes: [""],
       descripcion: "", objetivo: "", destinatarios: "", escenario: "",
       epis: ["", "", ""],
       materiales: ["", "", "", ""],
@@ -452,13 +458,25 @@ function GeneradorManiobras() {
     /* 0 · Cabecera */
     <div style={spY} key="tab0">
       <SectionTitle>Cabecera del documento</SectionTitle>
-      <Hint>Identificación de la maniobra y su código de instrucción técnica.</Hint>
+      <Hint>Identificación de la maniobra y sus códigos de instrucción técnica (si aplica).</Hint>
       <div><Label required>Título de la práctica</Label>
         <Inp value={d.titulo} onChange={v => upd("titulo", v)} placeholder="ej: BOMBEO EN SERIE DESDE HIDRANTE" /></div>
       <div><Label>Subtítulo (opcional)</Label>
         <Inp value={d.subtitulo} onChange={v => upd("subtitulo", v)} placeholder="ej: Verificación de presión de red y riesgo de cavitación" /></div>
-      <div><Label required>Código instrucción técnica</Label>
-        <Inp value={d.itCode} onChange={v => upd("itCode", v)} placeholder="ej: IT.JUT1.102" /></div>
+      <div>
+        <Label>Códigos de Instrucción Técnica (Opcional)</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          {d.itCodes.map((c, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center" }}>
+              <div style={{ flex:"1" }}>
+                <Inp value={c} onChange={v => updArr("itCodes", i, v)} placeholder="ej: IT.JUT1.102" />
+              </div>
+              {d.itCodes.length > 1 && <RemBtn onClick={() => remArr("itCodes", i)} />}
+            </div>
+          ))}
+        </div>
+        <AddBtn onClick={() => addArr("itCodes")} label="＋ Añadir código" />
+      </div>
     </div>,
 
     /* 1 · Info General */
@@ -958,7 +976,7 @@ function GeneradorManiobras() {
   );
 }
 
-/* ─── MOUNT (CORREGIDO ESPERANDO AL DOM) ─────────────────────────────────────────────────── */
+/* ─── MOUNT ─────────────────────────────────────────────────── */
 (function mountGenerador() {
   function init() {
     const el = document.getElementById('maniobras-root');
@@ -967,7 +985,6 @@ function GeneradorManiobras() {
     root.render(<GeneradorManiobras />);
   }
 
-  // Asegurar que el DOM existe antes de intentar montarlo
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
