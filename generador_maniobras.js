@@ -65,6 +65,11 @@ function generateHTML(d) {
   const matItems = d.materiales.filter(m => m.trim())
     .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
 
+  const escImagenesHtml = (d.escenarioImagenes || []).filter(img => {
+    if (typeof img === "string") return img.trim();
+    return img.mode === "file" ? img.src : (img.url || "").trim();
+  }).map(img => renderImage(img)).join("\n");
+
   const recImagenesHtml = d.recursosImagenes.filter(img => {
     if (typeof img === "string") return img.trim();
     return img.mode === "file" ? img.src : (img.url || "").trim();
@@ -141,7 +146,10 @@ function generateHTML(d) {
 
   <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
     <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">4. Escenario</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.escenario)}</div>
+    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
+      <div style="margin-bottom:${escImagenesHtml ? '14px' : '0'};">${mEsc(d.escenario)}</div>
+${escImagenesHtml}
+    </div>
   </div>
 
   <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
@@ -315,6 +323,7 @@ function GeneradorManiobras() {
   const [d, setD] = useState({
     titulo: "", subtitulo: "", itCodes: [""],
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
+    escenarioImagenes: [],
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
     recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
@@ -391,6 +400,7 @@ function GeneradorManiobras() {
     setD({
       titulo: "", subtitulo: "", itCodes: [""],
       descripcion: "", objetivo: "", destinatarios: "", escenario: "",
+      escenarioImagenes: [],
       epis: ["", "", ""],
       materiales: ["", "", "", ""],
       recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
@@ -484,20 +494,64 @@ function GeneradorManiobras() {
       <SectionTitle>Información General</SectionTitle>
       <Hint>Secciones 1 a 4 del documento generado.</Hint>
       <div><Label required>1 · Descripción</Label>
-        <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={3}
+        <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={5}
           placeholder="Qué se monta, qué se verifica, aspectos técnicos clave..." /></div>
       <Divider />
       <div><Label required>2 · Objetivo Pedagógico</Label>
-        <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={2}
+        <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={4}
           placeholder="ej: Comprobar ventajas e inconvenientes de un bombeo en serie desde un hidrante" /></div>
       <Divider />
       <div><Label required>3 · Destinatarios</Label>
-        <Inp value={d.destinatarios} onChange={v => upd("destinatarios", v)}
+        <Txt value={d.destinatarios} onChange={v => upd("destinatarios", v)} rows={2}
           placeholder="ej: Personal operativo de guardia" /></div>
       <Divider />
       <div><Label required>4 · Escenario</Label>
-        <Txt value={d.escenario} onChange={v => upd("escenario", v)} rows={2}
+        <Txt value={d.escenario} onChange={v => upd("escenario", v)} rows={4}
           placeholder="ej: La práctica se desarrollará en el hidrante de abastecimiento del parque" /></div>
+      <Divider />
+      <div>
+        <Label>Imágenes para el Escenario (Opcional)</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+          {d.escenarioImagenes && d.escenarioImagenes.map((img, i) => (
+            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+                {/* toggle URL / Archivo */}
+                <div style={{ display:"flex", gap:"4px" }}>
+                  {["url", "file"].map(mode => (
+                    <button type="button" key={mode} onClick={() => updImg("escenarioImagenes", i, "mode", mode)}
+                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
+                        borderRadius:"4px", cursor:"pointer",
+                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
+                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
+                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                      {mode === "url" ? "URL" : "Archivo local"}
+                    </button>
+                  ))}
+                </div>
+                <RemBtn onClick={() => remImg("escenarioImagenes", i)} />
+              </div>
+              {img.mode === "url" ? (
+                <Inp value={img.url} onChange={v => updImg("escenarioImagenes", i, "url", v)} placeholder="https://ejemplo.com/imagen.jpg" />
+              ) : (
+                <div>
+                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
+                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
+                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
+                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
+                    <input type="file" accept="image/*" style={{ display:"none" }}
+                      onChange={e => handleImgFile("escenarioImagenes", i, e.target.files[0])} />
+                  </label>
+                  {img.src && (
+                    <img src={img.src} alt="preview"
+                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <AddBtn onClick={() => addImg("escenarioImagenes")} label="＋ Añadir imagen al escenario" />
+      </div>
     </div>,
 
     /* 2 · Recursos */
@@ -934,7 +988,7 @@ function GeneradorManiobras() {
 
       {/* Content */}
       <div style={{ flex:"1", overflowY:"auto", paddingBottom:"70px" }}>
-        <div style={{ maxWidth:"720px", margin:"0 auto", padding:"20px 16px" }}>
+        <div style={{ maxWidth:"1000px", margin:"0 auto", padding:"20px 16px" }}>
           {panels[tab]}
         </div>
       </div>
@@ -942,7 +996,7 @@ function GeneradorManiobras() {
       {/* Bottom bar */}
       <div style={{ position:"sticky", bottom:"0", background:"#fff",
         borderTop:"1px solid #e5e7eb", padding:"10px 16px", zIndex:"10" }}>
-        <div style={{ maxWidth:"720px", margin:"0 auto",
+        <div style={{ maxWidth:"1000px", margin:"0 auto",
           display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px" }}>
           <button type="button" onClick={() => setTab(t => Math.max(0, t - 1))} disabled={tab === 0}
             style={{ padding:"8px 16px", fontSize:"13px", border:"1.5px solid #e5e7eb",
