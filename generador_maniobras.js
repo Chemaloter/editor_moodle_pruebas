@@ -103,7 +103,12 @@ function generateHTML(d) {
         <div style="font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">PR&Aacute;CTICA: ${mEsc(d.titulo)}</div>
         <div style="font-size:12px;margin-top:4px;opacity:0.85;">${mEsc(d.subtitulo)}</div>
       </td>
-      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA<br><span style="font-weight:bold;font-size:13px;letter-spacing:1px;">${mEsc(d.itCode)}</span></td>
+      ${d.mostrarIT ? `
+<td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">
+  INSTRUCCI&Oacute;N T&Eacute;CNICA<br>
+  <span style="font-weight:bold;font-size:13px;letter-spacing:1px;">${mEsc(d.itCode)}</span>
+</td>
+` : ""}
     </tr>
   </table>
 
@@ -296,7 +301,7 @@ function GeneradorManiobras() {
   const [inserted, setInserted] = useState(false);
 
   const [d, setD] = useState({
-    titulo: "", subtitulo: "", itCode: "",
+    titulo: "", subtitulo: "",mostrarIT: true, itCode: "",
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
@@ -372,7 +377,7 @@ function GeneradorManiobras() {
     if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
     const t = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     setD({
-      titulo: "", subtitulo: "", itCode: "",
+      titulo: "", subtitulo: "",mostrarIT: true, itCode: "",
       descripcion: "", objetivo: "", destinatarios: "", escenario: "",
       epis: ["", "", ""],
       materiales: ["", "", "", ""],
@@ -446,7 +451,23 @@ function GeneradorManiobras() {
         <Inp value={d.titulo} onChange={v => upd("titulo", v)} placeholder="ej: BOMBEO EN SERIE DESDE HIDRANTE" /></div>
       <div><Label>Subtítulo (opcional)</Label>
         <Inp value={d.subtitulo} onChange={v => upd("subtitulo", v)} placeholder="ej: Verificación de presión de red y riesgo de cavitación" /></div>
-      <div><Label required>Código instrucción técnica</Label>
+     <div style={{ marginBottom:"10px" }}>
+  <label style={{
+    display:"flex",
+    alignItems:"center",
+    gap:"8px",
+    fontSize:"14px"
+  }}>
+    <input
+      type="checkbox"
+      checked={d.mostrarIT}
+      onChange={e => upd("mostrarIT", e.target.checked)}
+    />
+
+    Mostrar instrucción técnica
+  </label>
+</div> 
+     <div><Label required>Código instrucción técnica</Label>
         <Inp value={d.itCode} onChange={v => upd("itCode", v)} placeholder="ej: IT.JUT1.102" /></div>
     </div>,
 
