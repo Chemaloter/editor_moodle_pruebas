@@ -188,6 +188,9 @@ ${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;
     <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">7. Desarrollo Explicativo de la Pr&aacute;ctica</div>
     <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
       <p style="margin:0 0 10px 0;"><strong>Documentaci&oacute;n de referencia:</strong> ${mEsc(d.refDoc)}</p>
+      ${d.aspectosGenerales.trim() ? `<p style="margin:0 0 10px 0;"><strong>Aspectos generales:</strong> ${mEsc(d.aspectosGenerales)}</p>` : ""}
+      ${d.desarrolloManiobra.trim() ? `<p style="margin:0 0 10px 0;"><strong>Desarrollo de la maniobra:</strong> ${mEsc(d.desarrolloManiobra)}</p>` : ""}
+      ${d.escenarioDesarrollo.trim() ? `<p style="margin:0 0 10px 0;"><strong>Escenario:</strong> ${mEsc(d.escenarioDesarrollo)}</p>` : ""}
 ${desImagenesHtml}${desVideosHtml}      <p style="margin:0 0 10px 0;"><strong>Explicaci&oacute;n secuencial de la maniobra:</strong></p>
 ${stepRows}
       <div style="background:#fff3cd;border-left:4px solid #ff8800;border-radius:0 3px 3px 0;padding:10px 14px;margin-top:14px;">
@@ -336,12 +339,15 @@ function GeneradorManiobras() {
     recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     recursosVideos: [""],
     organizacion: "",
-    rolMandoTitulo: "JEFE DE TURNO", // NUEVO CAMPO PARA EL TÍTULO
+    rolMandoTitulo: "JEFE DE TURNO",
     rolesJT: [
         "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
         "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
     ],
     refDoc: "",
+    aspectosGenerales: "", // NUEVO
+    desarrolloManiobra: "", // NUEVO
+    escenarioDesarrollo: "", // NUEVO
     videos: [""],
     desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     pasos: ["", "", "", "", "", ""],
@@ -422,6 +428,9 @@ function GeneradorManiobras() {
         "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
       ],
       refDoc: "",
+      aspectosGenerales: "",
+      desarrolloManiobra: "",
+      escenarioDesarrollo: "",
       videos: [""],
       desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
       pasos: ["", "", "", "", "", ""],
@@ -691,7 +700,6 @@ function GeneradorManiobras() {
       
       <Divider />
       
-      {/* CAMBIO: Selector de Título del Mando */}
       <div>
         <Label>Título del Responsable</Label>
         <div style={{ display:"flex", gap:"20px", marginBottom:"15px", background:"#fff", padding:"12px", borderRadius:"6px", border:"1.5px solid #e5e7eb" }}>
@@ -736,10 +744,23 @@ function GeneradorManiobras() {
     /* 4 · Desarrollo */
     <div style={spY} key="tab4">
       <SectionTitle>Desarrollo Explicativo</SectionTitle>
-      <Hint>Referencia, multimedia, pasos secuenciales y precauciones de la maniobra.</Hint>
+      <Hint>Referencia, bloques de contexto, multimedia, pasos secuenciales y precauciones.</Hint>
       <div><Label>Documentación de referencia</Label>
         <Inp value={d.refDoc} onChange={v => upd("refDoc", v)}
           placeholder="ej: 2023 Reciclaje Hidráulica y Abastecimientos" /></div>
+      
+      {/* NUEVOS BLOQUES SOLICITADOS */}
+      <div><Label>Aspectos generales</Label>
+        <Txt value={d.aspectosGenerales} onChange={v => upd("aspectosGenerales", v)} rows={4}
+          placeholder="Descripción de los aspectos generales clave..." /></div>
+      
+      <div><Label>Desarrollo de la maniobra</Label>
+        <Txt value={d.desarrolloManiobra} onChange={v => upd("desarrolloManiobra", v)} rows={4}
+          placeholder="Explicación detallada del desarrollo..." /></div>
+
+      <div><Label>Escenario</Label>
+        <Txt value={d.escenarioDesarrollo} onChange={v => upd("escenarioDesarrollo", v)} rows={4}
+          placeholder="Detalles específicos sobre el escenario de trabajo..." /></div>
       
       <Divider />
       <div>
