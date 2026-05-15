@@ -167,7 +167,10 @@ ${escImagenesHtml}
         <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Materiales y Herramientas</div>
         <ul style="margin:0;padding-left:20px;">${matItems}</ul>
       </div>
-${recImagenesHtml}${recVideosHtml}    </div>
+${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
+        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Material Adicional</div>
+        <ul style="margin:0;padding-left:20px;">${matAdicItems}</ul>
+      </div>\n` : ""}${recImagenesHtml}${recVideosHtml}    </div>
   </div>
 
   <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
@@ -330,7 +333,7 @@ function GeneradorManiobras() {
     escenarioImagenes: [],
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
-    materialAdicional: [""], // <-- NUEVA LÍNEA
+    materialAdicional: [""],
     recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     recursosVideos: [""],
     organizacion: "",
@@ -408,7 +411,7 @@ function GeneradorManiobras() {
       escenarioImagenes: [],
       epis: ["", "", ""],
       materiales: ["", "", "", ""],
-      materialAdicional: [""], // <-- NUEVA LÍNEA
+      materialAdicional: [""],
       recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
       recursosVideos: [""],
       organizacion: "",
@@ -598,7 +601,7 @@ function GeneradorManiobras() {
         <AddBtn onClick={() => addArr("materiales")} label="＋ Añadir material" />
       </div>
       <Divider />
-             {/* NUEVO BLOQUE: MATERIAL ADICIONAL */}
+      {/* NUEVO BLOQUE: MATERIAL ADICIONAL */}
       <div>
         <Label>Material Adicional (Opcional)</Label>
         <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
@@ -617,16 +620,6 @@ function GeneradorManiobras() {
       </div>
 
       <Divider />
-<div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Materiales y Herramientas</div>
-        <ul style="margin:0;padding-left:20px;">${matItems}</ul>
-      </div>
-${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Material Adicional</div>
-        <ul style="margin:0;padding-left:20px;">${matAdicItems}</ul>
-      </div>` : ""}
-${recImagenesHtml}${recVideosHtml}    </div>
-
              
       <div>
         <Label>Imágenes</Label>
