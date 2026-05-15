@@ -20,7 +20,6 @@ function badgeStyle(g) {
   return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#e8f5e9;color:#1b5e20;";
 }
 
-/* Función para embeber vídeos de forma responsiva */
 function embedVideoUrl(url) {
   if (!url || !url.trim()) return "";
   let src = url.trim();
@@ -112,7 +111,6 @@ function generateHTML(d) {
   const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
   const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
 
-  // NUEVO: Procesamiento dinámico de Roles del JT
   const jtItems = (d.rolesJT || []).filter(r => r.trim())
     .map(r => `<li style="margin-bottom:6px;">${mEsc(r)}</li>`).join("\n        ");
 
@@ -179,7 +177,7 @@ ${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;
     <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">6. Organizaci&oacute;n del Grupo</div>
     <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
       <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;margin-bottom:12px;">${mEsc(d.organizacion)}</div>
-      <p style="margin:0 0 6px 0;"><strong>Rol del Jefe de Turno:</strong></p>
+      <p style="margin:0 0 6px 0;"><strong>Rol del ${mEsc(d.rolMandoTitulo)}:</strong></p>
       <ul style="margin:0;padding-left:20px;">
         ${jtItems}
       </ul>
@@ -338,7 +336,7 @@ function GeneradorManiobras() {
     recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     recursosVideos: [""],
     organizacion: "",
-    // CAMBIO: Transformado a Array dinámico
+    rolMandoTitulo: "JEFE DE TURNO", // NUEVO CAMPO PARA EL TÍTULO
     rolesJT: [
         "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
         "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
@@ -379,7 +377,6 @@ function GeneradorManiobras() {
     const a = [...p.riesgos]; a[i] = { ...a[i], [f]: v }; return { ...p, riesgos: a };
   });
 
-  /* ── Handlers imagen con soporte URL + archivo local ── */
   const updImg = (key, i, field, val) => setD(p => {
     const a = [...p[key]]; a[i] = { ...a[i], [field]: val }; return { ...p, [key]: a };
   });
@@ -419,6 +416,7 @@ function GeneradorManiobras() {
       recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
       recursosVideos: [""],
       organizacion: "",
+      rolMandoTitulo: "JEFE DE TURNO",
       rolesJT: [
         "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
         "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
@@ -464,7 +462,6 @@ function GeneradorManiobras() {
     });
   };
 
-  /* ── Insertar en el editor principal ── */
   const insertInEditor = () => {
     if (typeof window.insertHTMLAtCursor === 'function') {
       window.insertHTMLAtCursor(html);
@@ -693,9 +690,27 @@ function GeneradorManiobras() {
           placeholder="ej: Práctica para todos los componentes del turno operativo." /></div>
       
       <Divider />
-      {/* CAMBIO: Sección de Roles del Jefe de Turno dinámica */}
+      
+      {/* CAMBIO: Selector de Título del Mando */}
       <div>
-        <Label>Rol del Jefe de Turno (Funciones)</Label>
+        <Label>Título del Responsable</Label>
+        <div style={{ display:"flex", gap:"20px", marginBottom:"15px", background:"#fff", padding:"12px", borderRadius:"6px", border:"1.5px solid #e5e7eb" }}>
+          {["JEFE DE TURNO", "RESPONSABLE DE LA MANIOBRA"].map(opcion => (
+            <label key={opcion} style={{ display:"flex", alignItems:"center", fontSize:"13px", cursor:"pointer", fontWeight:"600", color:"#374151" }}>
+              <input
+                type="radio"
+                name="rolMandoTitulo"
+                value={opcion}
+                checked={d.rolMandoTitulo === opcion}
+                onChange={() => upd("rolMandoTitulo", opcion)}
+                style={{ marginRight:"8px", accentColor:"#B22222" }}
+              />
+              {opcion}
+            </label>
+          ))}
+        </div>
+        
+        <Label>Funciones del {d.rolMandoTitulo}</Label>
         <Hint>Añade las responsabilidades específicas para el mando de la maniobra.</Hint>
         <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
           {(d.rolesJT || []).map((rol, i) => (
@@ -708,13 +723,13 @@ function GeneradorManiobras() {
               </div>
               <div style={{ flex:"1" }}>
                 <Txt value={rol} onChange={v => updArr("rolesJT", i, v)} rows={3} 
-                  placeholder="Describa la función del JT..." />
+                  placeholder={`Describa la función del ${d.rolMandoTitulo}...`} />
               </div>
               {d.rolesJT.length > 1 && <RemBtn onClick={() => remArr("rolesJT", i)} />}
             </div>
           ))}
         </div>
-        <AddBtn onClick={() => addArr("rolesJT", "")} label="＋ Añadir función al JT" />
+        <AddBtn onClick={() => addArr("rolesJT", "")} label={`＋ Añadir función al ${d.rolMandoTitulo}`} />
       </div>
     </div>,
 
