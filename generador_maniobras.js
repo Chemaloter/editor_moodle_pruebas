@@ -657,7 +657,7 @@ function GeneradorManiobras() {
       <SectionTitle>Organización del Grupo</SectionTitle>
       <Hint>Define la estructura y las funciones del personal durante la maniobra.</Hint>
       <div><Label required>Descripción general</Label>
-        <Txt value={d.organizacion} onChange={v => upd("organizacion", v)} rows={4}
+        <Txt value={d.organizacion} onChange={v => upd("organizacion", v)} rows={10}
           placeholder="ej: Práctica para todos los componentes del turno operativo." /></div>
       
       <div style={{ background:"#f3f4f6", border:"1px solid #d1d5db", borderRadius:"6px", padding:"12px 14px" }}>
