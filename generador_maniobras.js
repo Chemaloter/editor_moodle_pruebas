@@ -121,7 +121,7 @@ function generateHTML(d) {
     itCodeHtml = `\n      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
   }
 
-  /* HTML Criterios de Evaluación */
+  /* HTML Criterios de Evaluación — AHORA ANEXO II */
   let evaluacionHtml = "";
   if (d.evaluacion.mostrar) {
     const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
@@ -130,7 +130,7 @@ function generateHTML(d) {
 
     evaluacionHtml = `
   <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">Anexo &mdash; Criterios de Evaluaci&oacute;n</div>
+    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO II &mdash; Criterios de Evaluaci&oacute;n</div>
     <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
       <p style="margin:0 0 12px 0;">Durante las maniobras se realizar&aacute;n unas r&uacute;bricas de evaluaci&oacute;n divididas en tres bloques diferenciados:</p>
       
@@ -259,7 +259,7 @@ ${recordadBlock}      </div>
   </div>
 
   <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">Anexo &mdash; Plan SOS</div>
+    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO I &mdash; Plan SOS</div>
     <div style="background:#fce4ec;border:1px solid #f48fb1;border-radius:3px;padding:12px 14px;">
       <div style="background:#b71c1c;color:#ffffff;text-align:center;font-weight:bold;padding:10px;border-radius:3px;margin-bottom:12px;letter-spacing:1px;font-size:13px;">${mEsc(d.planSOS.senal)}</div>
       <p style="margin:0 0 8px 0;">${mEsc(d.planSOS.intro1)}</p>
@@ -424,7 +424,7 @@ function GeneradorManiobras() {
   const upd    = (k, v) => setD(p => ({ ...p, [k]: v }));
   const updArr = (k, i, v) => setD(p => { const a = [...p[k]]; a[i] = v; return { ...p, [k]: a }; });
   const addArr = (k, def = "") => setD(p => ({ ...p, [k]: [...p[k], def] }));
-  const remArr = (k, i) => setD(p => ({ ...p, [k]: p[k].filter((_, j) => j !== i) }));
+  const remArr = (k, i) => setD(p => { const a = [...p[k]]; a.splice(i, 1); return { ...p, [k]: a }; });
   
   const updRisk = (i, f, v) => setD(p => {
     const a = [...p.riesgos]; a[i] = { ...a[i], [f]: v }; return { ...p, riesgos: a };
@@ -1024,7 +1024,7 @@ function GeneradorManiobras() {
         <Txt value={d.planSOS.cierre} onChange={v => updSos("cierre", v)} rows={2} /></div>
     </div>,
 
-    /* 7 · Evaluación (NUEVO) */
+    /* 7 · Evaluación */
     <div style={spY} key="tab7">
       <SectionTitle>Criterios de Evaluación</SectionTitle>
       <Hint>Rúbricas de evaluación divididas por criticidad (opcional).</Hint>
