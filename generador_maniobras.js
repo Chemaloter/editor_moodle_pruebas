@@ -15,9 +15,9 @@ function mEsc(s) {
 }
 
 function badgeStyle(g) {
-  if (g === "Notable")  return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#ffe0b2;color:#bf360c;";
-  if (g === "Moderado") return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#fff9c4;color:#827717;";
-  return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#e8f5e9;color:#1b5e20;";
+  if (g === "Notable")  return "display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#ffebee;color:#c62828;";
+  if (g === "Moderado") return "display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#fff8e1;color:#f57f17;";
+  return "display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#e8f5e9;color:#2e7d32;";
 }
 
 function embedVideoUrl(url) {
@@ -44,28 +44,54 @@ function embedVideoUrl(url) {
   }
 
   if (src.match(/\.(mp4|webm|ogg)$/i)) {
-    return `<div style="margin-bottom:14px;overflow-x:auto;"><video style="width:100%;max-width:100%;border-radius:4px;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
+    return `<div style="margin-bottom:20px;overflow:hidden;border-radius:20px;box-shadow:0 8px 25px rgba(0,0,0,0.1);"><video style="width:100%;max-width:100%;display:block;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
   }
-  return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;border-radius:4px;margin-bottom:14px;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div>`;
+  return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;border-radius:20px;margin-bottom:20px;box-shadow:0 8px 25px rgba(0,0,0,0.1);"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div>`;
 }
 
 function renderImage(item) {
   const src = typeof item === "string" ? item.trim()
     : item.mode === "file" ? item.src : (item.url || "").trim();
   if (!src) return "";
-  return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
+  return `<div style="margin-bottom:20px;overflow:hidden;border-radius:20px;box-shadow:0 8px 25px rgba(0,0,0,0.1);"><img src="${item.mode === "file" ? src : mEsc(src)}" style="width:100%;height:auto;display:block;" alt="Recurso visual" /></div>`;
 }
 
-/* ─── HTML GENERATOR ────────────────────────────────────────── */
+/* ─── HTML GENERATOR (Moodle Compatible & Styled) ───────────── */
 function generateHTML(d) {
-  const epiItems = d.epis.filter(e => e.trim())
-    .map(e => `<li style="margin-bottom:4px;">${mEsc(e)}</li>`).join("\n              ");
+  // Variables de Diseño
+  const fFamily = "'Montserrat', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+  const cAzul = "#1e3a8a"; // Mando / Seguridad
+  const cRojo = "#c62828"; // Peligro / SOS
+  const cVerde = "#2e7d32"; // Evaluación / Éxito
+  const cGris = "#263238"; // Texto general / HUD
+  const cFondo = "#ffffff";
+  const bRadius = "25px";
+  const bShadow = "0 15px 35px rgba(0,0,0,0.12)";
+  const bShadowSoft = "0 8px 20px rgba(0,0,0,0.06)";
 
-  const matItems = d.materiales.filter(m => m.trim())
-    .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
+  const buildDetails = (title, content, bgColor, open = false) => `
+  <details ${open ? 'open' : ''} style="background: ${cFondo}; border-radius: ${bRadius}; box-shadow: ${bShadow}; margin-bottom: 30px; border: 1px solid #f0f0f0; overflow: hidden; font-family: ${fFamily};">
+    <summary style="background: ${bgColor}; color: #ffffff; padding: 22px 30px; font-weight: 700; font-size: 16px; cursor: pointer; outline: none; text-transform: uppercase; letter-spacing: 0.5px;">
+      ${title}
+    </summary>
+    <div style="padding: 35px 30px; line-height: 1.8; color: ${cGris}; max-width: 800px; margin: 0 auto; font-size: 15px;">
+      ${content}
+    </div>
+  </details>`;
 
-  const matAdicItems = (d.materialAdicional || []).filter(m => m.trim())
-    .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
+  const buildCard = (title, items, color) => {
+    if (!items || items.length === 0) return "";
+    const listHtml = items.map(i => `<li style="margin-bottom:8px;">${mEsc(i)}</li>`).join("");
+    return `
+    <div style="background: #f8f9fa; border-left: 6px solid ${color}; border-radius: 16px; padding: 25px; margin-bottom: 25px; box-shadow: ${bShadowSoft};">
+      <div style="font-weight: 800; color: ${color}; font-size: 14px; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">${title}</div>
+      <ul style="margin: 0; padding-left: 20px; color: ${cGris};">${listHtml}</ul>
+    </div>`;
+  };
+
+  const epiItems = d.epis.filter(e => e.trim());
+  const matItems = d.materiales.filter(m => m.trim());
+  const matAdicItems = (d.materialAdicional || []).filter(m => m.trim());
 
   const escImagenesHtml = (d.escenarioImagenes || []).filter(img => {
     if (typeof img === "string") return img.trim();
@@ -80,22 +106,18 @@ function generateHTML(d) {
   const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const stepRows = d.pasos.filter(p => p.trim()).map((p, i) => `
-      <table style="width:100%;border-collapse:collapse;margin-bottom:8px;" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="width:36px;vertical-align:top;padding-right:10px;">
-            <div style="background:#B22222;color:#ffffff;font-weight:bold;font-size:13px;width:28px;height:28px;border-radius:50%;text-align:center;line-height:28px;">${i + 1}</div>
-          </td>
-          <td style="vertical-align:top;background:#ffffff;border:1px solid #e0e0e0;border-radius:3px;padding:8px 12px;">${mEsc(p)}</td>
-        </tr>
-      </table>`).join("");
+    <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: flex-start;">
+      <div style="background: ${cAzul}; color: #ffffff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; font-size: 15px; box-shadow: 0 4px 10px rgba(30,58,138,0.3); margin-top: 4px;">${i + 1}</div>
+      <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 20px; padding: 20px 25px; flex: 1; box-shadow: ${bShadowSoft};">${mEsc(p)}</div>
+    </div>`).join("");
 
   const riskRows = d.riesgos.map((r, i) => `
-          <tr${i % 2 === 1 ? ' style="background:#fdf5f5;"' : ""}>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.riesgo)}</td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.causa)}</td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;text-align:center;"><span style="${badgeStyle(r.grado)}">${r.grado}</span></td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.medida)}</td>
-          </tr>`).join("");
+    <tr style="background: ${i % 2 === 1 ? '#fdfdfd' : '#ffffff'}; transition: background 0.3s;">
+      <td style="border-bottom: 1px solid #eeeeee; padding: 18px 20px; vertical-align: top; font-weight: 700;">${mEsc(r.riesgo)}</td>
+      <td style="border-bottom: 1px solid #eeeeee; padding: 18px 20px; vertical-align: top;">${mEsc(r.causa)}</td>
+      <td style="border-bottom: 1px solid #eeeeee; padding: 18px 20px; vertical-align: top; text-align: center;">${badgeStyle(r.grado)}</td>
+      <td style="border-bottom: 1px solid #eeeeee; padding: 18px 20px; vertical-align: top;">${mEsc(r.medida)}</td>
+    </tr>`).join("");
 
   const desImagenesHtml = d.desarrolloImagenes.filter(img => {
     if (typeof img === "string") return img.trim();
@@ -104,189 +126,138 @@ function generateHTML(d) {
   
   const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
-  const recordadBlock = d.recordad.trim()
-    ? `        <p style="margin:8px 0 0 0;"><strong>Recordad:</strong> ${mEsc(d.recordad)}</p>\n`
-    : "";
-
-  const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-  const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-
-  const jtItems = (d.rolesJT || []).filter(r => r.trim())
-    .map(r => `<li style="margin-bottom:6px;">${mEsc(r)}</li>`).join("\n        ");
+  const jtItems = (d.rolesJT || []).filter(r => r.trim());
 
   const validItCodes = d.itCodes.filter(c => c.trim());
   let itCodeHtml = "";
   if (validItCodes.length > 0) {
-    const codesStr = validItCodes.map(c => `<div style="font-weight:bold;font-size:13px;letter-spacing:1px;margin-top:4px;">${mEsc(c)}</div>`).join("");
-    itCodeHtml = `\n      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
+    itCodeHtml = validItCodes.map(c => `<span style="display:inline-block; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:15px; font-size:12px; font-weight:700; margin-left:10px;">${mEsc(c)}</span>`).join("");
   }
 
-  /* HTML Criterios de Evaluación */
-  let evaluacionHtml = "";
-  if (d.evaluacion.mostrar) {
-    const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+  // Secciones 1 a 4 combinadas si son cortas, o separadas
+  const descContent = mEsc(d.descripcion);
+  const objContent = mEsc(d.objetivo);
+  const destContent = mEsc(d.destinatarios);
+  const escContent = `
+    <div style="margin-bottom:${escImagenesHtml ? '25px' : '0'};">${mEsc(d.escenario)}</div>
+    ${escImagenesHtml}
+  `;
 
-    evaluacionHtml = `
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO II &mdash; Criterios de Evaluaci&oacute;n</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <p style="margin:0 0 12px 0;">Durante las maniobras se realizar&aacute;n unas r&uacute;bricas de evaluaci&oacute;n divididas en tres bloques diferenciados:</p>
-      
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 1 - CR&Iacute;TICOS</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Ser&aacute; necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.</p>
-        <ul style="margin:0;padding-left:20px;">
-          ${criticosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
-        </ul>
-      </div>
+  const recursosContent = `
+    ${buildCard("EPI's", epiItems, cAzul)}
+    ${buildCard("Materiales y Herramientas", matItems, cAzul)}
+    ${matAdicItems.length > 0 ? buildCard("Material Adicional", matAdicItems, cAzul) : ""}
+    ${recImagenesHtml}
+    ${recVideosHtml}
+  `;
 
-      <div style="background:#e8f5e9;border:1px solid #c8e6c9;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
-        <div style="font-weight:bold;color:#1b5e20;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 2 - T&Eacute;CNICOS</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems son los que nos permitir&aacute;n alcanzar el 10 (los 5 puntos restantes).</p>
-        <ul style="margin:0;padding-left:20px;">
-          ${tecnicosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
-        </ul>
-      </div>
+  const orgContent = `
+    <div style="background: #e3f2fd; border-radius: 16px; padding: 25px; margin-bottom: 25px; color: #0d47a1; font-weight: 600;">${mEsc(d.organizacion)}</div>
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 15px; color: ${cAzul};">Rol del ${mEsc(d.rolMandoTitulo)}:</div>
+    <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+      ${jtItems.map(r => `<li style="margin-bottom:10px;">${mEsc(r)}</li>`).join("")}
+    </ul>
+  `;
 
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;">
-        <div style="font-weight:bold;color:#f57f17;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 3 - ACTITUDINALES</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems no suman, pero s&iacute; que restan.</p>
-        <ul style="margin:0;padding-left:20px;">
-          ${actitudinalesItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
-        </ul>
-      </div>
+  const desarrolloContent = `
+    ${d.refDoc.trim() ? `<div style="margin-bottom: 20px;"><strong>Documentación de referencia:</strong> ${mEsc(d.refDoc)}</div>` : ""}
+    ${d.aspectosGenerales.trim() ? `<div style="margin-bottom: 20px;"><strong>Aspectos generales:</strong> ${mEsc(d.aspectosGenerales)}</div>` : ""}
+    ${d.desarrolloManiobra.trim() ? `<div style="margin-bottom: 20px;"><strong>Desarrollo de la maniobra:</strong> ${mEsc(d.desarrolloManiobra)}</div>` : ""}
+    ${d.escenarioDesarrollo.trim() ? `<div style="margin-bottom: 20px;"><strong>Escenario:</strong> ${mEsc(d.escenarioDesarrollo)}</div>` : ""}
+    ${desImagenesHtml}
+    ${desVideosHtml}
+    <div style="font-weight: 800; font-size: 16px; margin: 30px 0 20px 0; color: ${cAzul};">EXPLICACIÓN SECUENCIAL DE LA MANIOBRA:</div>
+    ${stepRows}
+    <div style="background: #fff3e0; border-left: 6px solid #e65100; border-radius: 16px; padding: 25px; margin-top: 35px; box-shadow: ${bShadowSoft};">
+      <div style="font-weight: 800; color: #e65100; text-transform: uppercase; font-size: 14px; margin-bottom: 10px; letter-spacing: 0.5px;">PRECAUCIONES</div>
+      <p style="margin: 0 0 10px 0;">${mEsc(d.precauciones)}</p>
+      ${d.recordad.trim() ? `<div style="margin-top:15px; padding-top:15px; border-top: 1px solid #ffe0b2;"><strong>Recordad:</strong> ${mEsc(d.recordad)}</div>` : ""}
     </div>
-  </div>`;
-  }
+  `;
 
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;max-width:860px;margin:0 auto;box-sizing:border-box;">
-
-  <table style="width:100%;border-collapse:collapse;overflow:hidden;background-color:#B22222;color:#ffffff;" cellpadding="0" cellspacing="0">
-    <tr>
-      <td style="width:60px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:14px 8px;font-size:13px;font-weight:bold;color:#ffffff;">CBCM</td>
-      <td style="padding:12px 16px;vertical-align:middle;">
-        <div style="font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">PR&Aacute;CTICA: ${mEsc(d.titulo)}</div>
-        <div style="font-size:12px;margin-top:4px;opacity:0.85;">${mEsc(d.subtitulo)}</div>
-      </td>${itCodeHtml}
-    </tr>
-  </table>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">1. Descripci&oacute;n</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.descripcion)}</div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">2. Objetivo Pedag&oacute;gico</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.objetivo)}</div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">3. Destinatarios</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.destinatarios)}</div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">4. Escenario</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="margin-bottom:${escImagenesHtml ? '14px' : '0'};">${mEsc(d.escenario)}</div>
-${escImagenesHtml}
-    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">5. Recursos</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">EPI&apos;s</div>
-        <ul style="margin:0;padding-left:20px;">${epiItems}</ul>
-      </div>
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Materiales y Herramientas</div>
-        <ul style="margin:0;padding-left:20px;">${matItems}</ul>
-      </div>
-${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Material Adicional</div>
-        <ul style="margin:0;padding-left:20px;">${matAdicItems}</ul>
-      </div>\n` : ""}${recImagenesHtml}${recVideosHtml}    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">6. Organizaci&oacute;n del Grupo</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;margin-bottom:12px;">${mEsc(d.organizacion)}</div>
-      <p style="margin:0 0 6px 0;"><strong>Rol del ${mEsc(d.rolMandoTitulo)}:</strong></p>
-      <ul style="margin:0;padding-left:20px;">
-        ${jtItems}
-      </ul>
-    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">7. Desarrollo Explicativo de la Pr&aacute;ctica</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <p style="margin:0 0 10px 0;"><strong>Documentaci&oacute;n de referencia:</strong> ${mEsc(d.refDoc)}</p>
-      ${d.aspectosGenerales.trim() ? `<p style="margin:0 0 10px 0;"><strong>Aspectos generales:</strong> ${mEsc(d.aspectosGenerales)}</p>` : ""}
-      ${d.desarrolloManiobra.trim() ? `<p style="margin:0 0 10px 0;"><strong>Desarrollo de la maniobra:</strong> ${mEsc(d.desarrolloManiobra)}</p>` : ""}
-      ${d.escenarioDesarrollo.trim() ? `<p style="margin:0 0 10px 0;"><strong>Escenario:</strong> ${mEsc(d.escenarioDesarrollo)}</p>` : ""}
-${desImagenesHtml}${desVideosHtml}      <p style="margin:0 0 10px 0;"><strong>Explicaci&oacute;n secuencial de la maniobra:</strong></p>
-${stepRows}
-      <div style="background:#fff3cd;border-left:4px solid #ff8800;border-radius:0 3px 3px 0;padding:10px 14px;margin-top:14px;">
-        <div style="font-weight:bold;color:#7a4f00;text-transform:uppercase;font-size:12px;margin-bottom:6px;">PRECAUCIONES</div>
-        <p style="margin:0;">${mEsc(d.precauciones)}</p>
-${recordadBlock}      </div>
-    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">8. Evaluaci&oacute;n de Riesgos de la Maniobra</div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;" cellpadding="0" cellspacing="0">
+  const riesgosContent = `
+    <div style="overflow-x: auto; border-radius: 20px; border: 1px solid #e0e0e0; box-shadow: ${bShadowSoft};">
+      <table style="width: 100%; border-collapse: separate; border-spacing: 0; min-width: 600px;">
         <thead>
           <tr>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:22%;">Riesgo</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:28%;">Causa</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:center;font-weight:bold;border:1px solid #921a1a;width:12%;">Grado</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:38%;">Medida Preventiva</th>
+            <th style="background: ${cRojo}; color: #ffffff; padding: 18px 20px; text-align: left; font-weight: 800; width: 22%;">Riesgo</th>
+            <th style="background: ${cRojo}; color: #ffffff; padding: 18px 20px; text-align: left; font-weight: 800; width: 28%;">Causa</th>
+            <th style="background: ${cRojo}; color: #ffffff; padding: 18px 20px; text-align: center; font-weight: 800; width: 12%;">Grado</th>
+            <th style="background: ${cRojo}; color: #ffffff; padding: 18px 20px; text-align: left; font-weight: 800; width: 38%;">Medida Preventiva</th>
           </tr>
         </thead>
-        <tbody>${riskRows}
-        </tbody>
+        <tbody>${riskRows}</tbody>
       </table>
+    </div>
+  `;
+
+  const planSosContent = `
+    <div style="background: ${cRojo}; color: #ffffff; text-align: center; font-weight: 800; padding: 20px; border-radius: 20px; margin-bottom: 25px; letter-spacing: 1px; font-size: 16px; box-shadow: ${bShadowSoft};">
+      ${mEsc(d.planSOS.senal)}
+    </div>
+    <div style="margin-bottom: 25px;">
+      <p style="margin: 0 0 15px 0;">${mEsc(d.planSOS.intro1)}</p>
+      <p style="margin: 0;">${mEsc(d.planSOS.intro2)}</p>
+    </div>
+    ${buildCard(d.planSOS.leveTitulo, d.planSOS.leveItems, "#e53935")}
+    ${buildCard(d.planSOS.graveTitulo, d.planSOS.graveItems, "#b71c1c")}
+    <div style="font-size: 14px; font-weight: 600; text-align: center; margin-top: 25px; opacity: 0.8;">
+      ${mEsc(d.planSOS.cierre)}
+    </div>
+  `;
+
+  let evaluacionHtml = "";
+  if (d.evaluacion.mostrar) {
+    const criticosItems = d.evaluacion.criticos.filter(i => i.trim());
+    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim());
+    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim());
+
+    const evalContent = `
+      <p style="margin: 0 0 25px 0; font-size: 15px;">Durante las maniobras se realizarán unas rúbricas de evaluación divididas en tres bloques diferenciados:</p>
+      ${buildCard("BLOQUE 1 - CRÍTICOS (Aseguran el aprobado)", criticosItems, "#d32f2f")}
+      ${buildCard("BLOQUE 2 - TÉCNICOS (Permiten alcanzar el 10)", tecnicosItems, cVerde)}
+      ${buildCard("BLOQUE 3 - ACTITUDINALES (No suman, pero restan)", actitudinalesItems, "#f57f17")}
+    `;
+    evaluacionHtml = buildDetails("ANEXO II — Criterios de Evaluación", evalContent, cVerde);
+  }
+
+  return `
+<div style="font-family: ${fFamily}; width: 95%; max-width: 850px; margin: 40px auto; color: ${cGris}; box-sizing: border-box; line-height: 1.8;">
+
+  <div style="background: linear-gradient(135deg, ${cAzul}, #0f172a); border-radius: ${bRadius}; box-shadow: ${bShadow}; padding: 45px 35px; margin-bottom: 40px; color: #ffffff; text-align: center; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50px; left: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.05); border-radius: 50%;"></div>
+    <div style="position: absolute; bottom: -80px; right: -50px; width: 200px; height: 200px; background: rgba(255,255,255,0.05); border-radius: 50%;"></div>
+    
+    <div style="position: relative; z-index: 1;">
+      <div style="font-size: 14px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; color: #93c5fd;">
+        CBCM ${itCodeHtml}
+      </div>
+      <h1 style="font-size: 28px; font-weight: 800; margin: 0 0 15px 0; line-height: 1.4; letter-spacing: -0.5px;">
+        ${mEsc(d.titulo)}
+      </h1>
+      <div style="font-size: 16px; opacity: 0.9; font-weight: 400; max-width: 700px; margin: 0 auto; line-height: 1.6;">
+        ${mEsc(d.subtitulo)}
+      </div>
     </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO I &mdash; Plan SOS</div>
-    <div style="background:#fce4ec;border:1px solid #f48fb1;border-radius:3px;padding:12px 14px;">
-      <div style="background:#b71c1c;color:#ffffff;text-align:center;font-weight:bold;padding:10px;border-radius:3px;margin-bottom:12px;letter-spacing:1px;font-size:13px;">${mEsc(d.planSOS.senal)}</div>
-      <p style="margin:0 0 8px 0;">${mEsc(d.planSOS.intro1)}</p>
-      <p style="margin:0 0 12px 0;">${mEsc(d.planSOS.intro2)}</p>
-      <div style="background:#ffffff;border:1px solid #ef9a9a;border-radius:3px;padding:10px 14px;margin-bottom:8px;">
-        <div style="font-weight:bold;color:#b71c1c;text-transform:uppercase;font-size:12px;margin-bottom:6px;">${mEsc(d.planSOS.leveTitulo)}</div>
-        <ul style="margin:0;padding-left:20px;">
-          ${planSosLeveItems}
-        </ul>
-      </div>
-      <div style="background:#ffffff;border:1px solid #ef9a9a;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#b71c1c;text-transform:uppercase;font-size:12px;margin-bottom:6px;">${mEsc(d.planSOS.graveTitulo)}</div>
-        <ul style="margin:0;padding-left:20px;">
-          ${planSosGraveItems}
-        </ul>
-      </div>
-      <p style="margin:0;font-size:12px;">${mEsc(d.planSOS.cierre)}</p>
-    </div>
+  ${buildDetails("1. Descripción", descContent, cAzul, true)}
+  ${buildDetails("2. Objetivo Pedagógico", objContent, cAzul)}
+  ${buildDetails("3. Destinatarios", destContent, cAzul)}
+  ${buildDetails("4. Escenario", escContent, cAzul)}
+  ${buildDetails("5. Recursos", recursosContent, cAzul)}
+  ${buildDetails("6. Organización del Grupo", orgContent, cAzul)}
+  ${buildDetails("7. Desarrollo Explicativo de la Práctica", desarrolloContent, cAzul)}
+  
+  ${buildDetails("8. Evaluación de Riesgos de la Maniobra", riesgosContent, cRojo)}
+  ${buildDetails("ANEXO I — Plan SOS", planSosContent, cRojo)}
+  
+  ${evaluacionHtml}
+
+  <div style="margin-top: 50px; padding-top: 25px; border-top: 2px solid #e0e0e0; font-size: 12px; color: #9ca3af; text-align: center; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+    <div style="font-weight: 700;">Revisión ${mEsc(d.revision)}</div>
+    <div style="flex: 1; min-width: 200px;">${mEsc(d.pieTexto)}</div>
   </div>
-${evaluacionHtml}
-  <table style="width:100%;border-collapse:collapse;margin-top:20px;border-top:2px solid #B22222;font-size:11px;color:#666;" cellpadding="6" cellspacing="0">
-    <tr>
-      <td style="white-space:nowrap;vertical-align:top;width:1%;">Revisi&oacute;n ${mEsc(d.revision)}</td>
-      <td style="text-align:center;vertical-align:top;font-size:10px;padding:6px 12px;">${mEsc(d.pieTexto)}</td>
-      <td style="white-space:nowrap;vertical-align:top;width:1%;text-align:right;">P&aacute;g. 1 de 1</td>
-    </tr>
-  </table>
 
 </div>`;
 }
@@ -325,7 +296,7 @@ const Inp = ({ value, onChange, placeholder }) => (
     value={value}
     onChange={e => onChange(e.target.value)}
     placeholder={placeholder}
-    onFocus={e => e.target.style.borderColor = "#B22222"}
+    onFocus={e => e.target.style.borderColor = "#1e3a8a"}
     onBlur={e  => e.target.style.borderColor = "#e5e7eb"}
   />
 );
@@ -338,13 +309,13 @@ const Txt = ({ value, onChange, placeholder, rows = 3 }) => (
     onChange={e => onChange(e.target.value)}
     placeholder={placeholder}
     rows={rows}
-    onFocus={e => e.target.style.borderColor = "#B22222"}
+    onFocus={e => e.target.style.borderColor = "#1e3a8a"}
     onBlur={e  => e.target.style.borderColor = "#e5e7eb"}
   />
 );
 const AddBtn = ({ onClick, label }) => (
   <button type="button" onClick={onClick} style={{ marginTop:"8px", fontSize:"12px", fontWeight:"700",
-    color:"#B22222", border:"1px solid #fca5a5", borderRadius:"6px",
+    color:"#1e3a8a", border:"1px solid #bfdbfe", borderRadius:"6px",
     padding:"5px 12px", background:"none", cursor:"pointer" }}>
     {label}
   </button>
@@ -603,9 +574,9 @@ function GeneradorManiobras() {
                     <button type="button" key={mode} onClick={() => updImg("escenarioImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
                         borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                        borderColor: img.mode === mode ? "#1e3a8a" : "#e5e7eb",
+                        background:  img.mode === mode ? "#eff6ff" : "#f9fafb",
+                        color:       img.mode === mode ? "#1e3a8a" : "#6b7280" }}>
                       {mode === "url" ? "URL" : "Archivo local"}
                     </button>
                   ))}
@@ -704,9 +675,9 @@ function GeneradorManiobras() {
                     <button type="button" key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
                         borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                        borderColor: img.mode === mode ? "#1e3a8a" : "#e5e7eb",
+                        background:  img.mode === mode ? "#eff6ff" : "#f9fafb",
+                        color:       img.mode === mode ? "#1e3a8a" : "#6b7280" }}>
                       {mode === "url" ? "URL" : "Archivo local"}
                     </button>
                   ))}
@@ -773,7 +744,7 @@ function GeneradorManiobras() {
                 value={opcion}
                 checked={d.rolMandoTitulo === opcion}
                 onChange={() => upd("rolMandoTitulo", opcion)}
-                style={{ marginRight:"8px", accentColor:"#B22222" }}
+                style={{ marginRight:"8px", accentColor:"#1e3a8a" }}
               />
               {opcion}
             </label>
@@ -835,9 +806,9 @@ function GeneradorManiobras() {
                     <button type="button" key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
                         borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                        borderColor: img.mode === mode ? "#1e3a8a" : "#e5e7eb",
+                        background:  img.mode === mode ? "#eff6ff" : "#f9fafb",
+                        color:       img.mode === mode ? "#1e3a8a" : "#6b7280" }}>
                       {mode === "url" ? "URL" : "Archivo local"}
                     </button>
                   ))}
@@ -890,7 +861,7 @@ function GeneradorManiobras() {
           {d.pasos.map((p, i) => (
             <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
               <div style={{ marginTop:"8px", flexShrink:"0", width:"28px", height:"28px",
-                borderRadius:"50%", background:"#B22222", color:"#fff",
+                borderRadius:"50%", background:"#1e3a8a", color:"#fff",
                 fontSize:"12px", fontWeight:"bold", display:"flex",
                 alignItems:"center", justifyContent:"center" }}>
                 {i + 1}
@@ -1035,7 +1006,7 @@ function GeneradorManiobras() {
           id="eval_mostrar" 
           checked={d.evaluacion.mostrar} 
           onChange={e => updEval("mostrar", e.target.checked)} 
-          style={{ accentColor: "#B22222", width:"16px", height:"16px", cursor:"pointer" }} 
+          style={{ accentColor: "#1e3a8a", width:"16px", height:"16px", cursor:"pointer" }} 
         />
         <label htmlFor="eval_mostrar" style={{ fontSize:"13px", fontWeight:"600", color:"#374151", cursor:"pointer", userSelect:"none" }}>
           Incluir bloque de Criterios de Evaluación en el documento
@@ -1121,13 +1092,13 @@ function GeneradorManiobras() {
       </div>
     </div>,
 
-    /* 9 · Generar (Modificado: Sin visualización de código) */
+    /* 9 · Generar */
     <div style={spY} key="tab9">
       <SectionTitle>Gestión de la Maniobra</SectionTitle>
       <Hint>Insértalo en el editor o copia el contenido para usarlo en Moodle.</Hint>
       {!html ? (
-        <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:"6px",
-          padding:"20px", fontSize:"13px", color:"#92400e", textAlign:"center" }}>
+        <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:"6px",
+          padding:"20px", fontSize:"13px", color:"#1e3a8a", textAlign:"center" }}>
           <div style={{ fontSize:"24px", marginBottom:"8px" }}>⚡</div>
           Pulsa el botón <strong>⚡ Generar HTML</strong> de la barra inferior para procesar el documento.
         </div>
@@ -1137,7 +1108,7 @@ function GeneradorManiobras() {
             <button type="button" onClick={insertInEditor}
               style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
                 fontWeight:"700", border:"none", cursor:"pointer",
-                background: inserted ? "#16a34a" : "#B22222",
+                background: inserted ? "#16a34a" : "#1e3a8a",
                 color:"#fff", transition:"background 0.2s" }}>
               {inserted ? "✓ ¡Insertado en el editor!" : "⬆️ Insertar en el editor"}
             </button>
@@ -1162,7 +1133,7 @@ function GeneradorManiobras() {
                 textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"8px" }}>
                 Previsualización del documento final
               </div>
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden", background:"#fff" }}>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden", background:"#f9fafb" }}>
                 <iframe
                   srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="padding:16px;margin:0;">${html}</body></html>`}
                   style={{ width:"100%", height:"600px", border:"none" }}
@@ -1180,8 +1151,8 @@ function GeneradorManiobras() {
     <div style={{ height:"100%", display:"flex", flexDirection:"column",
       fontFamily:"system-ui, -apple-system, sans-serif", background:"#f9fafb" }}>
 
-      <div style={{ height:"3px", background:"#7f1d1d", flexShrink:"0" }}>
-        <div style={{ height:"100%", background:"#fca5a5",
+      <div style={{ height:"3px", background:"#dbeafe", flexShrink:"0" }}>
+        <div style={{ height:"100%", background:"#1e3a8a",
           width:`${((tab + 1) / TABS.length) * 100}%`, transition:"width 0.3s" }} />
       </div>
 
@@ -1193,8 +1164,8 @@ function GeneradorManiobras() {
               style={{ padding:"10px 12px", fontSize:"12px", fontWeight:"600",
                 whiteSpace:"nowrap", border:"none", borderBottom:"2px solid",
                 cursor:"pointer", transition:"all 0.15s", background:"transparent",
-                borderBottomColor: tab === i ? "#B22222" : "transparent",
-                color: tab === i ? "#B22222" : "#9ca3af" }}>
+                borderBottomColor: tab === i ? "#1e3a8a" : "transparent",
+                color: tab === i ? "#1e3a8a" : "#9ca3af" }}>
               <span>{t.label}</span>
             </button>
           ))}
@@ -1218,7 +1189,7 @@ function GeneradorManiobras() {
             ← Anterior
           </button>
           <button type="button" onClick={generate}
-            style={{ flex:"1", maxWidth:"240px", padding:"10px", background:"#B22222",
+            style={{ flex:"1", maxWidth:"240px", padding:"10px", background:"#1e3a8a",
               color:"#fff", fontSize:"13px", fontWeight:"700", border:"none",
               borderRadius:"6px", cursor:"pointer" }}>
             ⚡ Generar HTML
@@ -1232,8 +1203,8 @@ function GeneradorManiobras() {
             Siguiente →
           </button>
           <button type="button" onClick={resetAll}
-            style={{ padding:"8px 14px", fontSize:"12px", fontWeight:"700", border:"1.5px solid #fca5a5",
-              borderRadius:"6px", background:"#fff", color:"#B22222", cursor:"pointer", whiteSpace:"nowrap" }}>
+            style={{ padding:"8px 14px", fontSize:"12px", fontWeight:"700", border:"1.5px solid #bfdbfe",
+              borderRadius:"6px", background:"#fff", color:"#1e3a8a", cursor:"pointer", whiteSpace:"nowrap" }}>
             🗑 Borrar todo
           </button>
         </div>
