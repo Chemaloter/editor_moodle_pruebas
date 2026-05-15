@@ -65,7 +65,6 @@ function generateHTML(d) {
   const matItems = d.materiales.filter(m => m.trim())
     .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
 
-   // NUEVO: Procesamiento de Material Adicional
   const matAdicItems = (d.materialAdicional || []).filter(m => m.trim())
     .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
 
@@ -113,7 +112,10 @@ function generateHTML(d) {
   const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
   const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
 
-  // Bloque condicional y múltiple para Instrucciones Técnicas
+  // NUEVO: Procesamiento dinámico de Roles del JT
+  const jtItems = (d.rolesJT || []).filter(r => r.trim())
+    .map(r => `<li style="margin-bottom:6px;">${mEsc(r)}</li>`).join("\n        ");
+
   const validItCodes = d.itCodes.filter(c => c.trim());
   let itCodeHtml = "";
   if (validItCodes.length > 0) {
@@ -179,8 +181,7 @@ ${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;
       <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;margin-bottom:12px;">${mEsc(d.organizacion)}</div>
       <p style="margin:0 0 6px 0;"><strong>Rol del Jefe de Turno:</strong></p>
       <ul style="margin:0;padding-left:20px;">
-        <li style="margin-bottom:6px;">${mEsc(d.jt1)}</li>
-        <li>${mEsc(d.jt2)}</li>
+        ${jtItems}
       </ul>
     </div>
   </div>
@@ -337,8 +338,11 @@ function GeneradorManiobras() {
     recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     recursosVideos: [""],
     organizacion: "",
-    jt1: "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
-    jt2: "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS.",
+    // CAMBIO: Transformado a Array dinámico
+    rolesJT: [
+        "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
+        "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
+    ],
     refDoc: "",
     videos: [""],
     desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
@@ -415,8 +419,10 @@ function GeneradorManiobras() {
       recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
       recursosVideos: [""],
       organizacion: "",
-      jt1: "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
-      jt2: "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS.",
+      rolesJT: [
+        "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
+        "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
+      ],
       refDoc: "",
       videos: [""],
       desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
@@ -506,7 +512,7 @@ function GeneradorManiobras() {
         <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={10}
           placeholder="Qué se monta, qué se verifica, aspectos técnicos clave..." /></div>
       <Divider />
-      <div><Label required>2 · Objetivo Pedagógico</Label>
+      <div><Label required>2 · Objetivo Pedag&oacute;gico</Label>
         <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={10}
           placeholder="ej: Comprobar ventajas e inconvenientes de un bombeo en serie desde un hidrante" /></div>
       <Divider />
@@ -524,7 +530,6 @@ function GeneradorManiobras() {
           {d.escenarioImagenes && d.escenarioImagenes.map((img, i) => (
             <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                {/* toggle URL / Archivo */}
                 <div style={{ display:"flex", gap:"4px" }}>
                   {["url", "file"].map(mode => (
                     <button type="button" key={mode} onClick={() => updImg("escenarioImagenes", i, "mode", mode)}
@@ -601,7 +606,6 @@ function GeneradorManiobras() {
         <AddBtn onClick={() => addArr("materiales")} label="＋ Añadir material" />
       </div>
       <Divider />
-      {/* NUEVO BLOQUE: MATERIAL ADICIONAL */}
       <div>
         <Label>Material Adicional (Opcional)</Label>
         <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
@@ -627,7 +631,6 @@ function GeneradorManiobras() {
           {d.recursosImagenes.map((img, i) => (
             <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                {/* toggle URL / Archivo */}
                 <div style={{ display:"flex", gap:"4px" }}>
                   {["url", "file"].map(mode => (
                     <button type="button" key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
@@ -689,12 +692,29 @@ function GeneradorManiobras() {
         <Txt value={d.organizacion} onChange={v => upd("organizacion", v)} rows={10}
           placeholder="ej: Práctica para todos los componentes del turno operativo." /></div>
       
-      <div style={{ background:"#f3f4f6", border:"1px solid #d1d5db", borderRadius:"6px", padding:"12px 14px" }}>
-        <Label>Rol del Jefe de Turno (Editable)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          <Txt value={d.jt1} onChange={v => upd("jt1", v)} rows={2} />
-          <Txt value={d.jt2} onChange={v => upd("jt2", v)} rows={3} />
+      <Divider />
+      {/* CAMBIO: Sección de Roles del Jefe de Turno dinámica */}
+      <div>
+        <Label>Rol del Jefe de Turno (Funciones)</Label>
+        <Hint>Añade las responsabilidades específicas para el mando de la maniobra.</Hint>
+        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+          {(d.rolesJT || []).map((rol, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
+              <div style={{ marginTop:"12px", flexShrink:"0", width:"22px", height:"22px",
+                borderRadius:"4px", background:"#f3f4f6", border:"1px solid #d1d5db", 
+                color:"#374151", fontSize:"11px", fontWeight:"bold", display:"flex",
+                alignItems:"center", justifyContent:"center" }}>
+                {i + 1}
+              </div>
+              <div style={{ flex:"1" }}>
+                <Txt value={rol} onChange={v => updArr("rolesJT", i, v)} rows={3} 
+                  placeholder="Describa la función del JT..." />
+              </div>
+              {d.rolesJT.length > 1 && <RemBtn onClick={() => remArr("rolesJT", i)} />}
+            </div>
+          ))}
         </div>
+        <AddBtn onClick={() => addArr("rolesJT", "")} label="＋ Añadir función al JT" />
       </div>
     </div>,
 
@@ -713,7 +733,6 @@ function GeneradorManiobras() {
           {d.desarrolloImagenes.map((img, i) => (
             <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                {/* toggle URL / Archivo */}
                 <div style={{ display:"flex", gap:"4px" }}>
                   {["url", "file"].map(mode => (
                     <button type="button" key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
@@ -935,7 +954,6 @@ function GeneradorManiobras() {
         </div>
       ) : (
         <div style={spY}>
-          {/* Botones de acción */}
           <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
             <button type="button" onClick={insertInEditor}
               style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
@@ -959,14 +977,12 @@ function GeneradorManiobras() {
             </button>
           </div>
 
-          {/* Código HTML */}
           <textarea readOnly value={html} rows={14}
             style={{ width:"100%", border:"1px solid #374151", borderRadius:"6px",
               background:"#111827", color:"#86efac", fontSize:"12px",
               fontFamily:"monospace", padding:"12px 14px", outline:"none",
               resize:"vertical", boxSizing:"border-box" }} />
 
-          {/* Preview */}
           {preview && (
             <div>
               <div style={{ fontSize:"11px", fontWeight:"700", color:"#9ca3af",
@@ -987,18 +1003,15 @@ function GeneradorManiobras() {
     </div>,
   ];
 
-  /* ── RENDER ── */
   return (
     <div style={{ height:"100%", display:"flex", flexDirection:"column",
       fontFamily:"system-ui, -apple-system, sans-serif", background:"#f9fafb" }}>
 
-      {/* Progress bar */}
       <div style={{ height:"3px", background:"#7f1d1d", flexShrink:"0" }}>
         <div style={{ height:"100%", background:"#fca5a5",
           width:`${((tab + 1) / TABS.length) * 100}%`, transition:"width 0.3s" }} />
       </div>
 
-      {/* Tabs */}
       <div style={{ background:"#fff", borderBottom:"1px solid #e5e7eb",
         flexShrink:"0", overflowX:"auto" }}>
         <div style={{ display:"flex", minWidth:"max-content" }}>
@@ -1015,14 +1028,12 @@ function GeneradorManiobras() {
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ flex:"1", overflowY:"auto", paddingBottom:"70px" }}>
         <div style={{ maxWidth:"1000px", margin:"0 auto", padding:"20px 16px" }}>
           {panels[tab]}
         </div>
       </div>
 
-      {/* Bottom bar */}
       <div style={{ position:"sticky", bottom:"0", background:"#fff",
         borderTop:"1px solid #e5e7eb", padding:"10px 16px", zIndex:"10" }}>
         <div style={{ maxWidth:"1000px", margin:"0 auto",
