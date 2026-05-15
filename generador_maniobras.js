@@ -15,9 +15,9 @@ function mEsc(s) {
 }
 
 function badgeStyle(g) {
-  if (g === "Notable")  return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#ffe0b2;color:#bf360c;";
-  if (g === "Moderado") return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#fff9c4;color:#827717;";
-  return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#e8f5e9;color:#1b5e20;";
+  if (g === "Notable")  return "display:inline-block;padding:6px 14px;border-radius:24px;font-size:12px;font-weight:800;background-color:#ffedd5;color:#9a3412;box-shadow:0 4px 10px rgba(154,52,18,0.1);";
+  if (g === "Moderado") return "display:inline-block;padding:6px 14px;border-radius:24px;font-size:12px;font-weight:800;background-color:#fef9c3;color:#713f12;box-shadow:0 4px 10px rgba(113,63,18,0.1);";
+  return "display:inline-block;padding:6px 14px;border-radius:24px;font-size:12px;font-weight:800;background-color:#dcfce7;color:#14532d;box-shadow:0 4px 10px rgba(20,83,45,0.1);";
 }
 
 function embedVideoUrl(url) {
@@ -44,28 +44,35 @@ function embedVideoUrl(url) {
   }
 
   if (src.match(/\.(mp4|webm|ogg)$/i)) {
-    return `<div style="margin-bottom:14px;overflow-x:auto;"><video style="width:100%;max-width:100%;border-radius:4px;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
+    return `<div style="margin-bottom:24px;overflow-x:auto;"><video style="width:100%;max-width:100%;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);border:1px solid #f3f4f6;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
   }
-  return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;border-radius:4px;margin-bottom:14px;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div>`;
+  return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);border:1px solid #f3f4f6;margin-bottom:24px;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div>`;
 }
 
 function renderImage(item) {
   const src = typeof item === "string" ? item.trim()
     : item.mode === "file" ? item.src : (item.url || "").trim();
   if (!src) return "";
-  return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
+  return `<div style="margin-bottom:24px;overflow-x:auto;text-align:center;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="max-width:100%;height:auto;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);display:inline-block;border:1px solid #f3f4f6;" alt="Recurso visual" /></div>`;
 }
 
 /* ─── HTML GENERATOR ────────────────────────────────────────── */
 function generateHTML(d) {
+  const fontFam = "'Montserrat', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+  const cardStyle = "background-color:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:35px 40px;margin-bottom:35px;border:1px solid #f3f4f6;";
+  const titleStyle = "font-size:18px;font-weight:800;text-transform:uppercase;color:#B22222;letter-spacing:0.5px;margin:0 0 20px 0;border-bottom:2px solid #fecaca;padding-bottom:12px;";
+  const textContainer = "max-width:800px;margin:0 auto;";
+  const listUl = "margin:0;padding-left:24px;color:#374151;";
+  const listLi = "margin-bottom:10px;";
+
   const epiItems = d.epis.filter(e => e.trim())
-    .map(e => `<li style="margin-bottom:4px;">${mEsc(e)}</li>`).join("\n              ");
+    .map(e => `<li style="${listLi}">${mEsc(e)}</li>`).join("\n");
 
   const matItems = d.materiales.filter(m => m.trim())
-    .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
+    .map(m => `<li style="${listLi}">${mEsc(m)}</li>`).join("\n");
 
   const matAdicItems = (d.materialAdicional || []).filter(m => m.trim())
-    .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
+    .map(m => `<li style="${listLi}">${mEsc(m)}</li>`).join("\n");
 
   const escImagenesHtml = (d.escenarioImagenes || []).filter(img => {
     if (typeof img === "string") return img.trim();
@@ -80,21 +87,23 @@ function generateHTML(d) {
   const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const stepRows = d.pasos.filter(p => p.trim()).map((p, i) => `
-      <table style="width:100%;border-collapse:collapse;margin-bottom:8px;" cellpadding="0" cellspacing="0">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;" cellpadding="0" cellspacing="0">
         <tr>
-          <td style="width:36px;vertical-align:top;padding-right:10px;">
-            <div style="background:#B22222;color:#ffffff;font-weight:bold;font-size:13px;width:28px;height:28px;border-radius:50%;text-align:center;line-height:28px;">${i + 1}</div>
+          <td style="width:60px;vertical-align:top;padding-top:4px;">
+            <div style="background-color:#B22222;color:#ffffff;font-weight:800;font-size:16px;width:40px;height:40px;border-radius:50%;text-align:center;line-height:40px;box-shadow:0 6px 15px rgba(178,34,34,0.3);">${i + 1}</div>
           </td>
-          <td style="vertical-align:top;background:#ffffff;border:1px solid #e0e0e0;border-radius:3px;padding:8px 12px;">${mEsc(p)}</td>
+          <td style="vertical-align:top;background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:20px;padding:20px 24px;box-shadow:0 4px 10px rgba(0,0,0,0.03);">
+            ${mEsc(p)}
+          </td>
         </tr>
       </table>`).join("");
 
   const riskRows = d.riesgos.map((r, i) => `
-          <tr${i % 2 === 1 ? ' style="background:#fdf5f5;"' : ""}>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.riesgo)}</td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.causa)}</td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;text-align:center;"><span style="${badgeStyle(r.grado)}">${r.grado}</span></td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.medida)}</td>
+          <tr${i % 2 === 1 ? ' style="background-color:#f9fafb;"' : ' style="background-color:#ffffff;"'}>
+            <td style="border-bottom:1px solid #e5e7eb;padding:16px 20px;vertical-align:top;">${mEsc(r.riesgo)}</td>
+            <td style="border-bottom:1px solid #e5e7eb;padding:16px 20px;vertical-align:top;">${mEsc(r.causa)}</td>
+            <td style="border-bottom:1px solid #e5e7eb;padding:16px 20px;vertical-align:top;text-align:center;">${badgeStyle(r.grado)}</td>
+            <td style="border-bottom:1px solid #e5e7eb;padding:16px 20px;vertical-align:top;">${mEsc(r.medida)}</td>
           </tr>`).join("");
 
   const desImagenesHtml = d.desarrolloImagenes.filter(img => {
@@ -105,55 +114,56 @@ function generateHTML(d) {
   const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const recordadBlock = d.recordad.trim()
-    ? `        <p style="margin:8px 0 0 0;"><strong>Recordad:</strong> ${mEsc(d.recordad)}</p>\n`
+    ? `<div style="margin-top:16px;background-color:#fff7ed;padding:16px 20px;border-radius:16px;border-left:4px solid #ea580c;"><strong style="color:#9a3412;font-weight:800;">Recordad:</strong> ${mEsc(d.recordad)}</div>\n`
     : "";
 
-  const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-  const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+  const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="${listLi}">${mEsc(i)}</li>`).join("");
+  const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="${listLi}">${mEsc(i)}</li>`).join("");
 
   const jtItems = (d.rolesJT || []).filter(r => r.trim())
-    .map(r => `<li style="margin-bottom:6px;">${mEsc(r)}</li>`).join("\n        ");
+    .map(r => `<li style="${listLi}">${mEsc(r)}</li>`).join("\n");
 
   const validItCodes = d.itCodes.filter(c => c.trim());
   let itCodeHtml = "";
   if (validItCodes.length > 0) {
-    const codesStr = validItCodes.map(c => `<div style="font-weight:bold;font-size:13px;letter-spacing:1px;margin-top:4px;">${mEsc(c)}</div>`).join("");
-    itCodeHtml = `\n      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
+    const codesStr = validItCodes.map(c => `<div style="font-size:14px;margin-top:4px;color:#fecaca;">${mEsc(c)}</div>`).join("");
+    itCodeHtml = `\n      <td style="width:160px;text-align:right;vertical-align:middle;padding-left:16px;">
+        <div style="background-color:rgba(0,0,0,0.2);padding:14px;border-radius:16px;font-size:12px;font-weight:800;text-align:center;border:1px solid rgba(255,255,255,0.1);line-height:1.4;">INSTRUCCIÓN TÉCNICA${codesStr}</div>
+      </td>`;
   }
 
-  /* HTML Criterios de Evaluación */
   let evaluacionHtml = "";
   if (d.evaluacion.mostrar) {
-    const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+    const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="${listLi}">${mEsc(i)}</li>`).join("");
+    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="${listLi}">${mEsc(i)}</li>`).join("");
+    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="${listLi}">${mEsc(i)}</li>`).join("");
 
     evaluacionHtml = `
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO II &mdash; Criterios de Evaluaci&oacute;n</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <p style="margin:0 0 12px 0;">Durante las maniobras se realizar&aacute;n unas r&uacute;bricas de evaluaci&oacute;n divididas en tres bloques diferenciados:</p>
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">ANEXO II — Criterios de Evaluación</div>
+    <div style="${textContainer}">
+      <p style="margin:0 0 20px 0;">Durante las maniobras se realizarán unas rúbricas de evaluación divididas en tres bloques diferenciados:</p>
       
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 1 - CR&Iacute;TICOS</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Ser&aacute; necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.</p>
-        <ul style="margin:0;padding-left:20px;">
+      <div style="background-color:#fff1f2;border:1px solid #fecaca;border-radius:20px;padding:24px 28px;margin-bottom:20px;box-shadow:0 6px 15px rgba(225,29,72,0.05);">
+        <div style="font-weight:800;color:#9f1239;font-size:14px;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.5px;">BLOQUE 1 - CRÍTICOS</div>
+        <p style="margin:0 0 16px 0;font-size:14px;color:#be123c;">Será necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.</p>
+        <ul style="${listUl}">
           ${criticosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
         </ul>
       </div>
 
-      <div style="background:#e8f5e9;border:1px solid #c8e6c9;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
-        <div style="font-weight:bold;color:#1b5e20;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 2 - T&Eacute;CNICOS</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems son los que nos permitir&aacute;n alcanzar el 10 (los 5 puntos restantes).</p>
-        <ul style="margin:0;padding-left:20px;">
+      <div style="background-color:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:24px 28px;margin-bottom:20px;box-shadow:0 6px 15px rgba(22,163,74,0.05);">
+        <div style="font-weight:800;color:#166534;font-size:14px;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.5px;">BLOQUE 2 - TÉCNICOS</div>
+        <p style="margin:0 0 16px 0;font-size:14px;color:#15803d;">Estos ítems son los que nos permitirán alcanzar el 10 (los 5 puntos restantes).</p>
+        <ul style="${listUl}">
           ${tecnicosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
         </ul>
       </div>
 
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;">
-        <div style="font-weight:bold;color:#f57f17;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 3 - ACTITUDINALES</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems no suman, pero s&iacute; que restan.</p>
-        <ul style="margin:0;padding-left:20px;">
+      <div style="background-color:#fffbeb;border:1px solid #fde68a;border-radius:20px;padding:24px 28px;box-shadow:0 6px 15px rgba(217,119,6,0.05);">
+        <div style="font-weight:800;color:#b45309;font-size:14px;text-transform:uppercase;margin-bottom:6px;letter-spacing:0.5px;">BLOQUE 3 - ACTITUDINALES</div>
+        <p style="margin:0 0 16px 0;font-size:14px;color:#b45309;">Estos ítems no suman, pero sí que restan.</p>
+        <ul style="${listUl}">
           ${actitudinalesItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
         </ul>
       </div>
@@ -161,130 +171,147 @@ function generateHTML(d) {
   </div>`;
   }
 
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;max-width:860px;margin:0 auto;box-sizing:border-box;">
+  return `
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap">
+<div style="font-family:${fontFam};font-size:16px;color:#374151;line-height:1.8;max-width:850px;width:95%;margin:40px auto;box-sizing:border-box;">
 
-  <table style="width:100%;border-collapse:collapse;overflow:hidden;background-color:#B22222;color:#ffffff;" cellpadding="0" cellspacing="0">
-    <tr>
-      <td style="width:60px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:14px 8px;font-size:13px;font-weight:bold;color:#ffffff;">CBCM</td>
-      <td style="padding:12px 16px;vertical-align:middle;">
-        <div style="font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">PR&Aacute;CTICA: ${mEsc(d.titulo)}</div>
-        <div style="font-size:12px;margin-top:4px;opacity:0.85;">${mEsc(d.subtitulo)}</div>
-      </td>${itCodeHtml}
-    </tr>
-  </table>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">1. Descripci&oacute;n</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.descripcion)}</div>
+  <div style="background-color:#B22222;background:linear-gradient(135deg, #B22222 0%, #7a1515 100%);border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.18);color:#ffffff;padding:40px;margin-bottom:40px;">
+    <table style="width:100%;border-collapse:collapse;color:#ffffff;" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="width:90px;text-align:center;vertical-align:middle;padding-right:24px;border-right:2px solid rgba(255,255,255,0.2);">
+          <div style="font-size:22px;font-weight:800;letter-spacing:1px;">CBCM</div>
+        </td>
+        <td style="padding-left:24px;vertical-align:middle;">
+          <div style="font-size:24px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;line-height:1.3;">PRÁCTICA: ${mEsc(d.titulo)}</div>
+          <div style="font-size:16px;margin-top:8px;opacity:0.9;line-height:1.6;">${mEsc(d.subtitulo)}</div>
+        </td>
+        ${itCodeHtml}
+      </tr>
+    </table>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">2. Objetivo Pedag&oacute;gico</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.objetivo)}</div>
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">1. Descripción</div>
+    <div style="${textContainer}">${mEsc(d.descripcion)}</div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">3. Destinatarios</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.destinatarios)}</div>
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">2. Objetivo Pedagógico</div>
+    <div style="${textContainer}">${mEsc(d.objetivo)}</div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">4. Escenario</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="margin-bottom:${escImagenesHtml ? '14px' : '0'};">${mEsc(d.escenario)}</div>
-${escImagenesHtml}
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">3. Destinatarios</div>
+    <div style="${textContainer}">${mEsc(d.destinatarios)}</div>
+  </div>
+
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">4. Escenario</div>
+    <div style="${textContainer}">
+      <div style="margin-bottom:${escImagenesHtml ? '24px' : '0'};">${mEsc(d.escenario)}</div>
+      ${escImagenesHtml}
     </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">5. Recursos</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">EPI&apos;s</div>
-        <ul style="margin:0;padding-left:20px;">${epiItems}</ul>
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">5. Recursos</div>
+    <div style="${textContainer}">
+      <div style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:20px;padding:24px 28px;margin-bottom:20px;">
+        <div style="font-weight:800;color:#1f2937;font-size:15px;text-transform:uppercase;margin-bottom:12px;letter-spacing:0.5px;">EPI's</div>
+        <ul style="${listUl}">${epiItems}</ul>
       </div>
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Materiales y Herramientas</div>
-        <ul style="margin:0;padding-left:20px;">${matItems}</ul>
+      <div style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:20px;padding:24px 28px;margin-bottom:20px;">
+        <div style="font-weight:800;color:#1f2937;font-size:15px;text-transform:uppercase;margin-bottom:12px;letter-spacing:0.5px;">Materiales y Herramientas</div>
+        <ul style="${listUl}">${matItems}</ul>
       </div>
-${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Material Adicional</div>
-        <ul style="margin:0;padding-left:20px;">${matAdicItems}</ul>
+${matAdicItems ? `      <div style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:20px;padding:24px 28px;margin-bottom:20px;">
+        <div style="font-weight:800;color:#1f2937;font-size:15px;text-transform:uppercase;margin-bottom:12px;letter-spacing:0.5px;">Material Adicional</div>
+        <ul style="${listUl}">${matAdicItems}</ul>
       </div>\n` : ""}${recImagenesHtml}${recVideosHtml}    </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">6. Organizaci&oacute;n del Grupo</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;margin-bottom:12px;">${mEsc(d.organizacion)}</div>
-      <p style="margin:0 0 6px 0;"><strong>Rol del ${mEsc(d.rolMandoTitulo)}:</strong></p>
-      <ul style="margin:0;padding-left:20px;">
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">6. Organización del Grupo</div>
+    <div style="${textContainer}">
+      <div style="background-color:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:24px 28px;margin-bottom:24px;color:#1e3a8a;">${mEsc(d.organizacion)}</div>
+      <p style="margin:0 0 16px 0;"><strong style="font-weight:800;font-size:16px;">Rol del ${mEsc(d.rolMandoTitulo)}:</strong></p>
+      <ul style="${listUl}">
         ${jtItems}
       </ul>
     </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">7. Desarrollo Explicativo de la Pr&aacute;ctica</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <p style="margin:0 0 10px 0;"><strong>Documentaci&oacute;n de referencia:</strong> ${mEsc(d.refDoc)}</p>
-      ${d.aspectosGenerales.trim() ? `<p style="margin:0 0 10px 0;"><strong>Aspectos generales:</strong> ${mEsc(d.aspectosGenerales)}</p>` : ""}
-      ${d.desarrolloManiobra.trim() ? `<p style="margin:0 0 10px 0;"><strong>Desarrollo de la maniobra:</strong> ${mEsc(d.desarrolloManiobra)}</p>` : ""}
-      ${d.escenarioDesarrollo.trim() ? `<p style="margin:0 0 10px 0;"><strong>Escenario:</strong> ${mEsc(d.escenarioDesarrollo)}</p>` : ""}
-${desImagenesHtml}${desVideosHtml}      <p style="margin:0 0 10px 0;"><strong>Explicaci&oacute;n secuencial de la maniobra:</strong></p>
-${stepRows}
-      <div style="background:#fff3cd;border-left:4px solid #ff8800;border-radius:0 3px 3px 0;padding:10px 14px;margin-top:14px;">
-        <div style="font-weight:bold;color:#7a4f00;text-transform:uppercase;font-size:12px;margin-bottom:6px;">PRECAUCIONES</div>
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">7. Desarrollo Explicativo de la Práctica</div>
+    <div style="${textContainer}">
+      <p style="margin:0 0 16px 0;"><strong style="font-weight:800;">Documentación de referencia:</strong> ${mEsc(d.refDoc)}</p>
+      ${d.aspectosGenerales.trim() ? `<p style="margin:0 0 16px 0;"><strong style="font-weight:800;">Aspectos generales:</strong> ${mEsc(d.aspectosGenerales)}</p>` : ""}
+      ${d.desarrolloManiobra.trim() ? `<p style="margin:0 0 16px 0;"><strong style="font-weight:800;">Desarrollo de la maniobra:</strong> ${mEsc(d.desarrolloManiobra)}</p>` : ""}
+      ${d.escenarioDesarrollo.trim() ? `<p style="margin:0 0 24px 0;"><strong style="font-weight:800;">Escenario:</strong> ${mEsc(d.escenarioDesarrollo)}</p>` : ""}
+      ${desImagenesHtml}${desVideosHtml}
+      
+      <p style="margin:0 0 20px 0;"><strong style="font-weight:800;font-size:18px;">Explicación secuencial de la maniobra:</strong></p>
+      ${stepRows}
+      
+      <div style="background-color:#fffbeb;border:2px solid #fde68a;border-radius:20px;padding:24px 28px;margin-top:32px;box-shadow:0 8px 20px rgba(251,191,36,0.15);">
+        <div style="font-weight:800;color:#b45309;text-transform:uppercase;font-size:16px;margin-bottom:12px;display:flex;align-items:center;">PRECAUCIONES</div>
         <p style="margin:0;">${mEsc(d.precauciones)}</p>
-${recordadBlock}      </div>
+        ${recordadBlock}
+      </div>
     </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">8. Evaluaci&oacute;n de Riesgos de la Maniobra</div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;" cellpadding="0" cellspacing="0">
+  <div style="${cardStyle}">
+    <div style="${titleStyle}">8. Evaluación de Riesgos</div>
+    <div style="border-radius:20px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:500px;" cellpadding="0" cellspacing="0">
         <thead>
           <tr>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:22%;">Riesgo</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:28%;">Causa</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:center;font-weight:bold;border:1px solid #921a1a;width:12%;">Grado</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:38%;">Medida Preventiva</th>
+            <th style="background-color:#f3f4f6;color:#1f2937;padding:16px 20px;text-align:left;font-weight:800;border-bottom:2px solid #e5e7eb;width:22%;">Riesgo</th>
+            <th style="background-color:#f3f4f6;color:#1f2937;padding:16px 20px;text-align:left;font-weight:800;border-bottom:2px solid #e5e7eb;width:28%;">Causa</th>
+            <th style="background-color:#f3f4f6;color:#1f2937;padding:16px 20px;text-align:center;font-weight:800;border-bottom:2px solid #e5e7eb;width:12%;">Grado</th>
+            <th style="background-color:#f3f4f6;color:#1f2937;padding:16px 20px;text-align:left;font-weight:800;border-bottom:2px solid #e5e7eb;width:38%;">Medida Preventiva</th>
           </tr>
         </thead>
-        <tbody>${riskRows}
-        </tbody>
+        <tbody>${riskRows}</tbody>
       </table>
     </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO I &mdash; Plan SOS</div>
-    <div style="background:#fce4ec;border:1px solid #f48fb1;border-radius:3px;padding:12px 14px;">
-      <div style="background:#b71c1c;color:#ffffff;text-align:center;font-weight:bold;padding:10px;border-radius:3px;margin-bottom:12px;letter-spacing:1px;font-size:13px;">${mEsc(d.planSOS.senal)}</div>
-      <p style="margin:0 0 8px 0;">${mEsc(d.planSOS.intro1)}</p>
-      <p style="margin:0 0 12px 0;">${mEsc(d.planSOS.intro2)}</p>
-      <div style="background:#ffffff;border:1px solid #ef9a9a;border-radius:3px;padding:10px 14px;margin-bottom:8px;">
-        <div style="font-weight:bold;color:#b71c1c;text-transform:uppercase;font-size:12px;margin-bottom:6px;">${mEsc(d.planSOS.leveTitulo)}</div>
-        <ul style="margin:0;padding-left:20px;">
+  <div style="background-color:#fff1f2;border-radius:24px;box-shadow:0 15px 35px rgba(225,29,72,0.1);padding:35px 40px;margin-bottom:35px;border:2px solid #fecaca;">
+    <div style="${titleStyle}">ANEXO I — Plan SOS</div>
+    <div style="${textContainer}">
+      <div style="background-color:#be123c;color:#ffffff;text-align:center;font-weight:800;padding:20px;border-radius:20px;margin-bottom:24px;letter-spacing:1px;font-size:16px;box-shadow:0 8px 20px rgba(190,18,60,0.3);">
+        ${mEsc(d.planSOS.senal)}
+      </div>
+      <p style="margin:0 0 12px 0;">${mEsc(d.planSOS.intro1)}</p>
+      <p style="margin:0 0 24px 0;">${mEsc(d.planSOS.intro2)}</p>
+      
+      <div style="background-color:#ffffff;border:1px solid #fca5a5;border-radius:20px;padding:24px 28px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.03);">
+        <div style="font-weight:800;color:#9f1239;text-transform:uppercase;font-size:15px;margin-bottom:12px;">${mEsc(d.planSOS.leveTitulo)}</div>
+        <ul style="${listUl}">
           ${planSosLeveItems}
         </ul>
       </div>
-      <div style="background:#ffffff;border:1px solid #ef9a9a;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#b71c1c;text-transform:uppercase;font-size:12px;margin-bottom:6px;">${mEsc(d.planSOS.graveTitulo)}</div>
-        <ul style="margin:0;padding-left:20px;">
+      
+      <div style="background-color:#ffffff;border:1px solid #fca5a5;border-radius:20px;padding:24px 28px;margin-bottom:24px;box-shadow:0 4px 10px rgba(0,0,0,0.03);">
+        <div style="font-weight:800;color:#9f1239;text-transform:uppercase;font-size:15px;margin-bottom:12px;">${mEsc(d.planSOS.graveTitulo)}</div>
+        <ul style="${listUl}">
           ${planSosGraveItems}
         </ul>
       </div>
-      <p style="margin:0;font-size:12px;">${mEsc(d.planSOS.cierre)}</p>
+      
+      <p style="margin:0;font-size:14px;color:#881337;font-weight:700;">${mEsc(d.planSOS.cierre)}</p>
     </div>
   </div>
+
 ${evaluacionHtml}
-  <table style="width:100%;border-collapse:collapse;margin-top:20px;border-top:2px solid #B22222;font-size:11px;color:#666;" cellpadding="6" cellspacing="0">
+
+  <table style="width:100%;border-collapse:collapse;margin-top:40px;border-top:2px solid #e5e7eb;font-size:12px;color:#9ca3af;line-height:1.6;" cellpadding="10" cellspacing="0">
     <tr>
-      <td style="white-space:nowrap;vertical-align:top;width:1%;">Revisi&oacute;n ${mEsc(d.revision)}</td>
-      <td style="text-align:center;vertical-align:top;font-size:10px;padding:6px 12px;">${mEsc(d.pieTexto)}</td>
-      <td style="white-space:nowrap;vertical-align:top;width:1%;text-align:right;">P&aacute;g. 1 de 1</td>
+      <td style="white-space:nowrap;vertical-align:top;width:1%;font-weight:700;">Revisión ${mEsc(d.revision)}</td>
+      <td style="text-align:center;vertical-align:top;padding:10px 20px;">${mEsc(d.pieTexto)}</td>
+      <td style="white-space:nowrap;vertical-align:top;width:1%;text-align:right;font-weight:700;">Pág. 1 de 1</td>
     </tr>
   </table>
 
@@ -1121,7 +1148,7 @@ function GeneradorManiobras() {
       </div>
     </div>,
 
-    /* 9 · Generar (Modificado: Sin visualización de código) */
+    /* 9 · Generar */
     <div style={spY} key="tab9">
       <SectionTitle>Gestión de la Maniobra</SectionTitle>
       <Hint>Insértalo en el editor o copia el contenido para usarlo en Moodle.</Hint>
@@ -1162,10 +1189,10 @@ function GeneradorManiobras() {
                 textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"8px" }}>
                 Previsualización del documento final
               </div>
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden", background:"#fff" }}>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden", background:"#f3f4f6" }}>
                 <iframe
-                  srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="padding:16px;margin:0;">${html}</body></html>`}
-                  style={{ width:"100%", height:"600px", border:"none" }}
+                  srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:20px;background:#f3f4f6;">${html}</body></html>`}
+                  style={{ width:"100%", height:"700px", border:"none" }}
                   title="Previsualización del documento"
                 />
               </div>
