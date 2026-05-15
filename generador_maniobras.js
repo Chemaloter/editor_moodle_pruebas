@@ -201,6 +201,24 @@ ${recordadBlock}      </div>
   </div>
 
   <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
+    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">8. Evaluaci&oacute;n de Riesgos de la Maniobra</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;" cellpadding="0" cellspacing="0">
+        <thead>
+          <tr>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:22%;">Riesgo</th>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:28%;">Causa</th>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:center;font-weight:bold;border:1px solid #921a1a;width:12%;">Grado</th>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:38%;">Medida Preventiva</th>
+          </tr>
+        </thead>
+        <tbody>${riskRows}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
     <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">Anexo &mdash; Plan SOS</div>
     <div style="background:#fce4ec;border:1px solid #f48fb1;border-radius:3px;padding:12px 14px;">
       <div style="background:#b71c1c;color:#ffffff;text-align:center;font-weight:bold;padding:10px;border-radius:3px;margin-bottom:12px;letter-spacing:1px;font-size:13px;">${mEsc(d.planSOS.senal)}</div>
@@ -222,24 +240,6 @@ ${recordadBlock}      </div>
     </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">8. Evaluaci&oacute;n de Riesgos de la Maniobra</div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;" cellpadding="0" cellspacing="0">
-        <thead>
-          <tr>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:22%;">Riesgo</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:28%;">Causa</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:center;font-weight:bold;border:1px solid #921a1a;width:12%;">Grado</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:38%;">Medida Preventiva</th>
-          </tr>
-        </thead>
-        <tbody>${riskRows}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
   <table style="width:100%;border-collapse:collapse;margin-top:20px;border-top:2px solid #B22222;font-size:11px;color:#666;" cellpadding="6" cellspacing="0">
     <tr>
       <td style="white-space:nowrap;vertical-align:top;width:1%;">Revisi&oacute;n ${mEsc(d.revision)}</td>
@@ -258,8 +258,8 @@ const TABS = [
   { label: "3 · Recursos",     short: "Rec."      },
   { label: "4 · Organización", short: "Org."      },
   { label: "5 · Desarrollo",   short: "Des."      },
-  { label: "6 · Plan SOS",     short: "SOS"       },
-  { label: "7 · Riesgos",      short: "Rie."      },
+  { label: "6 · Riesgos",      short: "Rie."      }, // MOVIDO AQUÍ
+  { label: "7 · Plan SOS",     short: "SOS"       }, // MOVIDO AQUÍ
   { label: "8 · Pie",          short: "Pie"       },
   { label: "⚡ Generar",       short: "⚡"        },
 ];
@@ -345,9 +345,9 @@ function GeneradorManiobras() {
         "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
     ],
     refDoc: "",
-    aspectosGenerales: "", // NUEVO
-    desarrolloManiobra: "", // NUEVO
-    escenarioDesarrollo: "", // NUEVO
+    aspectosGenerales: "",
+    desarrolloManiobra: "",
+    escenarioDesarrollo: "",
     videos: [""],
     desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     pasos: ["", "", "", "", "", ""],
@@ -749,7 +749,6 @@ function GeneradorManiobras() {
         <Inp value={d.refDoc} onChange={v => upd("refDoc", v)}
           placeholder="ej: 2023 Reciclaje Hidráulica y Abastecimientos" /></div>
       
-      {/* NUEVOS BLOQUES SOLICITADOS */}
       <div><Label>Aspectos generales</Label>
         <Txt value={d.aspectosGenerales} onChange={v => upd("aspectosGenerales", v)} rows={4}
           placeholder="Descripción de los aspectos generales clave..." /></div>
@@ -852,63 +851,8 @@ function GeneradorManiobras() {
           placeholder="ej: No podemos demandar más prestaciones al sistema de las que puede proporcionar..." /></div>
     </div>,
 
-    /* 5 · Plan SOS */
+    /* 5 · Riesgos (MOVIDO ANTES DEL PLAN SOS) */
     <div style={spY} key="tab5">
-      <SectionTitle>Plan SOS</SectionTitle>
-      <Hint>Edición completa de los parámetros del Plan SOS del anexo.</Hint>
-      <div><Label required>Señal de Emergencia</Label>
-        <Inp value={d.planSOS.senal} onChange={v => updSos("senal", v)} /></div>
-      
-      <div><Label required>Párrafos introductorios</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          <Txt value={d.planSOS.intro1} onChange={v => updSos("intro1", v)} rows={3} />
-          <Txt value={d.planSOS.intro2} onChange={v => updSos("intro2", v)} rows={2} />
-        </div>
-      </div>
-
-      <Divider />
-      <div>
-        <Label>Sección: Accidente Leve (Título)</Label>
-        <Inp value={d.planSOS.leveTitulo} onChange={v => updSos("leveTitulo", v)} />
-        <Label style={{marginTop:"8px"}}>Pasos Accidente Leve</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.planSOS.leveItems.map((item, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={item} onChange={v => updSosArr("leveItems", i, v)} />
-              </div>
-              {d.planSOS.leveItems.length > 1 && <RemBtn onClick={() => remSosArr("leveItems", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addSosArr("leveItems")} label="＋ Añadir paso leve" />
-      </div>
-
-      <Divider />
-      <div>
-        <Label>Sección: Accidente Grave (Título)</Label>
-        <Inp value={d.planSOS.graveTitulo} onChange={v => updSos("graveTitulo", v)} />
-        <Label style={{marginTop:"8px"}}>Pasos Accidente Grave</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.planSOS.graveItems.map((item, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={item} onChange={v => updSosArr("graveItems", i, v)} />
-              </div>
-              {d.planSOS.graveItems.length > 1 && <RemBtn onClick={() => remSosArr("graveItems", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addSosArr("graveItems")} label="＋ Añadir paso grave" />
-      </div>
-
-      <Divider />
-      <div><Label required>Cierre del Plan SOS</Label>
-        <Txt value={d.planSOS.cierre} onChange={v => updSos("cierre", v)} rows={2} /></div>
-    </div>,
-
-    /* 6 · Riesgos */
-    <div style={spY} key="tab6">
       <SectionTitle>Evaluación de Riesgos</SectionTitle>
       <Hint>Añade una fila por cada riesgo identificado.</Hint>
       {d.riesgos.map((r, i) => (
@@ -961,6 +905,61 @@ function GeneradorManiobras() {
       <AddBtn
         onClick={() => addArr("riesgos", { riesgo: "", causa: "", grado: "Notable", medida: "" })}
         label="＋ Añadir riesgo" />
+    </div>,
+
+    /* 6 · Plan SOS (MOVIDO DESPUÉS DE RIESGOS) */
+    <div style={spY} key="tab6">
+      <SectionTitle>Plan SOS</SectionTitle>
+      <Hint>Edición completa de los parámetros del Plan SOS del anexo.</Hint>
+      <div><Label required>Señal de Emergencia</Label>
+        <Inp value={d.planSOS.senal} onChange={v => updSos("senal", v)} /></div>
+      
+      <div><Label required>Párrafos introductorios</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          <Txt value={d.planSOS.intro1} onChange={v => updSos("intro1", v)} rows={3} />
+          <Txt value={d.planSOS.intro2} onChange={v => updSos("intro2", v)} rows={2} />
+        </div>
+      </div>
+
+      <Divider />
+      <div>
+        <Label>Sección: Accidente Leve (Título)</Label>
+        <Inp value={d.planSOS.leveTitulo} onChange={v => updSos("leveTitulo", v)} />
+        <Label style={{marginTop:"8px"}}>Pasos Accidente Leve</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          {d.planSOS.leveItems.map((item, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center" }}>
+              <div style={{ flex:"1" }}>
+                <Inp value={item} onChange={v => updSosArr("leveItems", i, v)} />
+              </div>
+              {d.planSOS.leveItems.length > 1 && <RemBtn onClick={() => remSosArr("leveItems", i)} />}
+            </div>
+          ))}
+        </div>
+        <AddBtn onClick={() => addSosArr("leveItems")} label="＋ Añadir paso leve" />
+      </div>
+
+      <Divider />
+      <div>
+        <Label>Sección: Accidente Grave (Título)</Label>
+        <Inp value={d.planSOS.graveTitulo} onChange={v => updSos("graveTitulo", v)} />
+        <Label style={{marginTop:"8px"}}>Pasos Accidente Grave</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          {d.planSOS.graveItems.map((item, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center" }}>
+              <div style={{ flex:"1" }}>
+                <Inp value={item} onChange={v => updSosArr("graveItems", i, v)} />
+              </div>
+              {d.planSOS.graveItems.length > 1 && <RemBtn onClick={() => remSosArr("graveItems", i)} />}
+            </div>
+          ))}
+        </div>
+        <AddBtn onClick={() => addSosArr("graveItems")} label="＋ Añadir paso grave" />
+      </div>
+
+      <Divider />
+      <div><Label required>Cierre del Plan SOS</Label>
+        <Txt value={d.planSOS.cierre} onChange={v => updSos("cierre", v)} rows={2} /></div>
     </div>,
 
     /* 7 · Pie */
