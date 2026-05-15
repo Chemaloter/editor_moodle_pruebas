@@ -121,7 +121,7 @@ function generateHTML(d) {
     itCodeHtml = `\n      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
   }
 
-  /* HTML Criterios de Evaluación — AHORA ANEXO II */
+  /* HTML Criterios de Evaluación */
   let evaluacionHtml = "";
   if (d.evaluacion.mostrar) {
     const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
@@ -283,7 +283,7 @@ ${evaluacionHtml}
   <table style="width:100%;border-collapse:collapse;margin-top:20px;border-top:2px solid #B22222;font-size:11px;color:#666;" cellpadding="6" cellspacing="0">
     <tr>
       <td style="white-space:nowrap;vertical-align:top;width:1%;">Revisi&oacute;n ${mEsc(d.revision)}</td>
-      <td style="text-align:center;vertical-align:top;font-size:10px;padding:6px 12px;">Este documento es propiedad del Cuerpo de Bomberos de la Comunidad de Madrid, protegido bajo licencia <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="color:#B22222;">CC BY-NC-SA 4.0</a>. Se permite la copia y distribuci&oacute;n acreditando autor&iacute;a, sin fines comerciales y compartiendo bajo la misma licencia.</td>
+      <td style="text-align:center;vertical-align:top;font-size:10px;padding:6px 12px;">${mEsc(d.pieTexto)}</td>
       <td style="white-space:nowrap;vertical-align:top;width:1%;text-align:right;">P&aacute;g. 1 de 1</td>
     </tr>
   </table>
@@ -416,7 +416,7 @@ function GeneradorManiobras() {
       tecnicos: [""],
       actitudinales: [""]
     },
-    cecop: "918 354 918",
+    pieTexto: "Este documento es propiedad del Cuerpo de Bomberos de la Comunidad de Madrid, protegido bajo licencia CC BY-NC-SA 4.0. Se permite la copia y distribución acreditando autoría, sin fines comerciales y compartiendo bajo la misma licencia.",
     riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
     revision: today,
   });
@@ -514,7 +514,7 @@ function GeneradorManiobras() {
         tecnicos: [""],
         actitudinales: [""]
       },
-      cecop: "918 354 918",
+      pieTexto: "Este documento es propiedad del Cuerpo de Bomberos de la Comunidad de Madrid, protegido bajo licencia CC BY-NC-SA 4.0. Se permite la copia y distribución acreditando autoría, sin fines comerciales y compartiendo bajo la misma licencia.",
       riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
       revision: t,
     });
@@ -1109,15 +1109,15 @@ function GeneradorManiobras() {
     /* 8 · Pie */
     <div style={spY} key="tab8">
       <SectionTitle>Pie de Página</SectionTitle>
-      <Hint>Fecha de revisión y teléfono CECOP para referencias directas.</Hint>
+      <Hint>Fecha de revisión y texto legal del pie de página.</Hint>
       <div>
         <Label required>Fecha de revisión</Label>
         <Inp value={d.revision} onChange={v => upd("revision", v)} placeholder="ej: 20260322" />
         <p style={{ fontSize:"12px", color:"#9ca3af", marginTop:"4px" }}>Formato AAAAMMDD — ej: 20260322 = 22 de marzo de 2026</p>
       </div>
       <div>
-        <Label>Teléfono CECOP</Label>
-        <Inp value={d.cecop} onChange={v => upd("cecop", v)} placeholder="918 354 918" />
+        <Label>Texto del Pie de Página</Label>
+        <Txt value={d.pieTexto} onChange={v => upd("pieTexto", v)} rows={3} />
       </div>
     </div>,
 
