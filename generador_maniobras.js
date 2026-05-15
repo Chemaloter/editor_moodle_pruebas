@@ -65,6 +65,10 @@ function generateHTML(d) {
   const matItems = d.materiales.filter(m => m.trim())
     .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
 
+   // NUEVO: Procesamiento de Material Adicional
+  const matAdicItems = (d.materialAdicional || []).filter(m => m.trim())
+    .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
+
   const escImagenesHtml = (d.escenarioImagenes || []).filter(img => {
     if (typeof img === "string") return img.trim();
     return img.mode === "file" ? img.src : (img.url || "").trim();
@@ -326,6 +330,7 @@ function GeneradorManiobras() {
     escenarioImagenes: [],
     epis: ["", "", ""],
     materiales: ["", "", "", ""],
+    materialAdicional: [""], // <-- NUEVA LÍNEA
     recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     recursosVideos: [""],
     organizacion: "",
@@ -403,6 +408,7 @@ function GeneradorManiobras() {
       escenarioImagenes: [],
       epis: ["", "", ""],
       materiales: ["", "", "", ""],
+      materialAdicional: [""], // <-- NUEVA LÍNEA
       recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
       recursosVideos: [""],
       organizacion: "",
@@ -592,6 +598,36 @@ function GeneradorManiobras() {
         <AddBtn onClick={() => addArr("materiales")} label="＋ Añadir material" />
       </div>
       <Divider />
+             {/* NUEVO BLOQUE: MATERIAL ADICIONAL */}
+      <div>
+        <Label>Material Adicional (Opcional)</Label>
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+          {(d.materialAdicional || []).map((m, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center" }}>
+              <span style={{ fontSize:"12px", color:"#9ca3af", width:"24px", textAlign:"right", marginRight:"8px" }}>{i + 1}.</span>
+              <div style={{ flex:"1" }}>
+                <Inp value={m} onChange={v => updArr("materialAdicional", i, v)}
+                  placeholder="Material adicional, herramientas específicas..." />
+              </div>
+              {(d.materialAdicional || []).length > 1 && <RemBtn onClick={() => remArr("materialAdicional", i)} />}
+            </div>
+          ))}
+        </div>
+        <AddBtn onClick={() => addArr("materialAdicional")} label="＋ Añadir material adicional" />
+      </div>
+
+      <Divider />
+<div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
+        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Materiales y Herramientas</div>
+        <ul style="margin:0;padding-left:20px;">${matItems}</ul>
+      </div>
+${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
+        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Material Adicional</div>
+        <ul style="margin:0;padding-left:20px;">${matAdicItems}</ul>
+      </div>` : ""}
+${recImagenesHtml}${recVideosHtml}    </div>
+
+             
       <div>
         <Label>Imágenes</Label>
         <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
