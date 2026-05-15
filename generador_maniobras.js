@@ -111,8 +111,36 @@ function generateHTML(d) {
   const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
   const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
 
-  const jtItems = (d.rolesJT || []).filter(r => r.trim())
-    .map(r => `<li style="margin-bottom:6px;">${mEsc(r)}</li>`).join("\n        ");
+  // NUEVO: Generación de Criterios de Evaluación
+  let evaluacionHtml = "";
+  if (d.mostrarEvaluacion) {
+    const critItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+    const tecItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+    const actItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+
+    evaluacionHtml = `
+  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
+    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">Anexo &mdash; Criterios de Evaluaci&oacute;n</div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:3px;padding:12px 14px;">
+      <p style="margin:0 0 12px 0; font-size:13px;">Durante las maniobras se realizar&aacute;n unas r&uacute;bricas de evaluaci&oacute;n divididas en los siguientes bloques:</p>
+      
+      <div style="background:#fff5f5;border:1px solid #feb2b2;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
+        <div style="font-weight:bold;color:#c53030;font-size:12px;text-transform:uppercase;margin-bottom:6px;">BLOQUE 1 - CR&Iacute;TICOS (Aseguran el aprobado)</div>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${critItems || "<li>Sin ítems definidos.</li>"}</ul>
+      </div>
+
+      <div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
+        <div style="font-weight:bold;color:#276749;font-size:12px;text-transform:uppercase;margin-bottom:6px;">BLOQUE 2 - T&Eacute;CNICOS (Hasta 10 puntos)</div>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${tecItems || "<li>Sin ítems definidos.</li>"}</ul>
+      </div>
+
+      <div style="background:#fffaf0;border:1px solid #fbd38d;border-radius:3px;padding:10px 14px;">
+        <div style="font-weight:bold;color:#9c4221;font-size:12px;text-transform:uppercase;margin-bottom:6px;">BLOQUE 3 - ACTITUDINALES (Restan puntuaci&oacute;n)</div>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${actItems || "<li>Sin ítems definidos.</li>"}</ul>
+      </div>
+    </div>
+  </div>`;
+  }
 
   const validItCodes = d.itCodes.filter(c => c.trim());
   let itCodeHtml = "";
@@ -170,16 +198,18 @@ ${escImagenesHtml}
 ${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
         <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Material Adicional</div>
         <ul style="margin:0;padding-left:20px;">${matAdicItems}</ul>
-      </div>\n` : ""}${recImagenesHtml}${recVideosHtml}    </div>
+      </div>` : ""}
+${recImagenesHtml}${recVideosHtml}    </div>
   </div>
 
   <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
     <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">6. Organizaci&oacute;n del Grupo</div>
     <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
       <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;margin-bottom:12px;">${mEsc(d.organizacion)}</div>
-      <p style="margin:0 0 6px 0;"><strong>Rol del ${mEsc(d.rolMandoTitulo)}:</strong></p>
+      <p style="margin:0 0 6px 0;"><strong>Rol del Jefe de Turno:</strong></p>
       <ul style="margin:0;padding-left:20px;">
-        ${jtItems}
+        <li style="margin-bottom:6px;">${mEsc(d.jt1)}</li>
+        <li>${mEsc(d.jt2)}</li>
       </ul>
     </div>
   </div>
@@ -188,33 +218,12 @@ ${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;
     <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">7. Desarrollo Explicativo de la Pr&aacute;ctica</div>
     <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
       <p style="margin:0 0 10px 0;"><strong>Documentaci&oacute;n de referencia:</strong> ${mEsc(d.refDoc)}</p>
-      ${d.aspectosGenerales.trim() ? `<p style="margin:0 0 10px 0;"><strong>Aspectos generales:</strong> ${mEsc(d.aspectosGenerales)}</p>` : ""}
-      ${d.desarrolloManiobra.trim() ? `<p style="margin:0 0 10px 0;"><strong>Desarrollo de la maniobra:</strong> ${mEsc(d.desarrolloManiobra)}</p>` : ""}
-      ${d.escenarioDesarrollo.trim() ? `<p style="margin:0 0 10px 0;"><strong>Escenario:</strong> ${mEsc(d.escenarioDesarrollo)}</p>` : ""}
 ${desImagenesHtml}${desVideosHtml}      <p style="margin:0 0 10px 0;"><strong>Explicaci&oacute;n secuencial de la maniobra:</strong></p>
 ${stepRows}
       <div style="background:#fff3cd;border-left:4px solid #ff8800;border-radius:0 3px 3px 0;padding:10px 14px;margin-top:14px;">
         <div style="font-weight:bold;color:#7a4f00;text-transform:uppercase;font-size:12px;margin-bottom:6px;">PRECAUCIONES</div>
         <p style="margin:0;">${mEsc(d.precauciones)}</p>
 ${recordadBlock}      </div>
-    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">8. Evaluaci&oacute;n de Riesgos de la Maniobra</div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;" cellpadding="0" cellspacing="0">
-        <thead>
-          <tr>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:22%;">Riesgo</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:28%;">Causa</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:center;font-weight:bold;border:1px solid #921a1a;width:12%;">Grado</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:38%;">Medida Preventiva</th>
-          </tr>
-        </thead>
-        <tbody>${riskRows}
-        </tbody>
-      </table>
     </div>
   </div>
 
@@ -240,6 +249,26 @@ ${recordadBlock}      </div>
     </div>
   </div>
 
+${evaluacionHtml}
+
+  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
+    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">8. Evaluaci&oacute;n de Riesgos de la Maniobra</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;" cellpadding="0" cellspacing="0">
+        <thead>
+          <tr>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:22%;">Riesgo</th>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:28%;">Causa</th>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:center;font-weight:bold;border:1px solid #921a1a;width:12%;">Grado</th>
+            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:38%;">Medida Preventiva</th>
+          </tr>
+        </thead>
+        <tbody>${riskRows}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <table style="width:100%;border-collapse:collapse;margin-top:20px;border-top:2px solid #B22222;font-size:11px;color:#666;" cellpadding="6" cellspacing="0">
     <tr>
       <td style="white-space:nowrap;vertical-align:top;width:1%;">Revisi&oacute;n ${mEsc(d.revision)}</td>
@@ -258,9 +287,10 @@ const TABS = [
   { label: "3 · Recursos",     short: "Rec."      },
   { label: "4 · Organización", short: "Org."      },
   { label: "5 · Desarrollo",   short: "Des."      },
-  { label: "6 · Riesgos",      short: "Rie."      }, // MOVIDO AQUÍ
-  { label: "7 · Plan SOS",     short: "SOS"       }, // MOVIDO AQUÍ
-  { label: "8 · Pie",          short: "Pie"       },
+  { label: "6 · Plan SOS",     short: "SOS"       },
+  { label: "7 · Evaluación",   short: "Ev."       }, // NUEVA TAB
+  { label: "8 · Riesgos",      short: "Rie."      },
+  { label: "9 · Pie",          short: "Pie"       },
   { label: "⚡ Generar",       short: "⚡"        },
 ];
 
@@ -329,7 +359,7 @@ function GeneradorManiobras() {
   const [preview, setPreview] = useState(false);
   const [inserted, setInserted] = useState(false);
 
-  const [d, setD] = useState({
+  const initialData = {
     titulo: "", subtitulo: "", itCodes: [""],
     descripcion: "", objetivo: "", destinatarios: "", escenario: "",
     escenarioImagenes: [],
@@ -339,15 +369,9 @@ function GeneradorManiobras() {
     recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     recursosVideos: [""],
     organizacion: "",
-    rolMandoTitulo: "JEFE DE TURNO",
-    rolesJT: [
-        "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
-        "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
-    ],
+    jt1: "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
+    jt2: "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS.",
     refDoc: "",
-    aspectosGenerales: "",
-    desarrolloManiobra: "",
-    escenarioDesarrollo: "",
     videos: [""],
     desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
     pasos: ["", "", "", "", "", ""],
@@ -369,10 +393,18 @@ function GeneradorManiobras() {
       ],
       cierre: "En ambos casos, el Parte de Accidente/Suceso (PAS) se realizará conforme a la normativa interna del CBCM."
     },
+    mostrarEvaluacion: false, // <-- NUEVO
+    evaluacion: { // <-- NUEVO
+      criticos: [""],
+      tecnicos: [""],
+      actitudinales: [""]
+    },
     cecop: "918 354 918",
     riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
     revision: today,
-  });
+  };
+
+  const [d, setD] = useState(initialData);
 
   const upd    = (k, v) => setD(p => ({ ...p, [k]: v }));
   const updArr = (k, i, v) => setD(p => { const a = [...p[k]]; a[i] = v; return { ...p, [k]: a }; });
@@ -386,6 +418,7 @@ function GeneradorManiobras() {
   const updImg = (key, i, field, val) => setD(p => {
     const a = [...p[key]]; a[i] = { ...a[i], [field]: val }; return { ...p, [key]: a };
   });
+
   const handleImgFile = (key, i, file) => {
     if (!file) return;
     const reader = new FileReader();
@@ -407,66 +440,24 @@ function GeneradorManiobras() {
   const addSosArr = (f, def = "") => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: [...p.planSOS[f], def] } }));
   const remSosArr = (f, i) => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: p.planSOS[f].filter((_, j) => j !== i) } }));
 
-  const generate = () => { setHtml(generateHTML(d)); setTab(8); setPreview(false); setInserted(false); };
+  // Handlers para Evaluación (NUEVO)
+  const updEvalArr = (f, i, v) => setD(p => {
+    const a = [...p.evaluacion[f]]; a[i] = v;
+    return { ...p, evaluacion: { ...p.evaluacion, [f]: a } };
+  });
+  const addEvalArr = (f) => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: [...p.evaluacion[f], ""] } }));
+  const remEvalArr = (f, i) => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: p.evaluacion[f].filter((_, j) => j !== i) } }));
+
+  const generate = () => { setHtml(generateHTML(d)); setTab(TABS.length - 1); setPreview(false); setInserted(false); };
 
   const resetAll = () => {
     if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
-    const t = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    setD({
-      titulo: "", subtitulo: "", itCodes: [""],
-      descripcion: "", objetivo: "", destinatarios: "", escenario: "",
-      escenarioImagenes: [],
-      epis: ["", "", ""],
-      materiales: ["", "", "", ""],
-      materialAdicional: [""],
-      recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
-      recursosVideos: [""],
-      organizacion: "",
-      rolMandoTitulo: "JEFE DE TURNO",
-      rolesJT: [
-        "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
-        "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
-      ],
-      refDoc: "",
-      aspectosGenerales: "",
-      desarrolloManiobra: "",
-      escenarioDesarrollo: "",
-      videos: [""],
-      desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
-      pasos: ["", "", "", "", "", ""],
-      precauciones: "", recordad: "",
-      planSOS: {
-        senal: "SEÑAL DE EMERGENCIA: 3 REPETICIONES DE LA PALABRA «EMERGENCIA»",
-        intro1: "En caso de accidente durante el desarrollo de la práctica, cualquier integrante podrá alertar con la señal indicada. A partir de ese momento, todo el personal paraliza su actuación con seguridad y sigue las instrucciones de los instructores.",
-        intro2: "Cuando haya personal disperso en el terreno, se dispondrá necesariamente de emisoras.",
-        leveTitulo: "Accidente Leve",
-        leveItems: [
-          "Primera atención básica con medios disponibles (botiquín, DESA, etc.).",
-          "Avisar al médico de alerta si afecta a personal del CBCM.",
-          "Si se necesitan recursos de guardia: aviso inmediato a CECOP (918 354 918)."
-        ],
-        graveTitulo: "Accidente Grave o Muy Grave",
-        graveItems: [
-          "Todo lo previsto para accidente leve.",
-          "Traslado de aviso al 112."
-        ],
-        cierre: "En ambos casos, el Parte de Accidente/Suceso (PAS) se realizará conforme a la normativa interna del CBCM."
-      },
-      cecop: "918 354 918",
-      riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
-      revision: t,
-    });
+    setD(initialData);
     setHtml(""); setTab(0); setPreview(false); setInserted(false); setCopied(false);
   };
 
   const copy = () => {
     navigator.clipboard.writeText(html).then(() => {
-      setCopied(true); setTimeout(() => setCopied(false), 2500);
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = html; ta.style.cssText = 'position:fixed;opacity:0;';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta);
       setCopied(true); setTimeout(() => setCopied(false), 2500);
     });
   };
@@ -475,17 +466,13 @@ function GeneradorManiobras() {
     if (typeof window.insertHTMLAtCursor === 'function') {
       window.insertHTMLAtCursor(html);
       setInserted(true);
-      setTimeout(() => {
-        if (typeof window.closeManiobrasModal === 'function') window.closeManiobrasModal();
-      }, 800);
+      setTimeout(() => { if (typeof window.closeManiobrasModal === 'function') window.closeManiobrasModal(); }, 800);
     }
   };
 
-  /* ── TAB PANELS ── */
   const spY = { display:"flex", flexDirection:"column", gap:"20px" };
 
   const panels = [
-
     /* 0 · Cabecera */
     <div style={spY} key="tab0">
       <SectionTitle>Cabecera del documento</SectionTitle>
@@ -515,608 +502,216 @@ function GeneradorManiobras() {
       <SectionTitle>Información General</SectionTitle>
       <Hint>Secciones 1 a 4 del documento generado.</Hint>
       <div><Label required>1 · Descripción</Label>
-        <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={10}
-          placeholder="Qué se monta, qué se verifica, aspectos técnicos clave..." /></div>
+        <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={10} placeholder="Qué se monta, qué se verifica..." /></div>
       <Divider />
-      <div><Label required>2 · Objetivo Pedag&oacute;gico</Label>
-        <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={10}
-          placeholder="ej: Comprobar ventajas e inconvenientes de un bombeo en serie desde un hidrante" /></div>
+      <div><Label required>2 · Objetivo Pedagógico</Label>
+        <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={5} placeholder="ej: Comprobar ventajas e inconvenientes..." /></div>
       <Divider />
       <div><Label required>3 · Destinatarios</Label>
-        <Txt value={d.destinatarios} onChange={v => upd("destinatarios", v)} rows={10}
-          placeholder="ej: Personal operativo de guardia" /></div>
+        <Txt value={d.destinatarios} onChange={v => upd("destinatarios", v)} rows={3} placeholder="ej: Personal operativo de guardia" /></div>
       <Divider />
       <div><Label required>4 · Escenario</Label>
-        <Txt value={d.escenario} onChange={v => upd("escenario", v)} rows={10}
-          placeholder="ej: La práctica se desarrollará en el hidrante de abastecimiento del parque" /></div>
-      <Divider />
-      <div>
-        <Label>Imágenes para el Escenario (Opcional)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {d.escenarioImagenes && d.escenarioImagenes.map((img, i) => (
-            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                <div style={{ display:"flex", gap:"4px" }}>
-                  {["url", "file"].map(mode => (
-                    <button type="button" key={mode} onClick={() => updImg("escenarioImagenes", i, "mode", mode)}
-                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
-                      {mode === "url" ? "URL" : "Archivo local"}
-                    </button>
-                  ))}
-                </div>
-                <RemBtn onClick={() => remImg("escenarioImagenes", i)} />
-              </div>
-              {img.mode === "url" ? (
-                <Inp value={img.url} onChange={v => updImg("escenarioImagenes", i, "url", v)} placeholder="https://ejemplo.com/imagen.jpg" />
-              ) : (
-                <div>
-                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
-                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
-                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
-                    <input type="file" accept="image/*" style={{ display:"none" }}
-                      onChange={e => handleImgFile("escenarioImagenes", i, e.target.files[0])} />
-                  </label>
-                  {img.src && (
-                    <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addImg("escenarioImagenes")} label="＋ Añadir imagen al escenario" />
-      </div>
+        <Txt value={d.escenario} onChange={v => upd("escenario", v)} rows={5} placeholder="ej: Hidrante de abastecimiento del parque" /></div>
     </div>,
 
     /* 2 · Recursos */
     <div style={spY} key="tab2">
       <SectionTitle>Recursos</SectionTitle>
-      <Hint>EPIs, materiales y recursos multimedia necesarios para la maniobra.</Hint>
       <div>
         <Label>EPI's</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.epis.map((e, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <span style={{ fontSize:"12px", color:"#9ca3af", width:"24px", textAlign:"right", marginRight:"8px" }}>{i + 1}.</span>
-              <div style={{ flex:"1" }}>
-                <Inp value={e} onChange={v => updArr("epis", i, v)}
-                  placeholder={["U1 completo + casco F1", "Botas de intervención con punta de acero", "Guantes de protección"][i] || "EPI..."} />
-              </div>
-              {d.epis.length > 1 && <RemBtn onClick={() => remArr("epis", i)} />}
-            </div>
-          ))}
-        </div>
+        {d.epis.map((e, i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", marginBottom:"8px" }}>
+            <Inp value={e} onChange={v => updArr("epis", i, v)} placeholder="EPI..." />
+            {d.epis.length > 1 && <RemBtn onClick={() => remArr("epis", i)} />}
+          </div>
+        ))}
         <AddBtn onClick={() => addArr("epis")} label="＋ Añadir EPI" />
       </div>
       <Divider />
       <div>
         <Label>Materiales y Herramientas</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.materiales.map((m, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <span style={{ fontSize:"12px", color:"#9ca3af", width:"24px", textAlign:"right", marginRight:"8px" }}>{i + 1}.</span>
-              <div style={{ flex:"1" }}>
-                <Inp value={m} onChange={v => updArr("materiales", i, v)}
-                  placeholder={["BRP o BFP", "Llave de hidrante / columna", "2 mangueras de 70Ø", "1 manguera de 45Ø"][i] || "Material..."} />
-              </div>
-              {d.materiales.length > 1 && <RemBtn onClick={() => remArr("materiales", i)} />}
-            </div>
-          ))}
-        </div>
+        {d.materiales.map((m, i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", marginBottom:"8px" }}>
+            <Inp value={m} onChange={v => updArr("materiales", i, v)} placeholder="Material..." />
+            {d.materiales.length > 1 && <RemBtn onClick={() => remArr("materiales", i)} />}
+          </div>
+        ))}
         <AddBtn onClick={() => addArr("materiales")} label="＋ Añadir material" />
-      </div>
-      <Divider />
-      <div>
-        <Label>Material Adicional (Opcional)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {(d.materialAdicional || []).map((m, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <span style={{ fontSize:"12px", color:"#9ca3af", width:"24px", textAlign:"right", marginRight:"8px" }}>{i + 1}.</span>
-              <div style={{ flex:"1" }}>
-                <Inp value={m} onChange={v => updArr("materialAdicional", i, v)}
-                  placeholder="Material adicional, herramientas específicas..." />
-              </div>
-              {(d.materialAdicional || []).length > 1 && <RemBtn onClick={() => remArr("materialAdicional", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("materialAdicional")} label="＋ Añadir material adicional" />
-      </div>
-
-      <Divider />
-             
-      <div>
-        <Label>Imágenes</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {d.recursosImagenes.map((img, i) => (
-            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                <div style={{ display:"flex", gap:"4px" }}>
-                  {["url", "file"].map(mode => (
-                    <button type="button" key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
-                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
-                      {mode === "url" ? "URL" : "Archivo local"}
-                    </button>
-                  ))}
-                </div>
-                {d.recursosImagenes.length > 1 && <RemBtn onClick={() => remImg("recursosImagenes", i)} />}
-              </div>
-              {img.mode === "url" ? (
-                <Inp value={img.url} onChange={v => updImg("recursosImagenes", i, "url", v)} placeholder="https://ejemplo.com/imagen.jpg" />
-              ) : (
-                <div>
-                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
-                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
-                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
-                    <input type="file" accept="image/*" style={{ display:"none" }}
-                      onChange={e => handleImgFile("recursosImagenes", i, e.target.files[0])} />
-                  </label>
-                  {img.src && (
-                    <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addImg("recursosImagenes")} label="＋ Añadir imagen" />
-      </div>
-      <Divider />
-      <div>
-        <Label>Vídeos (URLs - YouTube, Vimeo, mp4)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.recursosVideos.map((vid, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={vid} onChange={v => updArr("recursosVideos", i, v)} placeholder="https://youtube.com/..." />
-              </div>
-              {d.recursosVideos.length > 1 && <RemBtn onClick={() => remArr("recursosVideos", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("recursosVideos")} label="＋ Añadir vídeo" />
       </div>
     </div>,
 
     /* 3 · Organización */
     <div style={spY} key="tab3">
       <SectionTitle>Organización del Grupo</SectionTitle>
-      <Hint>Define la estructura y las funciones del personal durante la maniobra.</Hint>
       <div><Label required>Descripción general</Label>
-        <Txt value={d.organizacion} onChange={v => upd("organizacion", v)} rows={10}
-          placeholder="ej: Práctica para todos los componentes del turno operativo." /></div>
-      
-      <Divider />
-      
-      <div>
-        <Label>Título del Responsable</Label>
-        <div style={{ display:"flex", gap:"20px", marginBottom:"15px", background:"#fff", padding:"12px", borderRadius:"6px", border:"1.5px solid #e5e7eb" }}>
-          {["JEFE DE TURNO", "RESPONSABLE DE LA MANIOBRA"].map(opcion => (
-            <label key={opcion} style={{ display:"flex", alignItems:"center", fontSize:"13px", cursor:"pointer", fontWeight:"600", color:"#374151" }}>
-              <input
-                type="radio"
-                name="rolMandoTitulo"
-                value={opcion}
-                checked={d.rolMandoTitulo === opcion}
-                onChange={() => upd("rolMandoTitulo", opcion)}
-                style={{ marginRight:"8px", accentColor:"#B22222" }}
-              />
-              {opcion}
-            </label>
-          ))}
-        </div>
-        
-        <Label>Funciones del {d.rolMandoTitulo}</Label>
-        <Hint>Añade las responsabilidades específicas para el mando de la maniobra.</Hint>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {(d.rolesJT || []).map((rol, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
-              <div style={{ marginTop:"12px", flexShrink:"0", width:"22px", height:"22px",
-                borderRadius:"4px", background:"#f3f4f6", border:"1px solid #d1d5db", 
-                color:"#374151", fontSize:"11px", fontWeight:"bold", display:"flex",
-                alignItems:"center", justifyContent:"center" }}>
-                {i + 1}
-              </div>
-              <div style={{ flex:"1" }}>
-                <Txt value={rol} onChange={v => updArr("rolesJT", i, v)} rows={3} 
-                  placeholder={`Describa la función del ${d.rolMandoTitulo}...`} />
-              </div>
-              {d.rolesJT.length > 1 && <RemBtn onClick={() => remArr("rolesJT", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("rolesJT", "")} label={`＋ Añadir función al ${d.rolMandoTitulo}`} />
+        <Txt value={d.organizacion} onChange={v => upd("organizacion", v)} rows={5} /></div>
+      <div style={{ background:"#f3f4f6", padding:"12px", borderRadius:"6px" }}>
+        <Label>Rol del Jefe de Turno</Label>
+        <Txt value={d.jt1} onChange={v => upd("jt1", v)} rows={2} style={{marginBottom:"8px"}} />
+        <Txt value={d.jt2} onChange={v => upd("jt2", v)} rows={3} />
       </div>
     </div>,
 
     /* 4 · Desarrollo */
     <div style={spY} key="tab4">
       <SectionTitle>Desarrollo Explicativo</SectionTitle>
-      <Hint>Referencia, bloques de contexto, multimedia, pasos secuenciales y precauciones.</Hint>
-      <div><Label>Documentación de referencia</Label>
-        <Inp value={d.refDoc} onChange={v => upd("refDoc", v)}
-          placeholder="ej: 2023 Reciclaje Hidráulica y Abastecimientos" /></div>
-      
-      <div><Label>Aspectos generales</Label>
-        <Txt value={d.aspectosGenerales} onChange={v => upd("aspectosGenerales", v)} rows={4}
-          placeholder="Descripción de los aspectos generales clave..." /></div>
-      
-      <div><Label>Desarrollo de la maniobra</Label>
-        <Txt value={d.desarrolloManiobra} onChange={v => upd("desarrolloManiobra", v)} rows={4}
-          placeholder="Explicación detallada del desarrollo..." /></div>
-
-      <div><Label>Escenario</Label>
-        <Txt value={d.escenarioDesarrollo} onChange={v => upd("escenarioDesarrollo", v)} rows={4}
-          placeholder="Detalles específicos sobre el escenario de trabajo..." /></div>
-      
-      <Divider />
-      <div>
-        <Label>Imágenes del desarrollo</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {d.desarrolloImagenes.map((img, i) => (
-            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                <div style={{ display:"flex", gap:"4px" }}>
-                  {["url", "file"].map(mode => (
-                    <button type="button" key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
-                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
-                      {mode === "url" ? "URL" : "Archivo local"}
-                    </button>
-                  ))}
-                </div>
-                {d.desarrolloImagenes.length > 1 && <RemBtn onClick={() => remImg("desarrolloImagenes", i)} />}
-              </div>
-              {img.mode === "url" ? (
-                <Inp value={img.url} onChange={v => updImg("desarrolloImagenes", i, "url", v)} placeholder="https://ejemplo.com/esquema.jpg" />
-              ) : (
-                <div>
-                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
-                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
-                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
-                    <input type="file" accept="image/*" style={{ display:"none" }}
-                      onChange={e => handleImgFile("desarrolloImagenes", i, e.target.files[0])} />
-                  </label>
-                  {img.src && (
-                    <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addImg("desarrolloImagenes")} label="＋ Añadir imagen" />
-      </div>
-
-      <Divider />
-      <div>
-        <Label>Vídeos del desarrollo (URLs)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.videos.map((vid, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={vid} onChange={v => updArr("videos", i, v)} placeholder="https://youtube.com/..." />
-              </div>
-              {d.videos.length > 1 && <RemBtn onClick={() => remArr("videos", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("videos")} label="＋ Añadir vídeo" />
-      </div>
-
+      <div><Label>Referencia</Label><Inp value={d.refDoc} onChange={v => upd("refDoc", v)} /></div>
       <Divider />
       <div>
         <Label required>Pasos secuenciales</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.pasos.map((p, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
-              <div style={{ marginTop:"8px", flexShrink:"0", width:"28px", height:"28px",
-                borderRadius:"50%", background:"#B22222", color:"#fff",
-                fontSize:"12px", fontWeight:"bold", display:"flex",
-                alignItems:"center", justifyContent:"center" }}>
-                {i + 1}
-              </div>
-              <div style={{ flex:"1" }}>
-                <Txt value={p} onChange={v => updArr("pasos", i, v)} rows={2} placeholder={`Paso ${i + 1}...`} />
-              </div>
-              {d.pasos.length > 1 && <RemBtn onClick={() => remArr("pasos", i)} />}
-            </div>
-          ))}
-        </div>
+        {d.pasos.map((p, i) => (
+          <div key={i} style={{ display:"flex", gap:"8px", marginBottom:"8px" }}>
+            <div style={{ background:"#B22222", color:"#fff", minWidth:"28px", height:"28px", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:"bold" }}>{i+1}</div>
+            <Txt value={p} onChange={v => updArr("pasos", i, v)} rows={2} />
+            {d.pasos.length > 1 && <RemBtn onClick={() => remArr("pasos", i)} />}
+          </div>
+        ))}
         <AddBtn onClick={() => addArr("pasos")} label="＋ Añadir paso" />
       </div>
       <Divider />
-      <div><Label required>Precauciones</Label>
-        <Txt value={d.precauciones} onChange={v => upd("precauciones", v)} rows={3}
-          placeholder="ej: Para evitar la cavitación, si la presión baja de 0 bares, reducir la demanda inmediatamente..." /></div>
-      <div><Label>«Recordad» — nota de cierre (opcional)</Label>
-        <Txt value={d.recordad} onChange={v => upd("recordad", v)} rows={2}
-          placeholder="ej: No podemos demandar más prestaciones al sistema de las que puede proporcionar..." /></div>
+      <div><Label required>Precauciones</Label><Txt value={d.precauciones} onChange={v => upd("precauciones", v)} /></div>
     </div>,
 
-    /* 5 · Riesgos (MOVIDO ANTES DEL PLAN SOS) */
+    /* 5 · Plan SOS */
     <div style={spY} key="tab5">
-      <SectionTitle>Evaluación de Riesgos</SectionTitle>
-      <Hint>Añade una fila por cada riesgo identificado.</Hint>
-      {d.riesgos.map((r, i) => (
-        <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"8px",
-          padding:"16px", background:"#fff" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"12px" }}>
-            <span style={{ fontSize:"11px", fontWeight:"700", color:"#9ca3af",
-              textTransform:"uppercase", letterSpacing:"0.08em" }}>Riesgo {i + 1}</span>
-            {d.riesgos.length > 1 && (
-              <button type="button" onClick={() => remArr("riesgos", i)}
-                style={{ fontSize:"12px", color:"#f87171", background:"none", border:"none",
-                  fontWeight:"600", cursor:"pointer" }}>Eliminar</button>
-            )}
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
-            <div><Label>Tipo de riesgo</Label>
-              <Inp value={r.riesgo} onChange={v => updRisk(i, "riesgo", v)}
-                placeholder="ej: Caída de personas al mismo nivel" /></div>
-            <div><Label>Causa</Label>
-              <Txt value={r.causa} onChange={v => updRisk(i, "causa", v)} rows={2}
-                placeholder="ej: Mangueras en carga que pueden conllevar tropiezos" /></div>
-            <div style={{ display:"flex", alignItems:"flex-end", gap:"12px" }}>
-              <div style={{ flex:"1" }}><Label>Grado de riesgo</Label>
-                <select value={r.grado} onChange={e => updRisk(i, "grado", e.target.value)}
-                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:"6px",
-                    background:"#fff", padding:"7px 10px", fontSize:"13px",
-                    fontFamily:"inherit", outline:"none" }}>
-                  <option>Notable</option>
-                  <option>Moderado</option>
-                  <option>Aceptable</option>
-                </select>
-              </div>
-              <div style={{ paddingBottom:"4px" }}>
-                <span style={{
-                  fontSize:"12px", fontWeight:"700", padding:"4px 12px",
-                  borderRadius:"50px",
-                  background: r.grado === "Notable" ? "#ffedd5" : r.grado === "Moderado" ? "#fef9c3" : "#dcfce7",
-                  color:      r.grado === "Notable" ? "#9a3412" : r.grado === "Moderado" ? "#713f12" : "#14532d",
-                }}>
-                  {r.grado}
-                </span>
-              </div>
-            </div>
-            <div><Label>Medida preventiva</Label>
-              <Txt value={r.medida} onChange={v => updRisk(i, "medida", v)} rows={2}
-                placeholder="ej: El JD comunica que la instalación ha entrado en carga." /></div>
-          </div>
-        </div>
-      ))}
-      <AddBtn
-        onClick={() => addArr("riesgos", { riesgo: "", causa: "", grado: "Notable", medida: "" })}
-        label="＋ Añadir riesgo" />
-    </div>,
-
-    /* 6 · Plan SOS (MOVIDO DESPUÉS DE RIESGOS) */
-    <div style={spY} key="tab6">
       <SectionTitle>Plan SOS</SectionTitle>
-      <Hint>Edición completa de los parámetros del Plan SOS del anexo.</Hint>
-      <div><Label required>Señal de Emergencia</Label>
-        <Inp value={d.planSOS.senal} onChange={v => updSos("senal", v)} /></div>
-      
-      <div><Label required>Párrafos introductorios</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          <Txt value={d.planSOS.intro1} onChange={v => updSos("intro1", v)} rows={3} />
-          <Txt value={d.planSOS.intro2} onChange={v => updSos("intro2", v)} rows={2} />
-        </div>
-      </div>
-
+      <div><Label required>Señal de Emergencia</Label><Inp value={d.planSOS.senal} onChange={v => updSos("senal", v)} /></div>
       <Divider />
-      <div>
-        <Label>Sección: Accidente Leve (Título)</Label>
-        <Inp value={d.planSOS.leveTitulo} onChange={v => updSos("leveTitulo", v)} />
-        <Label style={{marginTop:"8px"}}>Pasos Accidente Leve</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.planSOS.leveItems.map((item, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={item} onChange={v => updSosArr("leveItems", i, v)} />
-              </div>
-              {d.planSOS.leveItems.length > 1 && <RemBtn onClick={() => remSosArr("leveItems", i)} />}
-            </div>
-          ))}
-        </div>
+      <div><Label>Paso Leve</Label>
+        {d.planSOS.leveItems.map((item, i) => (
+          <div key={i} style={{ display:"flex", marginBottom:"8px" }}>
+            <Inp value={item} onChange={v => updSosArr("leveItems", i, v)} />
+            {d.planSOS.leveItems.length > 1 && <RemBtn onClick={() => remSosArr("leveItems", i)} />}
+          </div>
+        ))}
         <AddBtn onClick={() => addSosArr("leveItems")} label="＋ Añadir paso leve" />
       </div>
-
-      <Divider />
-      <div>
-        <Label>Sección: Accidente Grave (Título)</Label>
-        <Inp value={d.planSOS.graveTitulo} onChange={v => updSos("graveTitulo", v)} />
-        <Label style={{marginTop:"8px"}}>Pasos Accidente Grave</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.planSOS.graveItems.map((item, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={item} onChange={v => updSosArr("graveItems", i, v)} />
-              </div>
-              {d.planSOS.graveItems.length > 1 && <RemBtn onClick={() => remSosArr("graveItems", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addSosArr("graveItems")} label="＋ Añadir paso grave" />
-      </div>
-
-      <Divider />
-      <div><Label required>Cierre del Plan SOS</Label>
-        <Txt value={d.planSOS.cierre} onChange={v => updSos("cierre", v)} rows={2} /></div>
     </div>,
 
-    /* 7 · Pie */
-    <div style={spY} key="tab7">
-      <SectionTitle>Pie de Página</SectionTitle>
-      <Hint>Fecha de revisión y teléfono CECOP para referencias directas.</Hint>
-      <div>
-        <Label required>Fecha de revisión</Label>
-        <Inp value={d.revision} onChange={v => upd("revision", v)} placeholder="ej: 20260322" />
-        <p style={{ fontSize:"12px", color:"#9ca3af", marginTop:"4px" }}>Formato AAAAMMDD — ej: 20260322 = 22 de marzo de 2026</p>
+    /* 6 · Criterios de Evaluación (NUEVO) */
+    <div style={spY} key="tab6">
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <SectionTitle>Criterios de Evaluación</SectionTitle>
+        <button 
+          onClick={() => upd("mostrarEvaluacion", !d.mostrarEvaluacion)}
+          style={{ 
+            padding: "6px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: "bold",
+            cursor: "pointer", border: "1px solid",
+            background: d.mostrarEvaluacion ? "#16a34a" : "#fff",
+            color: d.mostrarEvaluacion ? "#fff" : "#6b7280",
+            borderColor: d.mostrarEvaluacion ? "#16a34a" : "#d1d5db"
+          }}>
+          {d.mostrarEvaluacion ? "✓ ACTIVADO" : "○ DESACTIVADO"}
+        </button>
       </div>
-      <div>
-        <Label>Teléfono CECOP</Label>
-        <Inp value={d.cecop} onChange={v => upd("cecop", v)} placeholder="918 354 918" />
-      </div>
-    </div>,
+      <Hint>Define los ítems que se evaluarán durante la práctica. Puedes ocultar este bloque del HTML final con el botón superior.</Hint>
 
-    /* 8 · Generar */
-    <div style={spY} key="tab8">
-      <SectionTitle>HTML generado para Moodle</SectionTitle>
-      <Hint>Insértalo directamente en el editor, o copia el código y pégalo en el editor HTML de Moodle.</Hint>
-      {!html ? (
-        <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:"6px",
-          padding:"20px", fontSize:"13px", color:"#92400e", textAlign:"center" }}>
-          <div style={{ fontSize:"24px", marginBottom:"8px" }}>⚡</div>
-          Pulsa el botón <strong>⚡ Generar HTML</strong> de la barra inferior para crear el documento.
-        </div>
-      ) : (
-        <div style={spY}>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
-            <button type="button" onClick={insertInEditor}
-              style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
-                fontWeight:"700", border:"none", cursor:"pointer",
-                background: inserted ? "#16a34a" : "#B22222",
-                color:"#fff", transition:"background 0.2s" }}>
-              {inserted ? "✓ ¡Insertado en el editor!" : "⬆️ Insertar en el editor"}
-            </button>
-            <button type="button" onClick={copy}
-              style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
-                fontWeight:"700", border:"none", cursor:"pointer",
-                background: copied ? "#16a34a" : "#374151",
-                color:"#fff", transition:"background 0.2s" }}>
-              {copied ? "✓ ¡Copiado!" : "📋 Copiar al portapapeles"}
-            </button>
-            <button type="button" onClick={() => setPreview(p => !p)}
-              style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
-                fontWeight:"600", border:"1.5px solid #e5e7eb", cursor:"pointer",
-                background:"#fff", color:"#374151" }}>
-              {preview ? "Ocultar previsualización" : "👁️ Ver previsualización"}
-            </button>
-          </div>
-
-          <textarea readOnly value={html} rows={14}
-            style={{ width:"100%", border:"1px solid #374151", borderRadius:"6px",
-              background:"#111827", color:"#86efac", fontSize:"12px",
-              fontFamily:"monospace", padding:"12px 14px", outline:"none",
-              resize:"vertical", boxSizing:"border-box" }} />
-
-          {preview && (
-            <div>
-              <div style={{ fontSize:"11px", fontWeight:"700", color:"#9ca3af",
-                textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"8px" }}>
-                Previsualización
-              </div>
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden" }}>
-                <iframe
-                  srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="padding:16px;margin:0;">${html}</body></html>`}
-                  style={{ width:"100%", height:"600px", border:"none" }}
-                  title="Previsualización del documento"
-                />
-              </div>
-            </div>
-          )}
+      {!d.mostrarEvaluacion && (
+        <div style={{ background:"#fef2f2", color:"#991b1b", padding:"12px", borderRadius:"6px", fontSize:"13px", border:"1px solid #fee2e2" }}>
+          Esta sección está actualmente <strong>desactivada</strong>. No aparecerá en el código HTML generado.
         </div>
       )}
+
+      <div style={{ opacity: d.mostrarEvaluacion ? 1 : 0.4, pointerEvents: d.mostrarEvaluacion ? "auto" : "none", transition: "opacity 0.2s" }}>
+        <div style={{ background: "#fff5f5", padding: "16px", borderRadius: "8px", border: "1px solid #feb2b2" }}>
+          <Label>Bloque 1 - Ítems Críticos (Obligatorios)</Label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {d.evaluacion.criticos.map((item, i) => (
+              <div key={i} style={{ display: "flex" }}>
+                <Inp value={item} onChange={v => updEvalArr("criticos", i, v)} placeholder="Ítem crítico..." />
+                {d.evaluacion.criticos.length > 1 && <RemBtn onClick={() => remEvalArr("criticos", i)} />}
+              </div>
+            ))}
+          </div>
+          <AddBtn onClick={() => addEvalArr("criticos")} label="＋ Añadir ítem crítico" />
+        </div>
+
+        <Divider />
+
+        <div style={{ background: "#f0fff4", padding: "16px", borderRadius: "8px", border: "1px solid #9ae6b4" }}>
+          <Label>Bloque 2 - Ítems Técnicos (Puntuables)</Label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {d.evaluacion.tecnicos.map((item, i) => (
+              <div key={i} style={{ display: "flex" }}>
+                <Inp value={item} onChange={v => updEvalArr("tecnicos", i, v)} placeholder="Ítem técnico..." />
+                {d.evaluacion.tecnicos.length > 1 && <RemBtn onClick={() => remEvalArr("tecnicos", i)} />}
+              </div>
+            ))}
+          </div>
+          <AddBtn onClick={() => addEvalArr("tecnicos")} label="＋ Añadir ítem técnico" />
+        </div>
+
+        <Divider />
+
+        <div style={{ background: "#fffaf0", padding: "16px", borderRadius: "8px", border: "1px solid #fbd38d" }}>
+          <Label>Bloque 3 - Actitudinales (Restan)</Label>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {d.evaluacion.actitudinales.map((item, i) => (
+              <div key={i} style={{ display: "flex" }}>
+                <Inp value={item} onChange={v => updEvalArr("actitudinales", i, v)} placeholder="Ítem actitudinal..." />
+                {d.evaluacion.actitudinales.length > 1 && <RemBtn onClick={() => remEvalArr("actitudinales", i)} />}
+              </div>
+            ))}
+          </div>
+          <AddBtn onClick={() => addEvalArr("actitudinales")} label="＋ Añadir ítem actitudinal" />
+        </div>
+      </div>
     </div>,
+
+    /* 7 · Riesgos */
+    <div style={spY} key="tab7">
+      <SectionTitle>Evaluación de Riesgos</SectionTitle>
+      {d.riesgos.map((r, i) => (
+        <div key={i} style={{ border:"1px solid #e5e7eb", padding:"12px", borderRadius:"6px", marginBottom:"10px" }}>
+          <Label>Riesgo {i+1}</Label>
+          <Inp value={r.riesgo} onChange={v => updRisk(i, "riesgo", v)} placeholder="Riesgo..." />
+          <AddBtn onClick={() => addArr("riesgos", { riesgo: "", causa: "", grado: "Notable", medida: "" })} label="＋ Añadir riesgo" />
+        </div>
+      ))}
+    </div>,
+
+    /* 8 · Pie */
+    <div style={spY} key="tab8">
+      <SectionTitle>Pie de Página</SectionTitle>
+      <Label>Fecha Revisión</Label><Inp value={d.revision} onChange={v => upd("revision", v)} />
+    </div>,
+
+    /* 9 · Generar */
+    <div style={spY} key="tab9">
+      <SectionTitle>HTML generado para Moodle</SectionTitle>
+      {html && (
+        <div style={spY}>
+          <div style={{ display:"flex", gap:"8px" }}>
+            <button onClick={insertInEditor} style={{ flex:"1", padding:"10px", background:"#B22222", color:"#fff", border:"none", borderRadius:"6px", fontWeight:"bold", cursor:"pointer" }}>Insertar en el editor</button>
+            <button onClick={copy} style={{ flex:"1", padding:"10px", background:"#374151", color:"#fff", border:"none", borderRadius:"6px", fontWeight:"bold", cursor:"pointer" }}>Copiar Código</button>
+          </div>
+          <textarea readOnly value={html} rows={12} style={{ width:"100%", background:"#111827", color:"#86efac", fontFamily:"monospace", padding:"12px", borderRadius:"6px" }} />
+          {preview && <div style={{ border:"1px solid #ddd", borderRadius:"6px", marginTop:"10px", padding:"10px" }} dangerouslySetInnerHTML={{ __html: html }} />}
+        </div>
+      )}
+    </div>
   ];
 
   return (
-    <div style={{ height:"100%", display:"flex", flexDirection:"column",
-      fontFamily:"system-ui, -apple-system, sans-serif", background:"#f9fafb" }}>
-
-      <div style={{ height:"3px", background:"#7f1d1d", flexShrink:"0" }}>
-        <div style={{ height:"100%", background:"#fca5a5",
-          width:`${((tab + 1) / TABS.length) * 100}%`, transition:"width 0.3s" }} />
+    <div style={{ height:"100%", display:"flex", flexDirection:"column", background:"#f9fafb" }}>
+      <div style={{ height:"3px", background:"#7f1d1d" }}><div style={{ height:"100%", background:"#fca5a5", width:`${((tab + 1) / TABS.length) * 100}%` }} /></div>
+      <div style={{ background:"#fff", borderBottom:"1px solid #e5e7eb", display:"flex", overflowX:"auto" }}>
+        {TABS.map((t, i) => (
+          <button key={i} onClick={() => setTab(i)} style={{ padding:"12px", fontSize:"12px", fontWeight:"600", border:"none", borderBottom: tab === i ? "2px solid #B22222" : "2px solid transparent", color: tab === i ? "#B22222" : "#9ca3af", background:"none", cursor:"pointer", whiteSpace:"nowrap" }}>{t.label}</button>
+        ))}
       </div>
-
-      <div style={{ background:"#fff", borderBottom:"1px solid #e5e7eb",
-        flexShrink:"0", overflowX:"auto" }}>
-        <div style={{ display:"flex", minWidth:"max-content" }}>
-          {TABS.map((t, i) => (
-            <button type="button" key={i} onClick={() => setTab(i)}
-              style={{ padding:"10px 12px", fontSize:"12px", fontWeight:"600",
-                whiteSpace:"nowrap", border:"none", borderBottom:"2px solid",
-                cursor:"pointer", transition:"all 0.15s", background:"transparent",
-                borderBottomColor: tab === i ? "#B22222" : "transparent",
-                color: tab === i ? "#B22222" : "#9ca3af" }}>
-              <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
+      <div style={{ flex:"1", overflowY:"auto", padding:"20px" }}><div style={{ maxWidth:"800px", margin:"0 auto" }}>{panels[tab]}</div></div>
+      <div style={{ background:"#fff", borderTop:"1px solid #e5e7eb", padding:"12px 20px", display:"flex", justifyContent:"space-between", gap:"10px" }}>
+        <button onClick={() => setTab(Math.max(0, tab-1))} style={{ padding:"8px 16px", borderRadius:"6px", border:"1px solid #ddd" }}>← Anterior</button>
+        <button onClick={generate} style={{ flex:"1", background:"#B22222", color:"#fff", border:"none", borderRadius:"6px", fontWeight:"bold" }}>⚡ GENERAR HTML</button>
+        <button onClick={() => setTab(Math.min(TABS.length-1, tab+1))} style={{ padding:"8px 16px", borderRadius:"6px", border:"1px solid #ddd" }}>Siguiente →</button>
       </div>
-
-      <div style={{ flex:"1", overflowY:"auto", paddingBottom:"70px" }}>
-        <div style={{ maxWidth:"1000px", margin:"0 auto", padding:"20px 16px" }}>
-          {panels[tab]}
-        </div>
-      </div>
-
-      <div style={{ position:"sticky", bottom:"0", background:"#fff",
-        borderTop:"1px solid #e5e7eb", padding:"10px 16px", zIndex:"10" }}>
-        <div style={{ maxWidth:"1000px", margin:"0 auto",
-          display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px" }}>
-          <button type="button" onClick={() => setTab(t => Math.max(0, t - 1))} disabled={tab === 0}
-            style={{ padding:"8px 16px", fontSize:"13px", border:"1.5px solid #e5e7eb",
-              borderRadius:"6px", background:"#fff", color: tab === 0 ? "#d1d5db" : "#6b7280",
-              cursor: tab === 0 ? "not-allowed" : "pointer", whiteSpace:"nowrap" }}>
-            ← Anterior
-          </button>
-          <button type="button" onClick={generate}
-            style={{ flex:"1", maxWidth:"240px", padding:"10px", background:"#B22222",
-              color:"#fff", fontSize:"13px", fontWeight:"700", border:"none",
-              borderRadius:"6px", cursor:"pointer" }}>
-            ⚡ Generar HTML
-          </button>
-          <button type="button" onClick={() => setTab(t => Math.min(TABS.length - 1, t + 1))}
-            disabled={tab === TABS.length - 1}
-            style={{ padding:"8px 16px", fontSize:"13px", border:"1.5px solid #e5e7eb",
-              borderRadius:"6px", background:"#fff",
-              color: tab === TABS.length - 1 ? "#d1d5db" : "#6b7280",
-              cursor: tab === TABS.length - 1 ? "not-allowed" : "pointer", whiteSpace:"nowrap" }}>
-            Siguiente →
-          </button>
-          <button type="button" onClick={resetAll}
-            style={{ padding:"8px 14px", fontSize:"12px", fontWeight:"700", border:"1.5px solid #fca5a5",
-              borderRadius:"6px", background:"#fff", color:"#B22222", cursor:"pointer", whiteSpace:"nowrap" }}>
-            🗑 Borrar todo
-          </button>
-        </div>
-      </div>
-
     </div>
   );
 }
 
 /* ─── MOUNT ─────────────────────────────────────────────────── */
 (function mountGenerador() {
-  function init() {
-    const el = document.getElementById('maniobras-root');
-    if (!el) return;
-    const root = ReactDOM.createRoot(el);
-    root.render(<GeneradorManiobras />);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  const el = document.getElementById('maniobras-root');
+  if (el) ReactDOM.createRoot(el).render(<GeneradorManiobras />);
 })();
