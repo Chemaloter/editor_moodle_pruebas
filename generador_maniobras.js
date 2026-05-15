@@ -121,6 +121,46 @@ function generateHTML(d) {
     itCodeHtml = `\n      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
   }
 
+  /* HTML Criterios de Evaluación */
+  let evaluacionHtml = "";
+  if (d.evaluacion.mostrar) {
+    const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+
+    evaluacionHtml = `
+  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
+    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">Anexo &mdash; Criterios de Evaluaci&oacute;n</div>
+    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
+      <p style="margin:0 0 12px 0;">Durante las maniobras se realizar&aacute;n unas r&uacute;bricas de evaluaci&oacute;n divididas en tres bloques diferenciados:</p>
+      
+      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
+        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 1 - CR&Iacute;TICOS</div>
+        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Ser&aacute; necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.</p>
+        <ul style="margin:0;padding-left:20px;">
+          ${criticosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
+        </ul>
+      </div>
+
+      <div style="background:#e8f5e9;border:1px solid #c8e6c9;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
+        <div style="font-weight:bold;color:#1b5e20;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 2 - T&Eacute;CNICOS</div>
+        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems son los que nos permitir&aacute;n alcanzar el 10 (los 5 puntos restantes).</p>
+        <ul style="margin:0;padding-left:20px;">
+          ${tecnicosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
+        </ul>
+      </div>
+
+      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;">
+        <div style="font-weight:bold;color:#f57f17;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 3 - ACTITUDINALES</div>
+        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems no suman, pero s&iacute; que restan.</p>
+        <ul style="margin:0;padding-left:20px;">
+          ${actitudinalesItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
+        </ul>
+      </div>
+    </div>
+  </div>`;
+  }
+
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;max-width:860px;margin:0 auto;box-sizing:border-box;">
 
   <table style="width:100%;border-collapse:collapse;overflow:hidden;background-color:#B22222;color:#ffffff;" cellpadding="0" cellspacing="0">
@@ -239,7 +279,7 @@ ${recordadBlock}      </div>
       <p style="margin:0;font-size:12px;">${mEsc(d.planSOS.cierre)}</p>
     </div>
   </div>
-
+${evaluacionHtml}
   <table style="width:100%;border-collapse:collapse;margin-top:20px;border-top:2px solid #B22222;font-size:11px;color:#666;" cellpadding="6" cellspacing="0">
     <tr>
       <td style="white-space:nowrap;vertical-align:top;width:1%;">Revisi&oacute;n ${mEsc(d.revision)}</td>
@@ -258,9 +298,10 @@ const TABS = [
   { label: "3 · Recursos",     short: "Rec."      },
   { label: "4 · Organización", short: "Org."      },
   { label: "5 · Desarrollo",   short: "Des."      },
-  { label: "6 · Riesgos",      short: "Rie."      }, // MOVIDO AQUÍ
-  { label: "7 · Plan SOS",     short: "SOS"       }, // MOVIDO AQUÍ
-  { label: "8 · Pie",          short: "Pie"       },
+  { label: "6 · Riesgos",      short: "Rie."      },
+  { label: "7 · Plan SOS",     short: "SOS"       },
+  { label: "8 · Evaluación",   short: "Eva."      },
+  { label: "9 · Pie",          short: "Pie"       },
   { label: "⚡ Generar",       short: "⚡"        },
 ];
 
@@ -270,9 +311,9 @@ const SectionTitle = ({ children }) => (
 const Hint = ({ children }) => (
   <p style={{ fontSize:"12px", color:"#9ca3af", marginBottom:"20px", marginTop:"0" }}>{children}</p>
 );
-const Label = ({ children, required }) => (
+const Label = ({ children, required, style }) => (
   <label style={{ display:"block", fontSize:"11px", fontWeight:"700", color:"#6b7280",
-    textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:"4px" }}>
+    textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:"4px", ...style }}>
     {children}{required && <span style={{ color:"#ef4444", marginLeft:"2px" }}>*</span>}
   </label>
 );
@@ -369,6 +410,12 @@ function GeneradorManiobras() {
       ],
       cierre: "En ambos casos, el Parte de Accidente/Suceso (PAS) se realizará conforme a la normativa interna del CBCM."
     },
+    evaluacion: {
+      mostrar: false,
+      criticos: [""],
+      tecnicos: [""],
+      actitudinales: [""]
+    },
     cecop: "918 354 918",
     riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
     revision: today,
@@ -407,7 +454,16 @@ function GeneradorManiobras() {
   const addSosArr = (f, def = "") => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: [...p.planSOS[f], def] } }));
   const remSosArr = (f, i) => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: p.planSOS[f].filter((_, j) => j !== i) } }));
 
-  const generate = () => { setHtml(generateHTML(d)); setTab(8); setPreview(false); setInserted(false); };
+  /* Helpers Criterios Evaluación */
+  const updEval = (f, v) => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: v } }));
+  const updEvalArr = (f, i, v) => setD(p => {
+    const a = [...p.evaluacion[f]]; a[i] = v; 
+    return { ...p, evaluacion: { ...p.evaluacion, [f]: a } };
+  });
+  const addEvalArr = (f, def = "") => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: [...p.evaluacion[f], def] } }));
+  const remEvalArr = (f, i) => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: p.evaluacion[f].filter((_, j) => j !== i) } }));
+
+  const generate = () => { setHtml(generateHTML(d)); setTab(9); setPreview(false); setInserted(false); };
 
   const resetAll = () => {
     if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
@@ -451,6 +507,12 @@ function GeneradorManiobras() {
           "Traslado de aviso al 112."
         ],
         cierre: "En ambos casos, el Parte de Accidente/Suceso (PAS) se realizará conforme a la normativa interna del CBCM."
+      },
+      evaluacion: {
+        mostrar: false,
+        criticos: [""],
+        tecnicos: [""],
+        actitudinales: [""]
       },
       cecop: "918 354 918",
       riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
@@ -851,7 +913,7 @@ function GeneradorManiobras() {
           placeholder="ej: No podemos demandar más prestaciones al sistema de las que puede proporcionar..." /></div>
     </div>,
 
-    /* 5 · Riesgos (MOVIDO ANTES DEL PLAN SOS) */
+    /* 5 · Riesgos */
     <div style={spY} key="tab5">
       <SectionTitle>Evaluación de Riesgos</SectionTitle>
       <Hint>Añade una fila por cada riesgo identificado.</Hint>
@@ -907,7 +969,7 @@ function GeneradorManiobras() {
         label="＋ Añadir riesgo" />
     </div>,
 
-    /* 6 · Plan SOS (MOVIDO DESPUÉS DE RIESGOS) */
+    /* 6 · Plan SOS */
     <div style={spY} key="tab6">
       <SectionTitle>Plan SOS</SectionTitle>
       <Hint>Edición completa de los parámetros del Plan SOS del anexo.</Hint>
@@ -962,8 +1024,90 @@ function GeneradorManiobras() {
         <Txt value={d.planSOS.cierre} onChange={v => updSos("cierre", v)} rows={2} /></div>
     </div>,
 
-    /* 7 · Pie */
+    /* 7 · Evaluación (NUEVO) */
     <div style={spY} key="tab7">
+      <SectionTitle>Criterios de Evaluación</SectionTitle>
+      <Hint>Rúbricas de evaluación divididas por criticidad (opcional).</Hint>
+
+      <div style={{ display:"flex", alignItems:"center", gap:"8px", background:"#fff", padding:"12px", borderRadius:"6px", border:"1.5px solid #e5e7eb" }}>
+        <input 
+          type="checkbox" 
+          id="eval_mostrar" 
+          checked={d.evaluacion.mostrar} 
+          onChange={e => updEval("mostrar", e.target.checked)} 
+          style={{ accentColor: "#B22222", width:"16px", height:"16px", cursor:"pointer" }} 
+        />
+        <label htmlFor="eval_mostrar" style={{ fontSize:"13px", fontWeight:"600", color:"#374151", cursor:"pointer", userSelect:"none" }}>
+          Incluir bloque de Criterios de Evaluación en el documento
+        </label>
+      </div>
+
+      {d.evaluacion.mostrar && (
+        <div style={{ display:"flex", flexDirection:"column", gap:"20px", marginTop:"8px" }}>
+          
+          {/* BLOQUE 1 - CRÍTICOS */}
+          <div style={{ border:"1px solid #f0c0c0", borderRadius:"6px", padding:"16px", background:"#fff3f3" }}>
+            <Label style={{color:"#8b0000", fontSize:"12px"}}>BLOQUE 1 - CRÍTICOS</Label>
+            <p style={{fontSize:"11px", color:"#666", marginBottom:"12px", marginTop:"0"}}>
+              Es necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.
+            </p>
+            <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+              {d.evaluacion.criticos.map((item, i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center" }}>
+                  <div style={{ flex:"1" }}>
+                    <Inp value={item} onChange={v => updEvalArr("criticos", i, v)} placeholder="Ítem crítico..." />
+                  </div>
+                  {d.evaluacion.criticos.length > 1 && <RemBtn onClick={() => remEvalArr("criticos", i)} />}
+                </div>
+              ))}
+            </div>
+            <AddBtn onClick={() => addEvalArr("criticos")} label="＋ Añadir ítem crítico" />
+          </div>
+
+          {/* BLOQUE 2 - TÉCNICOS */}
+          <div style={{ border:"1px solid #c8e6c9", borderRadius:"6px", padding:"16px", background:"#e8f5e9" }}>
+            <Label style={{color:"#1b5e20", fontSize:"12px"}}>BLOQUE 2 - TÉCNICOS</Label>
+            <p style={{fontSize:"11px", color:"#666", marginBottom:"12px", marginTop:"0"}}>
+              Estos ítems son los que nos permitirán alcanzar el 10 (los 5 puntos restantes).
+            </p>
+            <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+              {d.evaluacion.tecnicos.map((item, i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center" }}>
+                  <div style={{ flex:"1" }}>
+                    <Inp value={item} onChange={v => updEvalArr("tecnicos", i, v)} placeholder="Ítem técnico..." />
+                  </div>
+                  {d.evaluacion.tecnicos.length > 1 && <RemBtn onClick={() => remEvalArr("tecnicos", i)} />}
+                </div>
+              ))}
+            </div>
+            <AddBtn onClick={() => addEvalArr("tecnicos")} label="＋ Añadir ítem técnico" />
+          </div>
+
+          {/* BLOQUE 3 - ACTITUDINALES */}
+          <div style={{ border:"1px solid #ffe082", borderRadius:"6px", padding:"16px", background:"#fff8e1" }}>
+            <Label style={{color:"#f57f17", fontSize:"12px"}}>BLOQUE 3 - ACTITUDINALES</Label>
+            <p style={{fontSize:"11px", color:"#666", marginBottom:"12px", marginTop:"0"}}>
+              Estos ítems no suman, pero sí que restan.
+            </p>
+            <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+              {d.evaluacion.actitudinales.map((item, i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center" }}>
+                  <div style={{ flex:"1" }}>
+                    <Inp value={item} onChange={v => updEvalArr("actitudinales", i, v)} placeholder="Ítem actitudinal..." />
+                  </div>
+                  {d.evaluacion.actitudinales.length > 1 && <RemBtn onClick={() => remEvalArr("actitudinales", i)} />}
+                </div>
+              ))}
+            </div>
+            <AddBtn onClick={() => addEvalArr("actitudinales")} label="＋ Añadir ítem actitudinal" />
+          </div>
+
+        </div>
+      )}
+    </div>,
+
+    /* 8 · Pie */
+    <div style={spY} key="tab8">
       <SectionTitle>Pie de Página</SectionTitle>
       <Hint>Fecha de revisión y teléfono CECOP para referencias directas.</Hint>
       <div>
@@ -977,8 +1121,8 @@ function GeneradorManiobras() {
       </div>
     </div>,
 
-    /* 8 · Generar */
-    <div style={spY} key="tab8">
+    /* 9 · Generar */
+    <div style={spY} key="tab9">
       <SectionTitle>HTML generado para Moodle</SectionTitle>
       <Hint>Insértalo directamente en el editor, o copia el código y pégalo en el editor HTML de Moodle.</Hint>
       {!html ? (
