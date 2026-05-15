@@ -1121,54 +1121,48 @@ function GeneradorManiobras() {
       </div>
     </div>,
 
-    /* 9 · Generar */
+    /* 9 · Generar (Modificado: Sin visualización de código) */
     <div style={spY} key="tab9">
-      <SectionTitle>HTML generado para Moodle</SectionTitle>
-      <Hint>Insértalo directamente en el editor, o copia el código y pégalo en el editor HTML de Moodle.</Hint>
+      <SectionTitle>Gestión de la Maniobra</SectionTitle>
+      <Hint>Insértalo en el editor o copia el contenido para usarlo en Moodle.</Hint>
       {!html ? (
         <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:"6px",
           padding:"20px", fontSize:"13px", color:"#92400e", textAlign:"center" }}>
           <div style={{ fontSize:"24px", marginBottom:"8px" }}>⚡</div>
-          Pulsa el botón <strong>⚡ Generar HTML</strong> de la barra inferior para crear el documento.
+          Pulsa el botón <strong>⚡ Generar HTML</strong> de la barra inferior para procesar el documento.
         </div>
       ) : (
         <div style={spY}>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:"8px" }}>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", justifyContent:"center", background:"#fff", padding:"20px", borderRadius:"8px", border:"1.5px solid #e5e7eb" }}>
             <button type="button" onClick={insertInEditor}
-              style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
+              style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
                 fontWeight:"700", border:"none", cursor:"pointer",
                 background: inserted ? "#16a34a" : "#B22222",
                 color:"#fff", transition:"background 0.2s" }}>
               {inserted ? "✓ ¡Insertado en el editor!" : "⬆️ Insertar en el editor"}
             </button>
             <button type="button" onClick={copy}
-              style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
+              style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
                 fontWeight:"700", border:"none", cursor:"pointer",
                 background: copied ? "#16a34a" : "#374151",
                 color:"#fff", transition:"background 0.2s" }}>
-              {copied ? "✓ ¡Copiado!" : "📋 Copiar al portapapeles"}
+              {copied ? "✓ ¡Copiado!" : "📋 Copiar contenido"}
             </button>
             <button type="button" onClick={() => setPreview(p => !p)}
-              style={{ padding:"10px 20px", borderRadius:"6px", fontSize:"13px",
+              style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
                 fontWeight:"600", border:"1.5px solid #e5e7eb", cursor:"pointer",
                 background:"#fff", color:"#374151" }}>
               {preview ? "Ocultar previsualización" : "👁️ Ver previsualización"}
             </button>
           </div>
 
-          <textarea readOnly value={html} rows={14}
-            style={{ width:"100%", border:"1px solid #374151", borderRadius:"6px",
-              background:"#111827", color:"#86efac", fontSize:"12px",
-              fontFamily:"monospace", padding:"12px 14px", outline:"none",
-              resize:"vertical", boxSizing:"border-box" }} />
-
           {preview && (
-            <div>
+            <div style={{ marginTop:"10px" }}>
               <div style={{ fontSize:"11px", fontWeight:"700", color:"#9ca3af",
                 textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"8px" }}>
-                Previsualización
+                Previsualización del documento final
               </div>
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden" }}>
+              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden", background:"#fff" }}>
                 <iframe
                   srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="padding:16px;margin:0;">${html}</body></html>`}
                   style={{ width:"100%", height:"600px", border:"none" }}
