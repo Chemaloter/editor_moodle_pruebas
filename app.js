@@ -56,6 +56,48 @@ function isWordList(el) {
   return cls.includes('MsoListParagraph') || cls.includes('ListParagraph') || cls.includes('MsoList');
 }
 
+
+// ══════════════════════════════════════════════════════════════
+//  OPTIMIZACIÓN DE ANCHO SOLO EN EXPORTACIÓN MOODLE
+//  - El editor trabaja a ancho completo.
+//  - El HTML copiado/exportado se limita para lectura cómoda.
+// ══════════════════════════════════════════════════════════════
+const EXPORT_READ_P  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:76ch;width:100%;";
+const EXPORT_READ_UL = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:76ch;width:100%;padding-left:28px;";
+const EXPORT_READ_OL = EXPORT_READ_UL;
+const EXPORT_READ_BLOCK = "margin:24px auto;max-width:850px;width:100%;";
+
+function applyOptimizedReadingWidthForExport(clone) {
+  clone.querySelectorAll('p').forEach(el => {
+    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_READ_P);
+  });
+  clone.querySelectorAll('ul').forEach(el => {
+    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_READ_UL);
+  });
+  clone.querySelectorAll('ol').forEach(el => {
+    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_READ_OL);
+  });
+
+  Array.from(clone.children).forEach(el => {
+    if (!el || el.nodeType !== 1) return;
+    const tag = el.tagName.toLowerCase();
+    if (tag !== 'div') return;
+    if (el.querySelector('table, iframe, img, video, audio')) return;
+    const style = el.getAttribute('style') || '';
+    const first = el.firstElementChild;
+    const firstStyle = first ? (first.getAttribute('style') || '') : '';
+    const isReadableBlock =
+      style.includes('margin:') ||
+      firstStyle.includes('display:inline-block') ||
+      el.classList.contains('sequence-block');
+    if (isReadableBlock) el.setAttribute('style', EXPORT_READ_BLOCK);
+  });
+
+  clone.querySelectorAll('.sequence-block').forEach(el => {
+    el.setAttribute('style', EXPORT_READ_BLOCK + 'font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;');
+  });
+}
+
 // ══════════════════════════════════════════════════════════════
 //  UTILIDADES
 // ══════════════════════════════════════════════════════════════
@@ -744,8 +786,8 @@ function addBlock(type) {
 
     // 3. Montamos el bloque completo
     html = `
-      <div class="sequence-block" style="margin: 30px 0; font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width: 850px; margin: auto; background-color: #ffffff; padding: 10px;">
+      <div class="sequence-block" style="margin:30px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+        <div style="width:100%;max-width:none;margin:0;background-color: #ffffff; padding: 10px;">
           <div style="border: 1px solid #eee; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <p style="color: #c0272d; font-size: 0.80rem; text-transform: uppercase; margin-bottom: 25px; font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: inline-block;">
               Bloque: Secuencia Operativa
@@ -1306,6 +1348,7 @@ function buildFinalHTML() {
   const clone = editor.cloneNode(true);
   clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
   clone.querySelectorAll('[bis_skin_checked]').forEach(el => el.removeAttribute('bis_skin_checked'));
+  applyOptimizedReadingWidthForExport(clone);
   let blockIndex = 0;
   Array.from(clone.childNodes).forEach(node => {
     const label = getBlockLabel(node);
