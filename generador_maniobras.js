@@ -46,27 +46,27 @@ function embedVideoUrl(url) {
   if (src.match(/\.(mp4|webm|ogg)$/i)) {
     return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;"><video style="width:100%;max-width:100%;height:auto;display:block;border-radius:24px;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
   }
-  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#111827;"><div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div></div>`;
+  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#111827;"><div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div></div>`;
 }
 
 function renderImage(item) {
   const src = typeof item === "string" ? item.trim()
     : item.mode === "file" ? item.src : (item.url || "").trim();
   if (!src) return "";
-  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="width:100%;max-width:100%;height:auto;border-radius:24px;display:block;" alt="Recurso visual" /></div>`;
+  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="width:100%;max-width:100%;height:auto;border-radius:24px;display:block;border:0;border:none;" alt="Recurso visual" /></div>`;
 }
 
 /* ─── HTML GENERATOR ────────────────────────────────────────── */
 function generateHTML(d) {
   const fontStack = "'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-  const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:#1f2937;background:#f8fafc;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;overflow:hidden;`;
+  const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:#1f2937;background:transparent;background-color:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;overflow:hidden;`;
   const cardStyle = "background:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:28px;margin:40px auto;width:95%;max-width:850px;box-sizing:border-box;overflow:hidden;";
   const textStyle = "max-width:800px;margin:0 auto 14px auto;line-height:1.8;";
   const h2Style = "font-family:" + fontStack + ";font-size:24px;line-height:1.3;font-weight:800;color:#B22222;margin:0 0 18px 0;border-bottom:2px solid #f3d4d4;padding-bottom:10px;";
   const h3Style = "font-family:" + fontStack + ";font-size:18px;line-height:1.4;font-weight:800;color:#374151;margin:20px 0 10px 0;";
   const listStyle = "max-width:800px;margin:8px auto 16px auto;padding-left:24px;line-height:1.8;";
   const liStyle = "margin-bottom:8px;line-height:1.8;";
-  const tableWrapStyle = "width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;";
+  const tableWrapStyle = "width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:0!important;border:none!important;outline:0!important;";
 
   const section = (num, title, body) => `
     <div style="${cardStyle}">
@@ -76,34 +76,34 @@ function generateHTML(d) {
 
   const paragraph = (txt) => `<p style="${textStyle}">${mEsc(txt)}</p>`;
 
-  const epiItems = d.epis.filter(e => e.trim())
-    .map(e => `<li style="${liStyle}">${mEsc(e)}</li>`).join("\n              ");
-
-  const matItems = d.materiales.filter(m => m.trim())
-    .map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("\n              ");
-
-  const matAdicItems = (d.materialAdicional || []).filter(m => m.trim())
-    .map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("\n              ");
+  const epiItems = d.epis.filter(e => e.trim()).map(e => `<li style="${liStyle}">${mEsc(e)}</li>`).join("
+              ");
+  const matItems = d.materiales.filter(m => m.trim()).map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("
+              ");
+  const matAdicItems = (d.materialAdicional || []).filter(m => m.trim()).map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("
+              ");
 
   const escImagenesHtml = (d.escenarioImagenes || []).filter(img => {
     if (typeof img === "string") return img.trim();
     return img.mode === "file" ? img.src : (img.url || "").trim();
-  }).map(img => renderImage(img)).join("\n");
+  }).map(img => renderImage(img)).join("
+");
 
   const recImagenesHtml = d.recursosImagenes.filter(img => {
     if (typeof img === "string") return img.trim();
     return img.mode === "file" ? img.src : (img.url || "").trim();
-  }).map(img => renderImage(img)).join("\n");
-  
-  const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
+  }).map(img => renderImage(img)).join("
+");
+  const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("
+");
 
   const stepRows = d.pasos.filter(p => p.trim()).map((p, i) => `
-      <table style="width:100%;border-collapse:separate;border-spacing:0;margin-bottom:14px;table-layout:fixed;" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="width:46px;vertical-align:top;padding-right:12px;">
+      <table style="width:100%;border-collapse:separate;border-spacing:0;margin-bottom:14px;table-layout:fixed;border:0!important;border:none!important;outline:0!important;" cellpadding="0" cellspacing="0" border="0">
+        <tr style="border:0!important;border:none!important;outline:0!important;">
+          <td style="width:46px;vertical-align:top;padding-right:12px;border:0!important;border:none!important;outline:0!important;">
             <div style="background:#B22222;color:#ffffff;font-weight:800;font-size:15px;width:34px;height:34px;border-radius:50%;text-align:center;line-height:34px;box-shadow:0 8px 18px rgba(178,34,34,0.25);">${i + 1}</div>
           </td>
-          <td style="vertical-align:top;background:#ffffff;border:1px solid #f0d6d6;border-radius:20px;padding:14px 16px;line-height:1.8;word-wrap:break-word;overflow-wrap:anywhere;box-shadow:0 8px 18px rgba(0,0,0,0.06);">${mEsc(p)}</td>
+          <td style="vertical-align:top;background:#ffffff;border:1px solid #f0d6d6!important;border-radius:20px;padding:14px 16px;line-height:1.8;word-wrap:break-word;overflow-wrap:anywhere;box-shadow:0 8px 18px rgba(0,0,0,0.06);outline:0!important;">${mEsc(p)}</td>
         </tr>
       </table>`).join("");
 
@@ -118,34 +118,34 @@ function generateHTML(d) {
   const desImagenesHtml = d.desarrolloImagenes.filter(img => {
     if (typeof img === "string") return img.trim();
     return img.mode === "file" ? img.src : (img.url || "").trim();
-  }).map(img => renderImage(img)).join("\n");
-  
-  const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
+  }).map(img => renderImage(img)).join("
+");
+  const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("
+");
 
   const recordadBlock = d.recordad.trim()
-    ? `        <div style="max-width:800px;margin:22px auto 0 auto;background:#fff7ed;border-left:6px solid #f97316;border-radius:20px;padding:16px 18px;line-height:1.8;box-shadow:0 8px 18px rgba(0,0,0,0.06);"><strong style="font-weight:800;color:#9a3412;">Recordad:</strong> ${mEsc(d.recordad)}</div>\n`
+    ? `        <div style="max-width:800px;margin:22px auto 0 auto;background:#fff7ed;border-left:6px solid #f97316;border-radius:20px;padding:16px 18px;line-height:1.8;box-shadow:0 8px 18px rgba(0,0,0,0.06);"><strong style="font-weight:800;color:#9a3412;">Recordad:</strong> ${mEsc(d.recordad)}</div>
+`
     : "";
 
   const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
   const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
-
-  const jtItems = (d.rolesJT || []).filter(r => r.trim())
-    .map(r => `<li style="${liStyle}">${mEsc(r)}</li>`).join("\n        ");
+  const jtItems = (d.rolesJT || []).filter(r => r.trim()).map(r => `<li style="${liStyle}">${mEsc(r)}</li>`).join("
+        ");
 
   const validItCodes = d.itCodes.filter(c => c.trim());
   let itCodeHtml = "";
   if (validItCodes.length > 0) {
     const codesStr = validItCodes.map(c => `<div style="font-weight:800;font-size:13px;letter-spacing:1px;margin-top:6px;line-height:1.4;">${mEsc(c)}</div>`).join("");
-    itCodeHtml = `\n      <td style="width:150px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:16px 12px;font-size:11px;color:#ffffff;line-height:1.5;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
+    itCodeHtml = `
+      <td style="width:150px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:16px 12px;font-size:11px;color:#ffffff;line-height:1.5;border:0!important;border:none!important;outline:0!important;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
   }
 
-  /* HTML Criterios de Evaluación */
   let evaluacionHtml = "";
   if (d.evaluacion.mostrar) {
     const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
     const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
     const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
-
     evaluacionHtml = `
     <div style="${cardStyle}">
       <h2 style="${h2Style}">ANEXO II — Criterios de Evaluación</h2>
@@ -164,12 +164,12 @@ function generateHTML(d) {
 
   return `
 <div style="${pageStyle}">
-  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:28px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;">
+  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:28px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;border:0!important;border:none!important;outline:0!important;">
     <div style="${tableWrapStyle}">
-      <table style="width:100%;border-collapse:collapse;min-width:520px;" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="width:110px;background-color:#B22222;color:#ffffff;text-align:center;vertical-align:middle;padding:20px 14px;font-weight:800;font-size:20px;letter-spacing:1px;">CBCM</td>
-          <td style="background-color:#ffffff;color:#111827;vertical-align:middle;padding:20px 18px;">
+      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:520px;border:0!important;border:none!important;outline:0!important;" cellpadding="0" cellspacing="0" border="0">
+        <tr style="border:0!important;border:none!important;outline:0!important;">
+          <td style="width:110px;background-color:#B22222;color:#ffffff;text-align:center;vertical-align:middle;padding:20px 14px;font-weight:800;font-size:20px;letter-spacing:1px;border:0!important;border:none!important;outline:0!important;">CBCM</td>
+          <td style="background-color:#ffffff;color:#111827;vertical-align:middle;padding:20px 18px;border:0!important;border:none!important;outline:0!important;">
             <div style="font-size:22px;font-weight:800;line-height:1.35;">PRÁCTICA: ${mEsc(d.titulo)}</div>
             <div style="font-size:15px;font-weight:400;line-height:1.6;color:#4b5563;margin-top:4px;">${mEsc(d.subtitulo)}</div>
           </td>${itCodeHtml}
@@ -206,7 +206,7 @@ function generateHTML(d) {
       ${recordadBlock}`)}
   <div style="${cardStyle}">
     <h2 style="${h2Style}">8. Evaluación de Riesgos de la Maniobra</h2>
-    <div style="${tableWrapStyle}">
+    <div style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;">
       <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:760px;background:#ffffff;border-radius:20px;overflow:hidden;" cellpadding="0" cellspacing="0">
         <tr>
           <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:left;font-weight:800;line-height:1.4;">Riesgo</th>
@@ -233,13 +233,13 @@ function generateHTML(d) {
 
   ${evaluacionHtml}
 
-  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;">
+  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;border:0!important;border:none!important;outline:0!important;">
     <div style="${tableWrapStyle}">
-      <table style="width:100%;border-collapse:collapse;min-width:620px;" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;font-weight:800;line-height:1.6;">Revisión ${mEsc(d.revision)}</td>
-          <td style="width:60%;background:#ffffff;color:#4b5563;padding:16px 14px;vertical-align:middle;font-size:12px;line-height:1.8;">${mEsc(d.pieTexto)}</td>
-          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;text-align:right;font-weight:800;line-height:1.6;">Pág. 1 de 1</td>
+      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:620px;border:0!important;border:none!important;outline:0!important;" cellpadding="0" cellspacing="0" border="0">
+        <tr style="border:0!important;border:none!important;outline:0!important;">
+          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;">Revisión ${mEsc(d.revision)}</td>
+          <td style="width:60%;background:#ffffff;color:#4b5563;padding:16px 14px;vertical-align:middle;font-size:12px;line-height:1.8;border:0!important;border:none!important;outline:0!important;">${mEsc(d.pieTexto)}</td>
+          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;text-align:right;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;">Pág. 1 de 1</td>
         </tr>
       </table>
     </div>
