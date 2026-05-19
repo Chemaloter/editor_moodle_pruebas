@@ -58,44 +58,61 @@ function isWordList(el) {
 
 
 // ══════════════════════════════════════════════════════════════
-//  OPTIMIZACIÓN DE ANCHO SOLO EN EXPORTACIÓN MOODLE
-//  - El editor trabaja a ancho completo.
-//  - El HTML copiado/exportado se limita para lectura cómoda.
+//  ANCHO INSTITUCIONAL SOLO EN EXPORTACIÓN MOODLE
+//  - El editor sigue a ancho completo.
+//  - El HTML final usa una caja visual coherente para texto, bloques,
+//    encabezado, pie, tablas y recursos incrustados.
 // ══════════════════════════════════════════════════════════════
-const EXPORT_READ_P  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:76ch;width:100%;";
-const EXPORT_READ_UL = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:76ch;width:100%;padding-left:28px;";
-const EXPORT_READ_OL = EXPORT_READ_UL;
-const EXPORT_READ_BLOCK = "margin:24px auto;max-width:850px;width:100%;";
+const EXPORT_CONTENT_MAX = "850px";
+const EXPORT_TEXT_MAX    = "76ch";
+const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
+const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";
+
+function setExportBox(el, maxWidth, topBottom) {
+  if (!el || !el.style) return;
+  el.style.maxWidth = maxWidth || EXPORT_CONTENT_MAX;
+  el.style.width = '100%';
+  el.style.marginLeft = 'auto';
+  el.style.marginRight = 'auto';
+  el.style.marginTop = topBottom || '24px';
+  el.style.marginBottom = topBottom || '24px';
+  el.style.boxSizing = 'border-box';
+}
 
 function applyOptimizedReadingWidthForExport(clone) {
   clone.querySelectorAll('p').forEach(el => {
-    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_READ_P);
+    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_TEXT_STYLE);
   });
   clone.querySelectorAll('ul').forEach(el => {
-    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_READ_UL);
+    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE);
   });
   clone.querySelectorAll('ol').forEach(el => {
-    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_READ_OL);
+    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE);
   });
 
   Array.from(clone.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
     const tag = el.tagName.toLowerCase();
-    if (tag !== 'div') return;
-    if (el.querySelector('table, iframe, img, video, audio')) return;
-    const style = el.getAttribute('style') || '';
-    const first = el.firstElementChild;
-    const firstStyle = first ? (first.getAttribute('style') || '') : '';
-    const isReadableBlock =
-      style.includes('margin:') ||
-      firstStyle.includes('display:inline-block') ||
-      el.classList.contains('sequence-block');
-    if (isReadableBlock) el.setAttribute('style', EXPORT_READ_BLOCK);
+    if (tag === 'table') { setExportBox(el, EXPORT_CONTENT_MAX, '24px'); return; }
+    if (tag === 'div' && el.querySelector('table')) {
+      if (!el.style.overflowX) el.style.overflowX = 'auto';
+      setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+      return;
+    }
+    if (tag === 'div' && el.querySelector('iframe,video,audio,img')) {
+      setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+      return;
+    }
+    if (tag === 'div') {
+      const first = el.firstElementChild;
+      const style = el.getAttribute('style') || '';
+      const firstStyle = first ? (first.getAttribute('style') || '') : '';
+      const isTextualBlock = style.includes('margin:') || firstStyle.includes('display:inline-block') || el.classList.contains('sequence-block');
+      if (isTextualBlock) setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+    }
   });
 
-  clone.querySelectorAll('.sequence-block').forEach(el => {
-    el.setAttribute('style', EXPORT_READ_BLOCK + 'font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;');
-  });
+  clone.querySelectorAll('.sequence-block').forEach(el => setExportBox(el, EXPORT_CONTENT_MAX, '24px'));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1281,7 +1298,7 @@ function buildBanner(position) {
   const name  = parts[1] || '';
   const marginTop    = position === 'footer' ? 'margin-top:24px;' : '';
   const marginBottom = position === 'header' ? 'margin-bottom:24px;' : '';
-  return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;' + marginTop + marginBottom
+  return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:850px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
     + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:10px 14px;">'
     + '<div style="display:table;width:100%;">'
     + '<div style="display:table-cell;width:76px;vertical-align:middle;text-align:center;">'
