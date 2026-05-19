@@ -59,15 +59,11 @@ function isWordList(el) {
 
 // ══════════════════════════════════════════════════════════════
 //  ANCHO INSTITUCIONAL SOLO EN EXPORTACIÓN MOODLE
-//  - El editor sigue a ancho completo.
-//  - El HTML final usa una caja visual coherente para texto, bloques,
-//    encabezado, pie, tablas y recursos incrustados.
 // ══════════════════════════════════════════════════════════════
 const EXPORT_CONTENT_MAX = "850px";
 const EXPORT_TEXT_MAX    = "76ch";
 const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
 const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";
-
 function setExportBox(el, maxWidth, topBottom) {
   if (!el || !el.style) return;
   el.style.maxWidth = maxWidth || EXPORT_CONTENT_MAX;
@@ -78,31 +74,16 @@ function setExportBox(el, maxWidth, topBottom) {
   el.style.marginBottom = topBottom || '24px';
   el.style.boxSizing = 'border-box';
 }
-
 function applyOptimizedReadingWidthForExport(clone) {
-  clone.querySelectorAll('p').forEach(el => {
-    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_TEXT_STYLE);
-  });
-  clone.querySelectorAll('ul').forEach(el => {
-    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE);
-  });
-  clone.querySelectorAll('ol').forEach(el => {
-    if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE);
-  });
-
+  clone.querySelectorAll('p').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_TEXT_STYLE); });
+  clone.querySelectorAll('ul').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
+  clone.querySelectorAll('ol').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
   Array.from(clone.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
     const tag = el.tagName.toLowerCase();
     if (tag === 'table') { setExportBox(el, EXPORT_CONTENT_MAX, '24px'); return; }
-    if (tag === 'div' && el.querySelector('table')) {
-      if (!el.style.overflowX) el.style.overflowX = 'auto';
-      setExportBox(el, EXPORT_CONTENT_MAX, '24px');
-      return;
-    }
-    if (tag === 'div' && el.querySelector('iframe,video,audio,img')) {
-      setExportBox(el, EXPORT_CONTENT_MAX, '24px');
-      return;
-    }
+    if (tag === 'div' && el.querySelector('table')) { if (!el.style.overflowX) el.style.overflowX = 'auto'; setExportBox(el, EXPORT_CONTENT_MAX, '24px'); return; }
+    if (tag === 'div' && el.querySelector('iframe,video,audio,img')) { setExportBox(el, EXPORT_CONTENT_MAX, '24px'); return; }
     if (tag === 'div') {
       const first = el.firstElementChild;
       const style = el.getAttribute('style') || '';
@@ -111,7 +92,6 @@ function applyOptimizedReadingWidthForExport(clone) {
       if (isTextualBlock) setExportBox(el, EXPORT_CONTENT_MAX, '24px');
     }
   });
-
   clone.querySelectorAll('.sequence-block').forEach(el => setExportBox(el, EXPORT_CONTENT_MAX, '24px'));
 }
 
@@ -1299,18 +1279,23 @@ function buildBanner(position) {
   const marginTop    = position === 'footer' ? 'margin-top:24px;' : '';
   const marginBottom = position === 'header' ? 'margin-bottom:24px;' : '';
   const moduleHtml = code
-    ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #ead1d2;text-align:center;word-break:break-word;overflow-wrap:anywhere;">'
-      + '<div style="font-size:12px;font-weight:800;color:#c0272d;letter-spacing:.8px;line-height:1.35;">' + esc(code) + '</div>'
-      + '<div style="font-size:11px;font-weight:600;color:#374151;margin-top:3px;line-height:1.35;">' + esc(name) + '</div>'
+    ? '<div style="flex:1 1 0;min-width:0;text-align:right;padding-left:10px;border-left:1px solid #ead1d2;box-sizing:border-box;word-break:break-word;overflow-wrap:anywhere;">'
+      + '<div style="font-size:12px;font-weight:800;color:#c0272d;letter-spacing:.8px;line-height:1.25;">' + esc(code) + '</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#374151;margin-top:4px;line-height:1.25;text-transform:uppercase;">' + esc(name) + '</div>'
       + '</div>'
-    : '';
+    : '<div style="flex:1 1 0;min-width:0;">&nbsp;</div>';
   return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:850px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
-    + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:12px 14px;text-align:center;overflow:hidden;">'
-    + '<img src="' + ESCUDO_B64 + '" alt="Escudo Bomberos" '
-    + 'style="width:54px;height:54px;display:block;margin:0 auto 8px auto;">'
-    + '<div style="font-size:12px;font-weight:800;color:#0a1628;letter-spacing:.4px;text-transform:uppercase;line-height:1.35;word-break:break-word;overflow-wrap:anywhere;">Cuerpo de Bomberos<br>Comunidad de Madrid</div>'
-    + '<div style="font-size:11px;color:#c0272d;font-weight:700;margin-top:4px;line-height:1.35;">Área de Formación</div>'
+    + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:10px 12px;overflow:hidden;">'
+    + '<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;">'
+    + '<div style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;box-sizing:border-box;word-break:break-word;overflow-wrap:anywhere;">'
+    + '<img src="' + ESCUDO_B64 + '" alt="Escudo Bomberos" style="width:44px;height:44px;display:block;flex:0 0 auto;">'
+    + '<div style="min-width:0;">'
+    + '<div style="font-size:10.5px;font-weight:800;color:#0a1628;letter-spacing:.25px;text-transform:uppercase;line-height:1.22;">Cuerpo de Bomberos<br>Comunidad de Madrid</div>'
+    + '<div style="font-size:9.5px;color:#c0272d;font-weight:700;margin-top:3px;line-height:1.2;">Área de Formación</div>'
+    + '</div>'
+    + '</div>'
     + moduleHtml
+    + '</div>'
     + '</div>';
 }
 
