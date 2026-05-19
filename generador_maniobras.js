@@ -60,8 +60,8 @@ function renderImage(item) {
 function generateHTML(d) {
   const fontStack = "'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:#1f2937;background:transparent;background-color:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;overflow:hidden;`;
-  const cardStyle = "background:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:28px;margin:40px auto;width:95%;max-width:850px;box-sizing:border-box;overflow:hidden;";
-  const textStyle = "max-width:800px;margin:0 auto 14px auto;line-height:1.8;";
+  const cardStyle = "background:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:28px 28px 18px 28px;margin:40px auto;width:95%;max-width:850px;box-sizing:border-box;overflow:hidden;";
+  const textStyle = "max-width:800px;margin:0 auto 0 auto;line-height:1.8;";
   const h2Style = "font-family:" + fontStack + ";font-size:24px;line-height:1.3;font-weight:800;color:#B22222;margin:0 0 18px 0;border-bottom:2px solid #f3d4d4;padding-bottom:10px;";
   const h3Style = "font-family:" + fontStack + ";font-size:18px;line-height:1.4;font-weight:800;color:#374151;margin:20px 0 10px 0;";
   const listStyle = "max-width:800px;margin:8px auto 16px auto;padding-left:24px;line-height:1.8;";
