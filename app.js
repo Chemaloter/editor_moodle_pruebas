@@ -1298,24 +1298,19 @@ function buildBanner(position) {
   const name  = parts[1] || '';
   const marginTop    = position === 'footer' ? 'margin-top:24px;' : '';
   const marginBottom = position === 'header' ? 'margin-bottom:24px;' : '';
+  const moduleHtml = code
+    ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #ead1d2;text-align:center;word-break:break-word;overflow-wrap:anywhere;">'
+      + '<div style="font-size:12px;font-weight:800;color:#c0272d;letter-spacing:.8px;line-height:1.35;">' + esc(code) + '</div>'
+      + '<div style="font-size:11px;font-weight:600;color:#374151;margin-top:3px;line-height:1.35;">' + esc(name) + '</div>'
+      + '</div>'
+    : '';
   return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:850px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
-    + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:10px 14px;">'
-    + '<div style="display:table;width:100%;">'
-    + '<div style="display:table-cell;width:76px;vertical-align:middle;text-align:center;">'
+    + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:12px 14px;text-align:center;overflow:hidden;">'
     + '<img src="' + ESCUDO_B64 + '" alt="Escudo Bomberos" '
-    + 'style="width:62px;height:62px;display:block;margin:0 auto;">'
-    + '</div>'
-    + '<div style="display:table-cell;vertical-align:middle;padding-left:14px;">'
-    + '<div style="font-size:13px;font-weight:700;color:#0a1628;letter-spacing:.5px;text-transform:uppercase;line-height:1.4;">Cuerpo de Bomberos<br>Comunidad de Madrid</div>'
-    + '<div style="font-size:11px;color:#c0272d;font-weight:600;margin-top:3px;">Área de Formación</div>'
-    + '</div>'
-    + (code
-        ? '<div style="display:table-cell;vertical-align:middle;text-align:right;padding-left:14px;white-space:nowrap;">'
-          + '<div style="font-size:13px;font-weight:700;color:#c0272d;letter-spacing:1px;">' + code + '</div>'
-          + '<div style="font-size:11px;font-weight:600;color:#374151;margin-top:3px;">' + name + '</div>'
-          + '</div>'
-        : '')
-    + '</div>'
+    + 'style="width:54px;height:54px;display:block;margin:0 auto 8px auto;">'
+    + '<div style="font-size:12px;font-weight:800;color:#0a1628;letter-spacing:.4px;text-transform:uppercase;line-height:1.35;word-break:break-word;overflow-wrap:anywhere;">Cuerpo de Bomberos<br>Comunidad de Madrid</div>'
+    + '<div style="font-size:11px;color:#c0272d;font-weight:700;margin-top:4px;line-height:1.35;">Área de Formación</div>'
+    + moduleHtml
     + '</div>';
 }
 
