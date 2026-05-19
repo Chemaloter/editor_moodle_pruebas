@@ -44,28 +44,46 @@ function embedVideoUrl(url) {
   }
 
   if (src.match(/\.(mp4|webm|ogg)$/i)) {
-    return `<div style="margin-bottom:14px;overflow-x:auto;"><video style="width:100%;max-width:100%;border-radius:4px;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
+    return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;"><video style="width:100%;max-width:100%;height:auto;display:block;border-radius:24px;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
   }
-  return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;border-radius:4px;margin-bottom:14px;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div>`;
+  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#111827;"><div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div></div>`;
 }
 
 function renderImage(item) {
   const src = typeof item === "string" ? item.trim()
     : item.mode === "file" ? item.src : (item.url || "").trim();
   if (!src) return "";
-  return `<div style="margin-bottom:14px;overflow-x:auto;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="max-width:100%;height:auto;border-radius:4px;display:block;" alt="Recurso visual" /></div>`;
+  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="width:100%;max-width:100%;height:auto;border-radius:24px;display:block;" alt="Recurso visual" /></div>`;
 }
 
 /* ─── HTML GENERATOR ────────────────────────────────────────── */
 function generateHTML(d) {
+  const fontStack = "'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+  const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:#1f2937;background:#f8fafc;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;overflow:hidden;`;
+  const cardStyle = "background:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:28px;margin:40px auto;width:95%;max-width:850px;box-sizing:border-box;overflow:hidden;";
+  const textStyle = "max-width:800px;margin:0 auto 14px auto;line-height:1.8;";
+  const h2Style = "font-family:" + fontStack + ";font-size:24px;line-height:1.3;font-weight:800;color:#B22222;margin:0 0 18px 0;border-bottom:2px solid #f3d4d4;padding-bottom:10px;";
+  const h3Style = "font-family:" + fontStack + ";font-size:18px;line-height:1.4;font-weight:800;color:#374151;margin:20px 0 10px 0;";
+  const listStyle = "max-width:800px;margin:8px auto 16px auto;padding-left:24px;line-height:1.8;";
+  const liStyle = "margin-bottom:8px;line-height:1.8;";
+  const tableWrapStyle = "width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;";
+
+  const section = (num, title, body) => `
+    <div style="${cardStyle}">
+      <h2 style="${h2Style}">${num}. ${title}</h2>
+      ${body}
+    </div>`;
+
+  const paragraph = (txt) => `<p style="${textStyle}">${mEsc(txt)}</p>`;
+
   const epiItems = d.epis.filter(e => e.trim())
-    .map(e => `<li style="margin-bottom:4px;">${mEsc(e)}</li>`).join("\n              ");
+    .map(e => `<li style="${liStyle}">${mEsc(e)}</li>`).join("\n              ");
 
   const matItems = d.materiales.filter(m => m.trim())
-    .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
+    .map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("\n              ");
 
   const matAdicItems = (d.materialAdicional || []).filter(m => m.trim())
-    .map(m => `<li style="margin-bottom:4px;">${mEsc(m)}</li>`).join("\n              ");
+    .map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("\n              ");
 
   const escImagenesHtml = (d.escenarioImagenes || []).filter(img => {
     if (typeof img === "string") return img.trim();
@@ -80,21 +98,21 @@ function generateHTML(d) {
   const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const stepRows = d.pasos.filter(p => p.trim()).map((p, i) => `
-      <table style="width:100%;border-collapse:collapse;margin-bottom:8px;" cellpadding="0" cellspacing="0">
+      <table style="width:100%;border-collapse:separate;border-spacing:0;margin-bottom:14px;table-layout:fixed;" cellpadding="0" cellspacing="0">
         <tr>
-          <td style="width:36px;vertical-align:top;padding-right:10px;">
-            <div style="background:#B22222;color:#ffffff;font-weight:bold;font-size:13px;width:28px;height:28px;border-radius:50%;text-align:center;line-height:28px;">${i + 1}</div>
+          <td style="width:46px;vertical-align:top;padding-right:12px;">
+            <div style="background:#B22222;color:#ffffff;font-weight:800;font-size:15px;width:34px;height:34px;border-radius:50%;text-align:center;line-height:34px;box-shadow:0 8px 18px rgba(178,34,34,0.25);">${i + 1}</div>
           </td>
-          <td style="vertical-align:top;background:#ffffff;border:1px solid #e0e0e0;border-radius:3px;padding:8px 12px;">${mEsc(p)}</td>
+          <td style="vertical-align:top;background:#ffffff;border:1px solid #f0d6d6;border-radius:20px;padding:14px 16px;line-height:1.8;word-wrap:break-word;overflow-wrap:anywhere;box-shadow:0 8px 18px rgba(0,0,0,0.06);">${mEsc(p)}</td>
         </tr>
       </table>`).join("");
 
   const riskRows = d.riesgos.map((r, i) => `
-          <tr${i % 2 === 1 ? ' style="background:#fdf5f5;"' : ""}>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.riesgo)}</td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.causa)}</td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;text-align:center;"><span style="${badgeStyle(r.grado)}">${r.grado}</span></td>
-            <td style="border:1px solid #ddd;padding:7px 10px;vertical-align:top;">${mEsc(r.medida)}</td>
+          <tr${i % 2 === 1 ? ' style="background:#fff7f7;"' : ""}>
+            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;line-height:1.8;min-width:160px;">${mEsc(r.riesgo)}</td>
+            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;line-height:1.8;min-width:180px;">${mEsc(r.causa)}</td>
+            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;text-align:center;min-width:120px;"><span style="${badgeStyle(r.grado)}">${r.grado}</span></td>
+            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;line-height:1.8;min-width:220px;">${mEsc(r.medida)}</td>
           </tr>`).join("");
 
   const desImagenesHtml = d.desarrolloImagenes.filter(img => {
@@ -105,189 +123,127 @@ function generateHTML(d) {
   const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
 
   const recordadBlock = d.recordad.trim()
-    ? `        <p style="margin:8px 0 0 0;"><strong>Recordad:</strong> ${mEsc(d.recordad)}</p>\n`
+    ? `        <div style="max-width:800px;margin:22px auto 0 auto;background:#fff7ed;border-left:6px solid #f97316;border-radius:20px;padding:16px 18px;line-height:1.8;box-shadow:0 8px 18px rgba(0,0,0,0.06);"><strong style="font-weight:800;color:#9a3412;">Recordad:</strong> ${mEsc(d.recordad)}</div>\n`
     : "";
 
-  const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-  const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+  const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
+  const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
 
   const jtItems = (d.rolesJT || []).filter(r => r.trim())
-    .map(r => `<li style="margin-bottom:6px;">${mEsc(r)}</li>`).join("\n        ");
+    .map(r => `<li style="${liStyle}">${mEsc(r)}</li>`).join("\n        ");
 
   const validItCodes = d.itCodes.filter(c => c.trim());
   let itCodeHtml = "";
   if (validItCodes.length > 0) {
-    const codesStr = validItCodes.map(c => `<div style="font-weight:bold;font-size:13px;letter-spacing:1px;margin-top:4px;">${mEsc(c)}</div>`).join("");
-    itCodeHtml = `\n      <td style="width:130px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:12px 10px;font-size:11px;color:#ffffff;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
+    const codesStr = validItCodes.map(c => `<div style="font-weight:800;font-size:13px;letter-spacing:1px;margin-top:6px;line-height:1.4;">${mEsc(c)}</div>`).join("");
+    itCodeHtml = `\n      <td style="width:150px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:16px 12px;font-size:11px;color:#ffffff;line-height:1.5;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
   }
 
   /* HTML Criterios de Evaluación */
   let evaluacionHtml = "";
   if (d.evaluacion.mostrar) {
-    const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
-    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="margin-bottom:4px;">${mEsc(i)}</li>`).join("");
+    const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
+    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
+    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
 
     evaluacionHtml = `
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO II &mdash; Criterios de Evaluaci&oacute;n</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <p style="margin:0 0 12px 0;">Durante las maniobras se realizar&aacute;n unas r&uacute;bricas de evaluaci&oacute;n divididas en tres bloques diferenciados:</p>
-      
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 1 - CR&Iacute;TICOS</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Ser&aacute; necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.</p>
-        <ul style="margin:0;padding-left:20px;">
-          ${criticosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
-        </ul>
-      </div>
-
-      <div style="background:#e8f5e9;border:1px solid #c8e6c9;border-radius:3px;padding:10px 14px;margin-bottom:12px;">
-        <div style="font-weight:bold;color:#1b5e20;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 2 - T&Eacute;CNICOS</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems son los que nos permitir&aacute;n alcanzar el 10 (los 5 puntos restantes).</p>
-        <ul style="margin:0;padding-left:20px;">
-          ${tecnicosItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
-        </ul>
-      </div>
-
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;">
-        <div style="font-weight:bold;color:#f57f17;font-size:12px;text-transform:uppercase;margin-bottom:4px;">BLOQUE 3 - ACTITUDINALES</div>
-        <p style="margin:0 0 8px 0;font-size:12px;color:#666;">Estos &iacute;tems no suman, pero s&iacute; que restan.</p>
-        <ul style="margin:0;padding-left:20px;">
-          ${actitudinalesItems || '<li style="color:#999;font-style:italic;">Sin ítems definidos</li>'}
-        </ul>
-      </div>
-    </div>
-  </div>`;
+    <div style="${cardStyle}">
+      <h2 style="${h2Style}">ANEXO II — Criterios de Evaluación</h2>
+      <p style="${textStyle}">Durante las maniobras se realizarán unas rúbricas de evaluación divididas en tres bloques diferenciados:</p>
+      <h3 style="${h3Style}">BLOQUE 1 - CRÍTICOS</h3>
+      <p style="${textStyle}">Será necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.</p>
+      <ul style="${listStyle}">${criticosItems || '<li style="margin-bottom:8px;line-height:1.8;">Sin ítems definidos</li>'}</ul>
+      <h3 style="${h3Style}">BLOQUE 2 - TÉCNICOS</h3>
+      <p style="${textStyle}">Estos ítems son los que nos permitirán alcanzar el 10 (los 5 puntos restantes).</p>
+      <ul style="${listStyle}">${tecnicosItems || '<li style="margin-bottom:8px;line-height:1.8;">Sin ítems definidos</li>'}</ul>
+      <h3 style="${h3Style}">BLOQUE 3 - ACTITUDINALES</h3>
+      <p style="${textStyle}">Estos ítems no suman, pero sí que restan.</p>
+      <ul style="${listStyle}">${actitudinalesItems || '<li style="margin-bottom:8px;line-height:1.8;">Sin ítems definidos</li>'}</ul>
+    </div>`;
   }
 
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1a1a1a;max-width:860px;margin:0 auto;box-sizing:border-box;">
-
-  <table style="width:100%;border-collapse:collapse;overflow:hidden;background-color:#B22222;color:#ffffff;" cellpadding="0" cellspacing="0">
-    <tr>
-      <td style="width:60px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:14px 8px;font-size:13px;font-weight:bold;color:#ffffff;">CBCM</td>
-      <td style="padding:12px 16px;vertical-align:middle;">
-        <div style="font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">PR&Aacute;CTICA: ${mEsc(d.titulo)}</div>
-        <div style="font-size:12px;margin-top:4px;opacity:0.85;">${mEsc(d.subtitulo)}</div>
-      </td>${itCodeHtml}
-    </tr>
-  </table>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">1. Descripci&oacute;n</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.descripcion)}</div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">2. Objetivo Pedag&oacute;gico</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.objetivo)}</div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">3. Destinatarios</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">${mEsc(d.destinatarios)}</div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">4. Escenario</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="margin-bottom:${escImagenesHtml ? '14px' : '0'};">${mEsc(d.escenario)}</div>
-${escImagenesHtml}
-    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">5. Recursos</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">EPI&apos;s</div>
-        <ul style="margin:0;padding-left:20px;">${epiItems}</ul>
-      </div>
-      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Materiales y Herramientas</div>
-        <ul style="margin:0;padding-left:20px;">${matItems}</ul>
-      </div>
-${matAdicItems ? `      <div style="background:#fff3f3;border:1px solid #f0c0c0;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#8b0000;font-size:12px;text-transform:uppercase;margin-bottom:6px;">Material Adicional</div>
-        <ul style="margin:0;padding-left:20px;">${matAdicItems}</ul>
-      </div>\n` : ""}${recImagenesHtml}${recVideosHtml}    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">6. Organizaci&oacute;n del Grupo</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:3px;padding:10px 14px;margin-bottom:12px;">${mEsc(d.organizacion)}</div>
-      <p style="margin:0 0 6px 0;"><strong>Rol del ${mEsc(d.rolMandoTitulo)}:</strong></p>
-      <ul style="margin:0;padding-left:20px;">
-        ${jtItems}
-      </ul>
-    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">7. Desarrollo Explicativo de la Pr&aacute;ctica</div>
-    <div style="background:#fafafa;border:1px solid #e0e0e0;border-radius:3px;padding:12px 14px;">
-      <p style="margin:0 0 10px 0;"><strong>Documentaci&oacute;n de referencia:</strong> ${mEsc(d.refDoc)}</p>
-      ${d.aspectosGenerales.trim() ? `<p style="margin:0 0 10px 0;"><strong>Aspectos generales:</strong> ${mEsc(d.aspectosGenerales)}</p>` : ""}
-      ${d.desarrolloManiobra.trim() ? `<p style="margin:0 0 10px 0;"><strong>Desarrollo de la maniobra:</strong> ${mEsc(d.desarrolloManiobra)}</p>` : ""}
-      ${d.escenarioDesarrollo.trim() ? `<p style="margin:0 0 10px 0;"><strong>Escenario:</strong> ${mEsc(d.escenarioDesarrollo)}</p>` : ""}
-${desImagenesHtml}${desVideosHtml}      <p style="margin:0 0 10px 0;"><strong>Explicaci&oacute;n secuencial de la maniobra:</strong></p>
-${stepRows}
-      <div style="background:#fff3cd;border-left:4px solid #ff8800;border-radius:0 3px 3px 0;padding:10px 14px;margin-top:14px;">
-        <div style="font-weight:bold;color:#7a4f00;text-transform:uppercase;font-size:12px;margin-bottom:6px;">PRECAUCIONES</div>
-        <p style="margin:0;">${mEsc(d.precauciones)}</p>
-${recordadBlock}      </div>
-    </div>
-  </div>
-
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">8. Evaluaci&oacute;n de Riesgos de la Maniobra</div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;" cellpadding="0" cellspacing="0">
-        <thead>
-          <tr>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:22%;">Riesgo</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:28%;">Causa</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:center;font-weight:bold;border:1px solid #921a1a;width:12%;">Grado</th>
-            <th style="background:#B22222;color:#ffffff;padding:8px 10px;text-align:left;font-weight:bold;border:1px solid #921a1a;width:38%;">Medida Preventiva</th>
-          </tr>
-        </thead>
-        <tbody>${riskRows}
-        </tbody>
+  return `
+<div style="${pageStyle}">
+  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:28px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;">
+    <div style="${tableWrapStyle}">
+      <table style="width:100%;border-collapse:collapse;min-width:520px;" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="width:110px;background-color:#B22222;color:#ffffff;text-align:center;vertical-align:middle;padding:20px 14px;font-weight:800;font-size:20px;letter-spacing:1px;">CBCM</td>
+          <td style="background-color:#ffffff;color:#111827;vertical-align:middle;padding:20px 18px;">
+            <div style="font-size:22px;font-weight:800;line-height:1.35;">PRÁCTICA: ${mEsc(d.titulo)}</div>
+            <div style="font-size:15px;font-weight:400;line-height:1.6;color:#4b5563;margin-top:4px;">${mEsc(d.subtitulo)}</div>
+          </td>${itCodeHtml}
+        </tr>
       </table>
     </div>
   </div>
 
-  <div style="margin-top:18px;border-left:4px solid #B22222;padding-left:12px;">
-    <div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#B22222;letter-spacing:0.8px;margin-bottom:8px;">ANEXO I &mdash; Plan SOS</div>
-    <div style="background:#fce4ec;border:1px solid #f48fb1;border-radius:3px;padding:12px 14px;">
-      <div style="background:#b71c1c;color:#ffffff;text-align:center;font-weight:bold;padding:10px;border-radius:3px;margin-bottom:12px;letter-spacing:1px;font-size:13px;">${mEsc(d.planSOS.senal)}</div>
-      <p style="margin:0 0 8px 0;">${mEsc(d.planSOS.intro1)}</p>
-      <p style="margin:0 0 12px 0;">${mEsc(d.planSOS.intro2)}</p>
-      <div style="background:#ffffff;border:1px solid #ef9a9a;border-radius:3px;padding:10px 14px;margin-bottom:8px;">
-        <div style="font-weight:bold;color:#b71c1c;text-transform:uppercase;font-size:12px;margin-bottom:6px;">${mEsc(d.planSOS.leveTitulo)}</div>
-        <ul style="margin:0;padding-left:20px;">
-          ${planSosLeveItems}
-        </ul>
-      </div>
-      <div style="background:#ffffff;border:1px solid #ef9a9a;border-radius:3px;padding:10px 14px;margin-bottom:10px;">
-        <div style="font-weight:bold;color:#b71c1c;text-transform:uppercase;font-size:12px;margin-bottom:6px;">${mEsc(d.planSOS.graveTitulo)}</div>
-        <ul style="margin:0;padding-left:20px;">
-          ${planSosGraveItems}
-        </ul>
-      </div>
-      <p style="margin:0;font-size:12px;">${mEsc(d.planSOS.cierre)}</p>
+  ${section("1", "Descripción", paragraph(d.descripcion))}
+  ${section("2", "Objetivo Pedagógico", paragraph(d.objetivo))}
+  ${section("3", "Destinatarios", paragraph(d.destinatarios))}
+  ${section("4", "Escenario", `${paragraph(d.escenario)}${escImagenesHtml}`)}
+  ${section("5", "Recursos", `
+      <h3 style="${h3Style}">EPI's</h3>
+      <ul style="${listStyle}">${epiItems}</ul>
+      <h3 style="${h3Style}">Materiales y Herramientas</h3>
+      <ul style="${listStyle}">${matItems}</ul>
+      ${matAdicItems ? `<h3 style="${h3Style}">Material Adicional</h3><ul style="${listStyle}">${matAdicItems}</ul>` : ""}
+      ${recImagenesHtml}${recVideosHtml}`)}
+  ${section("6", "Organización del Grupo", `
+      ${paragraph(d.organizacion)}
+      <h3 style="${h3Style}">Rol del ${mEsc(d.rolMandoTitulo)}:</h3>
+      <ul style="${listStyle}">${jtItems}</ul>`)}
+  ${section("7", "Desarrollo Explicativo de la Práctica", `
+      <p style="${textStyle}"><strong style="font-weight:800;color:#111827;">Documentación de referencia:</strong> ${mEsc(d.refDoc)}</p>
+      ${d.aspectosGenerales.trim() ? `<h3 style="${h3Style}">Aspectos generales:</h3>${paragraph(d.aspectosGenerales)}` : ""}
+      ${d.desarrolloManiobra.trim() ? `<h3 style="${h3Style}">Desarrollo de la maniobra:</h3>${paragraph(d.desarrolloManiobra)}` : ""}
+      ${d.escenarioDesarrollo.trim() ? `<h3 style="${h3Style}">Escenario:</h3>${paragraph(d.escenarioDesarrollo)}` : ""}
+      ${desImagenesHtml}${desVideosHtml}
+      <h3 style="${h3Style}">Explicación secuencial de la maniobra:</h3>
+      <div style="max-width:800px;margin:0 auto;">${stepRows}</div>
+      <h3 style="${h3Style}">PRECAUCIONES</h3>
+      ${paragraph(d.precauciones)}
+      ${recordadBlock}`)}
+  <div style="${cardStyle}">
+    <h2 style="${h2Style}">8. Evaluación de Riesgos de la Maniobra</h2>
+    <div style="${tableWrapStyle}">
+      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:760px;background:#ffffff;border-radius:20px;overflow:hidden;" cellpadding="0" cellspacing="0">
+        <tr>
+          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:left;font-weight:800;line-height:1.4;">Riesgo</th>
+          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:left;font-weight:800;line-height:1.4;">Causa</th>
+          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:center;font-weight:800;line-height:1.4;">Grado</th>
+          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:left;font-weight:800;line-height:1.4;">Medida Preventiva</th>
+        </tr>
+        ${riskRows}
+      </table>
     </div>
   </div>
-${evaluacionHtml}
-  <table style="width:100%;border-collapse:collapse;margin-top:20px;border-top:2px solid #B22222;font-size:11px;color:#666;" cellpadding="6" cellspacing="0">
-    <tr>
-      <td style="white-space:nowrap;vertical-align:top;width:1%;">Revisi&oacute;n ${mEsc(d.revision)}</td>
-      <td style="text-align:center;vertical-align:top;font-size:10px;padding:6px 12px;">${mEsc(d.pieTexto)}</td>
-      <td style="white-space:nowrap;vertical-align:top;width:1%;text-align:right;">P&aacute;g. 1 de 1</td>
-    </tr>
-  </table>
 
+  <div style="${cardStyle}">
+    <h2 style="${h2Style}">ANEXO I — Plan SOS</h2>
+    <div style="max-width:800px;margin:0 auto;background:#fee2e2;border-left:6px solid #B22222;border-radius:20px;padding:16px 18px;line-height:1.8;font-weight:800;color:#7f1d1d;box-shadow:0 8px 18px rgba(0,0,0,0.06);">${mEsc(d.planSOS.senal)}</div>
+    <p style="${textStyle};margin-top:18px;">${mEsc(d.planSOS.intro1)}</p>
+    <p style="${textStyle}">${mEsc(d.planSOS.intro2)}</p>
+    <h3 style="${h3Style}">${mEsc(d.planSOS.leveTitulo)}</h3>
+    <ul style="${listStyle}">${planSosLeveItems}</ul>
+    <h3 style="${h3Style}">${mEsc(d.planSOS.graveTitulo)}</h3>
+    <ul style="${listStyle}">${planSosGraveItems}</ul>
+    <p style="${textStyle}">${mEsc(d.planSOS.cierre)}</p>
+  </div>
+
+  ${evaluacionHtml}
+
+  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;">
+    <div style="${tableWrapStyle}">
+      <table style="width:100%;border-collapse:collapse;min-width:620px;" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;font-weight:800;line-height:1.6;">Revisión ${mEsc(d.revision)}</td>
+          <td style="width:60%;background:#ffffff;color:#4b5563;padding:16px 14px;vertical-align:middle;font-size:12px;line-height:1.8;">${mEsc(d.pieTexto)}</td>
+          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;text-align:right;font-weight:800;line-height:1.6;">Pág. 1 de 1</td>
+        </tr>
+      </table>
+    </div>
+  </div>
 </div>`;
 }
 
