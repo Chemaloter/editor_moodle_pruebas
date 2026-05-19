@@ -8,9 +8,9 @@ const EX = {
   h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;",
   h5:   "display:inline-block;color:#7a1518;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;",
   h6:   "display:inline-block;color:#999;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;font-style:italic;",
-  p:    "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:40px auto;max-width:800px;width:95%;",
-  ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:40px auto;max-width:800px;width:95%;padding-left:28px;",
-  ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:40px auto;max-width:800px;width:95%;padding-left:28px;",
+  p:    "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;",
+  ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
+  ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
   li:   "margin:5px 0;font-weight:normal;",
   table:"width:100%;border-collapse:collapse;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;",
   th:   "background-color:#C0272D;color:#ffffff;padding:10px 14px;text-align:left;font-weight:700;border:1px solid #9b1f23;font-size:14px;",
@@ -29,7 +29,7 @@ const EX = {
   defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#2d2d2d;",
   body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;",
   list:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;",
-  divider:"display:block;border:none;border-top:2px solid #e5e7eb;margin:40px auto;max-width:850px;width:95%;"
+  divider:"display:block;border:none;border-top:2px solid #e5e7eb;margin:16px 0;"
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -239,7 +239,7 @@ function convertWordBody(body) {
       if (lvl > 0) {
         const content = getInline(node).replace(/[\r\n]+/g, ' ').replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
         if (content) {
-          out += '<div style="margin:40px auto;max-width:850px;width:95%;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
+          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
           if (lvl===1) st.h1++; else if (lvl===2) st.h2++; else if (lvl===3) st.h3++; else st.h4++;
         }
         i++; continue;
@@ -271,7 +271,7 @@ function convertWordBody(body) {
         out += '</' + lt + '>\n'; st.li++;
         continue;
       }
-      if (tag === 'table') { out += '<div style="overflow-x:auto;margin:40px auto;max-width:850px;width:95%;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
+      if (tag === 'table') { out += '<div style="overflow-x:auto;margin:12px 0;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
       if (tag === 'img') {
         const src = node.getAttribute('src') || '';
         const alt = node.getAttribute('alt') || '';
@@ -306,7 +306,7 @@ function convertWordBody(body) {
         }
         const hLvl = detectHeadingHeuristic(node);
         if (hLvl > 0) {
-          out += '<div style="margin:40px auto;max-width:850px;width:95%;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
+          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
           if (hLvl===1) st.h1++; else if (hLvl===2) st.h2++; else if (hLvl===3) st.h3++; else st.h4++;
         } else {
           out += '<p style="' + EX.p + '">' + content + '</p>\n';
@@ -744,8 +744,8 @@ function addBlock(type) {
 
     // 3. Montamos el bloque completo
     html = `
-      <div class="sequence-block" style="margin:40px auto;max-width:850px;width:95%;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:850px;width:95%;margin:auto;background-color: #ffffff; padding: 10px;">
+      <div class="sequence-block" style="margin: 30px 0; font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width: 850px; margin: auto; background-color: #ffffff; padding: 10px;">
           <div style="border: 1px solid #eee; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <p style="color: #c0272d; font-size: 0.80rem; text-transform: uppercase; margin-bottom: 25px; font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: inline-block;">
               Bloque: Secuencia Operativa
@@ -760,12 +760,12 @@ function addBlock(type) {
   } else if (cfg.isList) {
     html = '<ul style="' + EX.ul + '"><li style="' + EX.li + '">Elemento 1</li><li style="' + EX.li + '">Elemento 2</li><li style="' + EX.li + '">Elemento 3</li></ul>';
   } else if (cfg.isDef) {
-    html = '<div style="margin:40px auto;max-width:850px;width:95%;">'
+    html = '<div style="margin:16px 0;">'
          + '<div style="' + EX.defterm + '" contenteditable="true">Término o concepto</div>'
          + '<div style="' + EX.defbody + '" contenteditable="true">Escribe aquí la definición o explicación del término.</div>'
          + '</div>';
   } else {
-    html = '<div style="margin:40px auto;max-width:850px;width:95%;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
+    html = '<div style="margin:12px 0;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
   }
   
   insertHTMLAtCursor(html);
@@ -781,7 +781,7 @@ function confirmTable() {
   const rows = Math.max(1, Math.min(30, parseInt(document.getElementById('tableRows').value)||3));
   const head = document.getElementById('tableHeader').checked;
   closeTableModal();
-  let t = '<div style="overflow-x:auto;margin:40px auto;max-width:850px;width:95%;"><table style="' + EX.table + '">';
+  let t = '<div style="overflow-x:auto;margin:12px 0;"><table style="' + EX.table + '">';
   if (head) {
     t += '<tr>';
     for (let i=0;i<cols;i++) t += '<th style="' + EX.th + '">Columna '+(i+1)+'</th>';
