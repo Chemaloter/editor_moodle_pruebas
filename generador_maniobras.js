@@ -60,8 +60,8 @@ function renderImage(item) {
 function generateHTML(d) {
   const fontStack = "'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:#1f2937;background:transparent;background-color:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;overflow:hidden;`;
-  const cardStyle = "background:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:28px 28px 18px 28px;margin:40px auto;width:95%;max-width:850px;box-sizing:border-box;overflow:hidden;";
-  const textStyle = "max-width:800px;margin:0 auto 0 auto;line-height:1.8;";
+  const cardStyle = "background:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:28px;margin:40px auto;width:95%;max-width:850px;box-sizing:border-box;overflow:hidden;";
+  const textStyle = "max-width:800px;margin:0 auto 14px auto;line-height:1.8;";
   const h2Style = "font-family:" + fontStack + ";font-size:24px;line-height:1.3;font-weight:800;color:#B22222;margin:0 0 18px 0;border-bottom:2px solid #f3d4d4;padding-bottom:10px;";
   const h3Style = "font-family:" + fontStack + ";font-size:18px;line-height:1.4;font-weight:800;color:#374151;margin:20px 0 10px 0;";
   const listStyle = "max-width:800px;margin:8px auto 16px auto;padding-left:24px;line-height:1.8;";
@@ -136,7 +136,7 @@ function generateHTML(d) {
   let itCodeHtml = "";
   if (validItCodes.length > 0) {
     const codesStr = validItCodes.map(c => `<div style="font-weight:800;font-size:13px;letter-spacing:1px;margin-top:6px;line-height:1.4;">${mEsc(c)}</div>`).join("");
-    itCodeHtml = `\n      <td style="width:150px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:16px 12px;font-size:11px;color:#ffffff;line-height:1.5;border:0!important;border:none!important;outline:0!important;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
+    itCodeHtml = `\n      <td style="width:150px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:16px 12px;font-size:11px;color:#ffffff;line-height:1.5;border:0!important;border:none!important;outline:0!important;margin:0!important;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
   }
 
   /* HTML Criterios de Evaluación */
@@ -164,12 +164,12 @@ function generateHTML(d) {
 
   return `
 <div style="${pageStyle}">
-  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:28px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;border:0!important;border:none!important;outline:0!important;">
-    <div style="${tableWrapStyle}">
-      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:520px;border:0!important;border:none!important;outline:0!important;" cellpadding="0" cellspacing="0" border="0">
-        <tr style="border:0!important;border:none!important;outline:0!important;">
-          <td style="width:110px;background-color:#B22222;color:#ffffff;text-align:center;vertical-align:middle;padding:20px 14px;font-weight:800;font-size:20px;letter-spacing:1px;border:0!important;border:none!important;outline:0!important;">CBCM</td>
-          <td style="background-color:#ffffff;color:#111827;vertical-align:middle;padding:20px 18px;border:0!important;border:none!important;outline:0!important;">
+  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:28px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:transparent;background-color:transparent;border:0!important;border:none!important;outline:0!important;padding:0!important;line-height:0;">
+    <div style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:0!important;border:none!important;outline:0!important;margin:0!important;margin-bottom:0!important;padding:0!important;line-height:0;">
+      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:520px;border:0!important;border:none!important;outline:0!important;margin:0!important;margin-bottom:0!important;padding:0!important;line-height:1.8;" cellpadding="0" cellspacing="0" border="0">
+        <tr style="border:0!important;border:none!important;outline:0!important;margin:0!important;padding:0!important;">
+          <td style="width:110px;background-color:#B22222;color:#ffffff;text-align:center;vertical-align:middle;padding:20px 14px;font-weight:800;font-size:20px;letter-spacing:1px;border:0!important;border:none!important;outline:0!important;margin:0!important;line-height:1.8;">CBCM</td>
+          <td style="background-color:#ffffff;color:#111827;vertical-align:middle;padding:20px 18px;border:0!important;border:none!important;outline:0!important;margin:0!important;line-height:1.8;">
             <div style="font-size:22px;font-weight:800;line-height:1.35;">PRÁCTICA: ${mEsc(d.titulo)}</div>
             <div style="font-size:15px;font-weight:400;line-height:1.6;color:#4b5563;margin-top:4px;">${mEsc(d.subtitulo)}</div>
           </td>${itCodeHtml}
@@ -235,11 +235,11 @@ function generateHTML(d) {
 
   <div style="width:95%;max-width:850px;margin:40px auto;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;">
     <div style="${tableWrapStyle}">
-      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:620px;border:0!important;border:none!important;outline:0!important;" cellpadding="0" cellspacing="0" border="0">
-        <tr style="border:0!important;border:none!important;outline:0!important;">
-          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;">Revisión ${mEsc(d.revision)}</td>
-          <td style="width:60%;background:#ffffff;color:#4b5563;padding:16px 14px;vertical-align:middle;font-size:12px;line-height:1.8;border:0!important;border:none!important;outline:0!important;">${mEsc(d.pieTexto)}</td>
-          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;text-align:right;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;">Pág. 1 de 1</td>
+      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:620px;border:0!important;border:none!important;outline:0!important;margin:0!important;margin-bottom:0!important;" cellpadding="0" cellspacing="0" border="0">
+        <tr style="border:0!important;border:none!important;outline:0!important;margin:0!important;padding:0!important;">
+          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;margin:0!important;">Revisión ${mEsc(d.revision)}</td>
+          <td style="width:60%;background:#ffffff;color:#4b5563;padding:16px 14px;vertical-align:middle;font-size:12px;line-height:1.8;border:0!important;border:none!important;outline:0!important;margin:0!important;">${mEsc(d.pieTexto)}</td>
+          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;text-align:right;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;margin:0!important;">Pág. 1 de 1</td>
         </tr>
       </table>
     </div>
