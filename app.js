@@ -2,33 +2,33 @@
 //  ESTILOS DE EXPORTACIÓN MOODLE (inline, TinyMCE/Atto compatible)
 // ══════════════════════════════════════════════════════════════
 const EX = {
-  h1:   "display:inline-block;background-color:#C0272D;color:#ffffff;padding:12px 24px;border-radius:6px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;line-height:1.3;",
-  h2:   "display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2px;line-height:1.3;",
-  h3:   "display:inline-block;background-color:#fff0f0;color:#6b1215;border-left:4px solid #C0272D;padding:8px 18px;border-radius:0 5px 5px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;",
-  h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;",
-  h5:   "display:inline-block;color:#7a1518;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;",
-  h6:   "display:inline-block;color:#999;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;font-style:italic;",
-  p:    "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;",
-  ul:   "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
-  ol:   "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
+  h1:   "display:inline-block;background-color:#C0272D;color:#ffffff;padding:12px 24px;border-radius:6px;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;line-height:1.3;",
+  h2:   "display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2px;line-height:1.3;",
+  h3:   "display:inline-block;background-color:#fff0f0;color:#6b1215;border-left:4px solid #C0272D;padding:8px 18px;border-radius:0 5px 5px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;",
+  h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;",
+  h5:   "display:inline-block;color:#7a1518;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;",
+  h6:   "display:inline-block;color:#999;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;font-style:italic;",
+  p:    "font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:40px auto;max-width:800px;width:95%;",
+  ul:   "font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:40px auto;max-width:800px;width:95%;padding-left:28px;",
+  ol:   "font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:40px auto;max-width:800px;width:95%;padding-left:28px;",
   li:   "margin:5px 0;font-weight:normal;",
-  table:"width:100%;border-collapse:collapse;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;",
+  table:"width:100%;border-collapse:collapse;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;",
   th:   "background-color:#C0272D;color:#ffffff;padding:10px 14px;text-align:left;font-weight:700;border:1px solid #9b1f23;font-size:14px;",
   td:   "padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;font-size:14px;line-height:1.6;",
   tdalt:"padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;background-color:#fdf5f5;font-size:14px;line-height:1.6;",
-  goal: "display:inline-block;background-color:#f0faf1;border-left:5px solid #2e7d32;color:#1a4d1e;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  think:"display:inline-block;background-color:#faf5ff;border-left:5px solid #7b1fa2;color:#4a1570;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.6;",
-  note: "display:inline-block;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  info: "display:inline-block;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
-  tip:  "display:inline-block;background-color:#f0fdfa;border-left:5px solid #0d9488;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
-  step: "display:inline-block;background-color:#eef2ff;border-left:5px solid #4338ca;color:#1e1b4b;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  quote:"display:inline-block;background-color:#f8fafc;border-left:5px solid #94a3b8;color:#334155;padding:12px 22px;border-radius:0 6px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.7;",
-  extra:"display:inline-block;background-color:#f9fafb;border:1px solid #d1d5db;border-left:4px solid #6b7280;color:#374151;padding:10px 18px;border-radius:0 6px 6px 6px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;line-height:1.6;",
-  practice:"display:inline-block;background-color:#f0fdfa;border:2px solid #0f766e;border-left:6px solid #0f766e;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  defterm:"display:block;background-color:#eeeeee;color:#263238;padding:10px 14px;border-radius:6px 6px 0 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;line-height:1.4;",
-  defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#2d2d2d;",
-  body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;",
-  list:   "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;",
+  goal: "display:inline-block;background-color:#f0faf1;border-left:5px solid #2e7d32;color:#1a4d1e;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  think:"display:inline-block;background-color:#faf5ff;border-left:5px solid #7b1fa2;color:#4a1570;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.6;",
+  note: "display:inline-block;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  info: "display:inline-block;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
+  tip:  "display:inline-block;background-color:#f0fdfa;border-left:5px solid #0d9488;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
+  step: "display:inline-block;background-color:#eef2ff;border-left:5px solid #4338ca;color:#1e1b4b;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  quote:"display:inline-block;background-color:#f8fafc;border-left:5px solid #94a3b8;color:#334155;padding:12px 22px;border-radius:0 6px 6px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.7;",
+  extra:"display:inline-block;background-color:#f9fafb;border:1px solid #d1d5db;border-left:4px solid #6b7280;color:#374151;padding:10px 18px;border-radius:0 6px 6px 6px;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;line-height:1.6;",
+  practice:"display:inline-block;background-color:#f0fdfa;border:2px solid #0f766e;border-left:6px solid #0f766e;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  defterm:"display:block;background-color:#eeeeee;color:#263238;padding:10px 14px;border-radius:6px 6px 0 0;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;line-height:1.4;",
+  defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#2d2d2d;",
+  body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;",
+  list:   "font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;",
   divider:"display:block;border:none;border-top:2px solid #e5e7eb;margin:16px 0;"
 };
 
@@ -139,8 +139,8 @@ function procTable(tableEl) {
       let cellStyle;
       if (hasWordColors) {
         const baseStyle = isH
-          ? 'padding:10px 14px;text-align:left;font-weight:700;border:1px solid #ccc;font-family:Arial,sans-serif;font-size:14px;'
-          : 'padding:9px 14px;border:1px solid #e0e0e0;vertical-align:middle;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;';
+          ? 'padding:10px 14px;text-align:left;font-weight:700;border:1px solid #ccc;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;'
+          : 'padding:9px 14px;border:1px solid #e0e0e0;vertical-align:middle;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;';
         const wordStyle = extractWordCellStyle(cell);
         cellStyle = baseStyle + (wordStyle ? wordStyle + ';' : '');
       } else {
@@ -239,7 +239,7 @@ function convertWordBody(body) {
       if (lvl > 0) {
         const content = getInline(node).replace(/[\r\n]+/g, ' ').replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
         if (content) {
-          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
+          out += '<div style="margin:40px auto;max-width:850px;width:95%;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
           if (lvl===1) st.h1++; else if (lvl===2) st.h2++; else if (lvl===3) st.h3++; else st.h4++;
         }
         i++; continue;
@@ -271,7 +271,7 @@ function convertWordBody(body) {
         out += '</' + lt + '>\n'; st.li++;
         continue;
       }
-      if (tag === 'table') { out += '<div style="overflow-x:auto;margin:12px 0;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
+      if (tag === 'table') { out += '<div style="overflow-x:auto;margin:40px auto;max-width:850px;width:95%;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
       if (tag === 'img') {
         const src = node.getAttribute('src') || '';
         const alt = node.getAttribute('alt') || '';
@@ -306,7 +306,7 @@ function convertWordBody(body) {
         }
         const hLvl = detectHeadingHeuristic(node);
         if (hLvl > 0) {
-          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
+          out += '<div style="margin:40px auto;max-width:850px;width:95%;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
           if (hLvl===1) st.h1++; else if (hLvl===2) st.h2++; else if (hLvl===3) st.h3++; else st.h4++;
         } else {
           out += '<p style="' + EX.p + '">' + content + '</p>\n';
@@ -534,6 +534,17 @@ function appendHTMLToEditor(html) {
   editor.dispatchEvent(new Event('input'));
 }
 
+function buildStyledParagraphsFromPlainText(text) {
+  return String(text || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split(/\n{2,}/)
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => '<p style="' + EX.p + '">' + esc(part).replace(/\n/g, '<br>') + '</p>')
+    .join('\n');
+}
+
 // ══════════════════════════════════════════════════════════════
 //  EVENTOS DEL EDITOR
 // ══════════════════════════════════════════════════════════════
@@ -649,16 +660,8 @@ editor.addEventListener('paste', function(e) {
   }
   if (text && text.trim()) {
     e.preventDefault();
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    const textNode = document.createTextNode(text);
-    range.insertNode(textNode);
-    range.setStartAfter(textNode);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const html = buildStyledParagraphsFromPlainText(text);
+    if (html) insertHTMLAtCursor(html);
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(refreshOutput, 300);
     return;
@@ -726,16 +729,16 @@ function addBlock(type) {
         <div style="display: flex; gap: 20px; margin-bottom: 25px;">
           <div style="flex-shrink: 0; width: 40px; height: 40px; background: ${color}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; ${shadow}">${i}</div>
           <div style="border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; width: 100%;">
-            <h4 contenteditable="true" style="margin: 0 0 5px 0; color: #1a1a1a; font-size: 1.1rem; font-family: 'Segoe UI', Roboto, Arial, sans-serif;">Título del Paso ${i}</h4>
-            <p contenteditable="true" style="margin: 0; color: #666; font-size: 0.95rem; line-height: 1.6; font-family: 'Segoe UI', Roboto, Arial, sans-serif;">Descripción detallada de la fase operativa ${i}.</p>
+            <h4 contenteditable="true" style="margin: 0 0 5px 0; color: #1a1a1a; font-size: 1.1rem; font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Título del Paso ${i}</h4>
+            <p contenteditable="true" style="margin: 0; color: #666; font-size: 0.95rem; line-height: 1.6; font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Descripción detallada de la fase operativa ${i}.</p>
           </div>
         </div>`;
     }
 
     // 3. Montamos el bloque completo
     html = `
-      <div class="sequence-block" style="margin: 30px 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif;">
-        <div style="max-width: 850px; margin: auto; background-color: #ffffff; padding: 10px;">
+      <div class="sequence-block" style="margin:40px auto;max-width:850px;width:95%;font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width:850px;width:95%;margin:auto;background-color: #ffffff; padding: 10px;">
           <div style="border: 1px solid #eee; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <p style="color: #c0272d; font-size: 0.80rem; text-transform: uppercase; margin-bottom: 25px; font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: inline-block;">
               Bloque: Secuencia Operativa
@@ -750,12 +753,12 @@ function addBlock(type) {
   } else if (cfg.isList) {
     html = '<ul style="' + EX.ul + '"><li style="' + EX.li + '">Elemento 1</li><li style="' + EX.li + '">Elemento 2</li><li style="' + EX.li + '">Elemento 3</li></ul>';
   } else if (cfg.isDef) {
-    html = '<div style="margin:16px 0;">'
+    html = '<div style="margin:40px auto;max-width:850px;width:95%;">'
          + '<div style="' + EX.defterm + '" contenteditable="true">Término o concepto</div>'
          + '<div style="' + EX.defbody + '" contenteditable="true">Escribe aquí la definición o explicación del término.</div>'
          + '</div>';
   } else {
-    html = '<div style="margin:12px 0;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
+    html = '<div style="margin:40px auto;max-width:850px;width:95%;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
   }
   
   insertHTMLAtCursor(html);
@@ -997,7 +1000,7 @@ function handleDocxFile(file) {
         return image.read('base64').then(function(b64) {
           const type = image.contentType || '';
           if (/emf|wmf/i.test(type)) {
-            const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="420" height="80"><rect width="420" height="80" fill="#fff8f0" stroke="#f59e0b" stroke-width="2" rx="6"/><text x="210" y="30" text-anchor="middle" font-family="Arial" font-size="13" fill="#92400e">Imagen EMF: no compatible con navegadores</text><text x="210" y="55" text-anchor="middle" font-family="Arial" font-size="11" fill="#b45309">Sustituye en Word por PNG o JPG antes de insertar</text></svg>';
+            const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="420" height="80"><rect width="420" height="80" fill="#fff8f0" stroke="#f59e0b" stroke-width="2" rx="6"/><text x="210" y="30" text-anchor="middle" font-family="Montserrat, Arial" font-size="13" fill="#92400e">Imagen EMF: no compatible con navegadores</text><text x="210" y="55" text-anchor="middle" font-family="Montserrat, Arial" font-size="11" fill="#b45309">Sustituye en Word por PNG o JPG antes de insertar</text></svg>';
             return { src: 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))), alt: 'Imagen EMF no compatible' };
           }
           return { src: 'data:' + type + ';base64,' + b64 };
@@ -1074,7 +1077,7 @@ function buildImageHTML(src, caption, width) {
   return '<div style="text-align:center;margin:20px 0;">' +
          '<div style="display:inline-block;' + containerW + 'background:#fff;' +
          'border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;' +
-         'box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Arial,sans-serif;">' +
+         'box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">' +
          '<div style="text-align:center;background:#f0f0f0;padding:16px;">' +
          '<img src="' + src + '" alt="' + esc(caption || 'Imagen') + '" ' +
          'style="' + imgStyle + '">' +
@@ -1089,7 +1092,7 @@ function buildImageHTML(src, caption, width) {
 
 function buildPPTHTML(embedUrl, caption, height) {
   return '<div style="width:100%;margin:20px auto;background:#fff;border:1px solid #d1d1d1;'
-       + 'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Arial,sans-serif;">'
+       + 'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">'
        + '<div style="position:relative;width:100%;height:' + height + ';background:#f5f5f5;">'
        + '<iframe src="' + embedUrl + '" '
        + 'style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" '
@@ -1169,7 +1172,7 @@ function confirmMedia() {
     if (ytMatch)  embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1];
     if (ytShorts) embedUrl = 'https://www.youtube.com/embed/' + ytShorts[1];
     html = '<div style="width:100%;margin:20px auto;background:#fff;border:1px solid #d1d1d1;' +
-           'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Arial,sans-serif;">' +
+           'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">' +
            '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;">' +
            '<iframe src="' + embedUrl + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen></iframe>' +
            '</div>' +
@@ -1186,7 +1189,7 @@ function confirmMedia() {
     const doProtect = protect ? protect.checked : false;
     const params = doProtect ? '#toolbar=0&navpanes=0&scrollbar=1' : '#scrollbar=1';
     html = '<div style="width:100%;margin:20px auto;border-radius:10px;' +
-           'overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Arial,sans-serif;">' +
+           'overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;">' +
            '<iframe src="' + url + params + '" ' +
            'style="width:100%;height:' + height + ';border:0;display:block;min-height:300px;">' +
            '</iframe>' +
@@ -1229,7 +1232,7 @@ function buildBanner(position) {
   const name  = parts[1] || '';
   const marginTop    = position === 'footer' ? 'margin-top:24px;' : '';
   const marginBottom = position === 'header' ? 'margin-bottom:24px;' : '';
-  return '<div style="font-family:Arial,sans-serif;' + marginTop + marginBottom
+  return '<div style="font-family:'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif;' + marginTop + marginBottom
     + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:10px 14px;">'
     + '<div style="display:table;width:100%;">'
     + '<div style="display:table-cell;width:76px;vertical-align:middle;text-align:center;">'
