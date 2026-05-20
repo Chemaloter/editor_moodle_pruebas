@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Editor de Contenido Moodle · Bomberos CAM</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <!-- ── REACT + BABEL (Generador de Maniobras) ── -->
@@ -85,12 +85,14 @@
         <button class="fmt-btn" onclick="applyFmt('italic')" title="Cursiva (Ctrl+I)"><em>K</em></button>
         <button class="fmt-btn" onclick="applyFmt('underline')" title="Subrayado (Ctrl+U)"><u>S</u></button>
 
-<select class="t-select" onchange="applyFmt('fontName', this.value)" title="Tipo de letra">
-          <option value="Arial" selected>Arial</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Courier New">Courier New</option>
-          <option value="Georgia">Georgia</option>
+<select class="t-select" onchange="applyFmt('fontName', this.value)" title="Tipo de letra">  
+          <option value="Montserrat" selected>Montserrat — estilo SCORM</option>  
+          <option value="IBM Plex Sans">IBM Plex Sans</option>  
+          <option value="Arial">Arial</option>  
+          <option value="Verdana">Verdana</option>  
+          <option value="Times New Roman">Times New Roman</option>  
+          <option value="Courier New">Courier New</option>  
+          <option value="Georgia">Georgia</option>  
         </select>
 
         <select class="t-select" onchange="applyFmt('fontSize', this.value)" title="Tamaño de letra">

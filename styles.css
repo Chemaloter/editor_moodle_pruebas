@@ -14,7 +14,7 @@
   --success:#16a34a;
   --warn:#d97706;
   --radius:12px;
-  --font-ui: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-ui:'Montserrat','IBM Plex Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --font-hd:'Barlow Condensed','Impact',sans-serif;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
 }
@@ -432,3 +432,48 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* ==========================================================
+   ESTILO SCORM DEFINITIVO: 754px centrado
+   ========================================================== */
+.editor-wrap{
+  flex:1 !important;
+  overflow-y:auto !important;
+  padding:14px !important;
+  background:var(--bg) !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:stretch !important;
+}
+.editor-area{
+  max-width:754px !important;
+  width:100% !important;
+  margin:0 auto !important;
+  box-sizing:border-box !important;
+  padding:34px 16px !important;
+  font-family:'Montserrat','IBM Plex Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif !important;
+  font-size:15px !important;
+  line-height:2.05 !important;
+  color:#111111 !important;
+  font-weight:400 !important;
+  letter-spacing:.005em !important;
+  text-align:left !important;
+  word-break:normal !important;
+  overflow-wrap:break-word !important;
+}
+.editor-area p,
+.editor-area ul,
+.editor-area ol{
+  max-width:754px !important;
+  width:100% !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  box-sizing:border-box !important;
+  font-family:'Montserrat','IBM Plex Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif !important;
+  font-size:15px !important;
+  line-height:2.05 !important;
+  color:#111111 !important;
+}
+.editor-area p{margin-top:0 !important;margin-bottom:20px !important;}
+.editor-area ul,.editor-area ol{padding-left:28px !important;margin-top:0 !important;margin-bottom:20px !important;}
+.editor-area li{line-height:2.05 !important;margin:0 0 7px 0 !important;}
