@@ -14,7 +14,7 @@
   --success:#16a34a;
   --warn:#d97706;
   --radius:12px;
-  --font-ui:'Montserrat','IBM Plex Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --font-ui:'Montserrat','IBM Plex Sans','Segoe UI',Arial,sans-serif;
   --font-hd:'Barlow Condensed','Impact',sans-serif;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
 }
@@ -126,20 +126,21 @@ main{flex:1;display:flex;flex-direction:column;min-height:0;}
 .fmt-btn.active{background:var(--red-s);border-color:var(--red);color:var(--red);}
 
 /* ── EDITOR ── */
-.editor-wrap{flex:1;overflow-y:auto;padding:14px;background:var(--bg);}
-.editor-area{
-  background:#fff;border-radius:var(--radius);
-  min-height:100%;padding:22px 26px;
-  font-family:var(--font-ui);font-size:16px;line-height:1.8;color:#1f2937;
-  outline:none;cursor:text;word-break:break-word;
-  border:1.5px solid var(--border);
-  transition:border-color .2s;
+.editor-wrap{flex:1;overflow-y:auto;padding:14px;background:var(--bg);display:flex;justify-content:center;align-items:stretch;}
+.editor-area{  
+  background:#fff;border-radius:var(--radius);  
+  min-height:100%;padding:34px 26px;  
+  max-width:754px;width:100%;margin:0 auto;box-sizing:border-box;  
+  font-family:var(--font-ui);font-size:15px;line-height:2.05;color:#111111;  
+  outline:none;cursor:text;word-break:normal;overflow-wrap:break-word;  
+  border:1.5px solid var(--border);  
+  transition:border-color .2s;  
 }
 .editor-area:focus{border-color:var(--red);}
 .editor-area[data-placeholder]:empty::before{
   content:attr(data-placeholder);color:#c4c9d4;font-style:italic;pointer-events:none;
 }
-.editor-area p{margin:8px 0;}
+.editor-area p{margin:0 0 20px 0;font-size:15px;line-height:2.05;color:#111111;}
 .editor-area.dragover{border:2px dashed var(--red)!important;background:#fff9f9!important;}
 
 /* ── ACTION BAR ── */
@@ -433,71 +434,18 @@ body {
   flex-direction: column;
 }
 
-/* ==========================================================
-   ESTILO SCORM DEFINITIVO · escritorio + móvil
-   Mantiene la paleta original de la herramienta; solo ajusta lectura.
-   ========================================================== */
-.editor-wrap{
-  flex:1 !important;
-  overflow-y:auto !important;
-  padding:14px !important;
-  background:var(--bg) !important;
-  display:flex !important;
-  justify-content:center !important;
-  align-items:stretch !important;
-}
-.editor-area{
-  max-width:754px !important;
-  width:100% !important;
-  margin:0 auto !important;
-  box-sizing:border-box !important;
-  padding:34px 16px !important;
-  font-family:'Montserrat','IBM Plex Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif !important;
-  font-size:15px !important;
-  line-height:2.05 !important;
-  color:#111111 !important;
-  font-weight:400 !important;
-  letter-spacing:.005em !important;
-  text-align:left !important;
-  word-break:normal !important;
-  overflow-wrap:break-word !important;
-}
-.editor-area p,
+/* Ajuste acordado de lectura: 754px escritorio/tablet, móvil legible */
 .editor-area ul,
-.editor-area ol{
-  max-width:754px !important;
-  width:100% !important;
-  margin-left:auto !important;
-  margin-right:auto !important;
-  box-sizing:border-box !important;
-  font-family:'Montserrat','IBM Plex Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif !important;
-  font-size:15px !important;
-  line-height:2.05 !important;
-  color:#111111 !important;
-}
-.editor-area p{margin-top:0 !important;margin-bottom:20px !important;}
-.editor-area ul,.editor-area ol{padding-left:28px !important;margin-top:0 !important;margin-bottom:20px !important;}
-.editor-area li{line-height:2.05 !important;margin:0 0 7px 0 !important;}
-
+.editor-area ol{font-size:15px;line-height:2.05;color:#111111;padding-left:28px;margin:0 0 20px 0;}
+.editor-area li{line-height:2.05;margin:0 0 7px 0;}
 @media screen and (max-width:600px){
-  .editor-wrap{
-    padding:8px !important;
-    align-items:flex-start !important;
-  }
-  .editor-area{
-    max-width:100% !important;
-    padding:24px 18px !important;
-    font-size:17px !important;
-    line-height:1.9 !important;
-    letter-spacing:0 !important;
-  }
-  .editor-area p,
-  .editor-area ul,
-  .editor-area ol{
-    max-width:100% !important;
-    font-size:17px !important;
-    line-height:1.9 !important;
-  }
-  .editor-area p{margin-bottom:18px !important;}
-  .editor-area li{font-size:17px !important;line-height:1.9 !important;margin-bottom:9px !important;}
+  .editor-wrap{padding:8px;align-items:flex-start;}
+  .editor-area{max-width:100%;padding:24px 18px;font-size:16.5px;line-height:1.9;}
+  .editor-area p,.editor-area ul,.editor-area ol{font-size:16.5px;line-height:1.9;}
+  .editor-area p{margin-bottom:18px;}
+  .editor-area li{font-size:16.5px;line-height:1.9;margin-bottom:8px;}
+}
+@media screen and (min-width:601px) and (max-width:900px){
+  .editor-wrap{padding:12px;}
+  .editor-area{max-width:754px;width:100%;padding:30px 22px;}
 }
