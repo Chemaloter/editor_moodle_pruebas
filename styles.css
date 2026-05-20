@@ -435,7 +435,7 @@ body {
 
 /* ============================================================
    AJUSTE RESPONSIVE DE ANCHO DE CONTENIDO
-   Único cambio: 800px en ordenador; ancho fluido en tablet y móvil.
+   800px en ordenador; ancho fluido en tablet y móvil.
    ============================================================ */
 .editor-wrap{
   display:flex;

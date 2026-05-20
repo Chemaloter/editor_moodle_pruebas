@@ -8,9 +8,9 @@ const EX = {
   h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;",
   h5:   "display:inline-block;color:#7a1518;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;",
   h6:   "display:inline-block;color:#999;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;font-style:italic;",
-  p:    "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;",
-  ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
-  ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
+  p:    "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:10px 0;",
+  ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
+  ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
   li:   "margin:5px 0;font-weight:normal;",
   table:"width:100%;border-collapse:collapse;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;",
   th:   "background-color:#C0272D;color:#ffffff;padding:10px 14px;text-align:left;font-weight:700;border:1px solid #9b1f23;font-size:14px;",
@@ -26,9 +26,9 @@ const EX = {
   extra:"display:inline-block;background-color:#f9fafb;border:1px solid #d1d5db;border-left:4px solid #6b7280;color:#374151;padding:10px 18px;border-radius:0 6px 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;line-height:1.6;",
   practice:"display:inline-block;background-color:#f0fdfa;border:2px solid #0f766e;border-left:6px solid #0f766e;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
   defterm:"display:block;background-color:#eeeeee;color:#263238;padding:10px 14px;border-radius:6px 6px 0 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;line-height:1.4;",
-  defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#2d2d2d;",
+  defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:#2d2d2d;",
   body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;",
-  list:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;",
+  list:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;",
   divider:"display:block;border:none;border-top:2px solid #e5e7eb;margin:16px 0;"
 };
 
@@ -62,7 +62,7 @@ function isWordList(el) {
 // ══════════════════════════════════════════════════════════════
 const EXPORT_CONTENT_MAX = "800px";
 const EXPORT_TEXT_MAX    = "800px";
-const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
+const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
 const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";
 function setExportBox(el, maxWidth, topBottom) {
   if (!el || !el.style) return;
