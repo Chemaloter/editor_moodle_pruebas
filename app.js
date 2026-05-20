@@ -2,33 +2,33 @@
 //  ESTILOS DE EXPORTACIÓN MOODLE (inline, TinyMCE/Atto compatible)
 // ══════════════════════════════════════════════════════════════
 const EX = {
-  h1:   "display:inline-block;background-color:#C0272D;color:#ffffff;padding:12px 24px;border-radius:6px;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;line-height:1.3;",
-  h2:   "display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2px;line-height:1.3;",
-  h3:   "display:inline-block;background-color:#fff0f0;color:#6b1215;border-left:4px solid #C0272D;padding:8px 18px;border-radius:0 5px 5px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;",
-  h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;",
-  h5:   "display:inline-block;color:#7a1518;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:13px;font-weight:700;",
-  h6:   "display:inline-block;color:#999;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;font-style:italic;",
-  p:    "font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:2.05;color:#111111;margin:0 auto 20px auto;max-width:754px;width:100%;box-sizing:border-box;",
-  ul:   "font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:2.05;color:#111111;margin:0 auto 20px auto;max-width:754px;width:100%;box-sizing:border-box;padding-left:28px;",
-  ol:   "font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:2.05;color:#111111;margin:0 auto 20px auto;max-width:754px;width:100%;box-sizing:border-box;padding-left:28px;",
-  li:   "margin:0 0 7px 0;font-weight:normal;line-height:2.05;",
-  table:"width:100%;border-collapse:collapse;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:14px;",
+  h1:   "display:inline-block;background-color:#C0272D;color:#ffffff;padding:12px 24px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;line-height:1.3;",
+  h2:   "display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2px;line-height:1.3;",
+  h3:   "display:inline-block;background-color:#fff0f0;color:#6b1215;border-left:4px solid #C0272D;padding:8px 18px;border-radius:0 5px 5px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;",
+  h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;",
+  h5:   "display:inline-block;color:#7a1518;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;",
+  h6:   "display:inline-block;color:#999;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;font-style:italic;",
+  p:    "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;",
+  ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
+  ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
+  li:   "margin:5px 0;font-weight:normal;",
+  table:"width:100%;border-collapse:collapse;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;",
   th:   "background-color:#C0272D;color:#ffffff;padding:10px 14px;text-align:left;font-weight:700;border:1px solid #9b1f23;font-size:14px;",
   td:   "padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;font-size:14px;line-height:1.6;",
   tdalt:"padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;background-color:#fdf5f5;font-size:14px;line-height:1.6;",
-  goal: "display:inline-block;background-color:#f0faf1;border-left:5px solid #2e7d32;color:#1a4d1e;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  think:"display:inline-block;background-color:#faf5ff;border-left:5px solid #7b1fa2;color:#4a1570;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.6;",
-  note: "display:inline-block;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  info: "display:inline-block;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
-  tip:  "display:inline-block;background-color:#f0fdfa;border-left:5px solid #0d9488;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
-  step: "display:inline-block;background-color:#eef2ff;border-left:5px solid #4338ca;color:#1e1b4b;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  quote:"display:inline-block;background-color:#f8fafc;border-left:5px solid #94a3b8;color:#334155;padding:12px 22px;border-radius:0 6px 6px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.7;",
-  extra:"display:inline-block;background-color:#f9fafb;border:1px solid #d1d5db;border-left:4px solid #6b7280;color:#374151;padding:10px 18px;border-radius:0 6px 6px 6px;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:600;line-height:1.6;",
-  practice:"display:inline-block;background-color:#f0fdfa;border:2px solid #0f766e;border-left:6px solid #0f766e;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  defterm:"display:block;background-color:#eeeeee;color:#263238;padding:10px 14px;border-radius:6px 6px 0 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:14px;font-weight:bold;line-height:1.4;",
-  defbody:   "display:block;padding:0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:2.05;color:#111111;margin:0 auto 20px auto;max-width:754px;width:100%;box-sizing:border-box;",
-  body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:1.8;",
-  list:   "font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:2.05;color:#111111;margin:0 auto 20px auto;max-width:754px;width:100%;box-sizing:border-box;",
+  goal: "display:inline-block;background-color:#f0faf1;border-left:5px solid #2e7d32;color:#1a4d1e;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  think:"display:inline-block;background-color:#faf5ff;border-left:5px solid #7b1fa2;color:#4a1570;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.6;",
+  note: "display:inline-block;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  info: "display:inline-block;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
+  tip:  "display:inline-block;background-color:#f0fdfa;border-left:5px solid #0d9488;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
+  step: "display:inline-block;background-color:#eef2ff;border-left:5px solid #4338ca;color:#1e1b4b;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  quote:"display:inline-block;background-color:#f8fafc;border-left:5px solid #94a3b8;color:#334155;padding:12px 22px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.7;",
+  extra:"display:inline-block;background-color:#f9fafb;border:1px solid #d1d5db;border-left:4px solid #6b7280;color:#374151;padding:10px 18px;border-radius:0 6px 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;line-height:1.6;",
+  practice:"display:inline-block;background-color:#f0fdfa;border:2px solid #0f766e;border-left:6px solid #0f766e;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
+  defterm:"display:block;background-color:#eeeeee;color:#263238;padding:10px 14px;border-radius:6px 6px 0 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;line-height:1.4;",
+  defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#2d2d2d;",
+  body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;",
+  list:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;",
   divider:"display:block;border:none;border-top:2px solid #e5e7eb;margin:16px 0;"
 };
 
@@ -60,12 +60,10 @@ function isWordList(el) {
 // ══════════════════════════════════════════════════════════════
 //  ANCHO INSTITUCIONAL SOLO EN EXPORTACIÓN MOODLE
 // ══════════════════════════════════════════════════════════════
-const EXPORT_CONTENT_MAX = "754px";  
-const EXPORT_TEXT_MAX    = "754px";  
-const EXPORT_TEXT_STYLE  = "font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:2.05;color:#111111;margin:0 auto 20px auto;max-width:754px;width:100%;box-sizing:border-box;";  
-const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";  
-const EXPORT_WRAP_STYLE  = "max-width:754px;width:100%;margin:0 auto;box-sizing:border-box;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:15px;line-height:2.05;color:#111111;";  
-const EXPORT_RESPONSIVE_STYLE = '<style>@media screen and (max-width:600px){.scorm-content-754{max-width:100%!important;width:100%!important;padding-left:16px!important;padding-right:16px!important;}.scorm-content-754 p,.scorm-content-754 ul,.scorm-content-754 ol{font-size:16.5px!important;line-height:1.9!important;max-width:100%!important;}.scorm-content-754 li{font-size:16.5px!important;line-height:1.9!important;margin-bottom:8px!important;}}@media screen and (min-width:601px) and (max-width:900px){.scorm-content-754{max-width:754px!important;width:100%!important;padding-left:22px!important;padding-right:22px!important;}}</style>';  
+const EXPORT_CONTENT_MAX = "850px";
+const EXPORT_TEXT_MAX    = "76ch";
+const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
+const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";
 function setExportBox(el, maxWidth, topBottom) {
   if (!el || !el.style) return;
   el.style.maxWidth = maxWidth || EXPORT_CONTENT_MAX;
@@ -180,8 +178,8 @@ function procTable(tableEl) {
       let cellStyle;
       if (hasWordColors) {
         const baseStyle = isH
-          ? 'padding:10px 14px;text-align:left;font-weight:700;border:1px solid #ccc;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:14px;'
-          : 'padding:9px 14px;border:1px solid #e0e0e0;vertical-align:middle;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;font-size:14px;line-height:1.6;';
+          ? 'padding:10px 14px;text-align:left;font-weight:700;border:1px solid #ccc;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;'
+          : 'padding:9px 14px;border:1px solid #e0e0e0;vertical-align:middle;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;';
         const wordStyle = extractWordCellStyle(cell);
         cellStyle = baseStyle + (wordStyle ? wordStyle + ';' : '');
       } else {
@@ -777,15 +775,15 @@ function addBlock(type) {
         <div style="display: flex; gap: 20px; margin-bottom: 25px;">
           <div style="flex-shrink: 0; width: 40px; height: 40px; background: ${color}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; ${shadow}">${i}</div>
           <div style="border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; width: 100%;">
-            <h4 contenteditable="true" style="margin: 0 0 5px 0; color: #1a1a1a; font-size: 1.1rem; font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;">Título del Paso ${i}</h4>
-            <p contenteditable="true" style="margin: 0; color: #666; font-size: 0.95rem; line-height: 1.6; font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;">Descripción detallada de la fase operativa ${i}.</p>
+            <h4 contenteditable="true" style="margin: 0 0 5px 0; color: #1a1a1a; font-size: 1.1rem; font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Título del Paso ${i}</h4>
+            <p contenteditable="true" style="margin: 0; color: #666; font-size: 0.95rem; line-height: 1.6; font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Descripción detallada de la fase operativa ${i}.</p>
           </div>
         </div>`;
     }
 
     // 3. Montamos el bloque completo
     html = `
-      <div class="sequence-block" style="margin:30px 0;font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;">
+      <div class="sequence-block" style="margin:30px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
         <div style="width:100%;max-width:none;margin:0;background-color: #ffffff; padding: 10px;">
           <div style="border: 1px solid #eee; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <p style="color: #c0272d; font-size: 0.80rem; text-transform: uppercase; margin-bottom: 25px; font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: inline-block;">
@@ -1125,7 +1123,7 @@ function buildImageHTML(src, caption, width) {
   return '<div style="text-align:center;margin:20px 0;">' +
          '<div style="display:inline-block;' + containerW + 'background:#fff;' +
          'border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;' +
-         'box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;">' +
+         'box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">' +
          '<div style="text-align:center;background:#f0f0f0;padding:16px;">' +
          '<img src="' + src + '" alt="' + esc(caption || 'Imagen') + '" ' +
          'style="' + imgStyle + '">' +
@@ -1140,7 +1138,7 @@ function buildImageHTML(src, caption, width) {
 
 function buildPPTHTML(embedUrl, caption, height) {
   return '<div style="width:100%;margin:20px auto;background:#fff;border:1px solid #d1d1d1;'
-       + 'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;">'
+       + 'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">'
        + '<div style="position:relative;width:100%;height:' + height + ';background:#f5f5f5;">'
        + '<iframe src="' + embedUrl + '" '
        + 'style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" '
@@ -1220,7 +1218,7 @@ function confirmMedia() {
     if (ytMatch)  embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1];
     if (ytShorts) embedUrl = 'https://www.youtube.com/embed/' + ytShorts[1];
     html = '<div style="width:100%;margin:20px auto;background:#fff;border:1px solid #d1d1d1;' +
-           'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;">' +
+           'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">' +
            '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;">' +
            '<iframe src="' + embedUrl + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen></iframe>' +
            '</div>' +
@@ -1237,7 +1235,7 @@ function confirmMedia() {
     const doProtect = protect ? protect.checked : false;
     const params = doProtect ? '#toolbar=0&navpanes=0&scrollbar=1' : '#scrollbar=1';
     html = '<div style="width:100%;margin:20px auto;border-radius:10px;' +
-           'overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;">' +
+           'overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">' +
            '<iframe src="' + url + params + '" ' +
            'style="width:100%;height:' + height + ';border:0;display:block;min-height:300px;">' +
            '</iframe>' +
@@ -1286,7 +1284,7 @@ function buildBanner(position) {
       + '<div style="font-size:10px;font-weight:600;color:#374151;margin-top:4px;line-height:1.25;text-transform:uppercase;">' + esc(name) + '</div>'
       + '</div>'
     : '<div style="flex:1 1 0;min-width:0;">&nbsp;</div>';
-  return '<div style="font-family:Montserrat,'IBM Plex Sans','Segoe UI',Arial,sans-serif;max-width:850px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
+  return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:850px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
     + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:10px 12px;overflow:hidden;">'
     + '<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;">'
     + '<div style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;box-sizing:border-box;word-break:break-word;overflow-wrap:anywhere;">'
@@ -1367,13 +1365,12 @@ function buildFinalHTML() {
   html = html.replace(/<br\s*\/?>/gi, '');
   html = html.replace(/\x00BR\x00/g, '<br>');
   html = html.trim();
-  if (html && html !== '<p>&nbsp;</p>') {  
-    const includeBanner = document.getElementById('toggle-banner')?.checked !== false;  
-    if (includeBanner) {  
-      html = buildBanner('header') + '\n' + html + '\n' + buildBanner('footer');  
-    }  
-    html = EXPORT_RESPONSIVE_STYLE + '<div class="scorm-content-754" style="' + EXPORT_WRAP_STYLE + '">' + html + '</div>';  
-  }  
+  if (html && html !== '<p>&nbsp;</p>') {
+    const includeBanner = document.getElementById('toggle-banner')?.checked !== false;
+    if (includeBanner) {
+      html = buildBanner('header') + '\n' + html + '\n' + buildBanner('footer');
+    }
+  }
   return html;
 }
 
@@ -1455,7 +1452,7 @@ function applyFmt(cmd, val = null) {
     const sizeMap = {
       '1': '10px',
       '2': '13px',
-      '3': '15px', // Normal
+      '3': '16px', // Normal
       '4': '18px',
       '5': '24px',
       '6': '32px',
@@ -1472,7 +1469,7 @@ function applyFmt(cmd, val = null) {
       const parent = selection.getRangeAt(0).commonAncestorContainer.parentElement;
       if (parent && parent.nodeName === 'FONT') {
         const span = document.createElement('span');
-        span.style.fontSize = sizeMap[val] || '15px';
+        span.style.fontSize = sizeMap[val] || '16px';
         if (parent.face) span.style.fontFamily = parent.face;
         span.innerHTML = parent.innerHTML;
         parent.parentNode.replaceChild(span, parent);
@@ -1505,7 +1502,7 @@ function updateFormatButtons() {
   const fontNameSel = document.querySelector('select[onchange*="fontName"]');
   if (fontNameSel) {
     let currentFont = document.queryCommandValue('fontName').replace(/"/g, "");
-    fontNameSel.value = currentFont || "Montserrat"; 
+    fontNameSel.value = currentFont || "Arial"; 
   }
 
   // 3. Actualizar selector de Tamaño
@@ -1515,7 +1512,7 @@ function updateFormatButtons() {
     
     // Si el navegador nos devuelve un tamaño en PX (ej: "24px"), lo mapeamos de vuelta al 1-7
     if (currentSize && currentSize.includes('px')) {
-        const pxMap = { '10px':'1','13px':'2','15px':'3','18px':'4','24px':'5','32px':'6','48px':'7' };
+        const pxMap = { '10px':'1','13px':'2','16px':'3','18px':'4','24px':'5','32px':'6','48px':'7' };
         currentSize = pxMap[currentSize] || "3";
     }
     fontSizeSel.value = currentSize || "3";
