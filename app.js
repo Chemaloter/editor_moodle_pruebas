@@ -60,8 +60,8 @@ function isWordList(el) {
 // ══════════════════════════════════════════════════════════════
 //  ANCHO INSTITUCIONAL SOLO EN EXPORTACIÓN MOODLE
 // ══════════════════════════════════════════════════════════════
-const EXPORT_CONTENT_MAX = "850px";
-const EXPORT_TEXT_MAX    = "76ch";
+const EXPORT_CONTENT_MAX = "800px";
+const EXPORT_TEXT_MAX    = "800px";
 const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
 const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";
 function setExportBox(el, maxWidth, topBottom) {
@@ -1284,7 +1284,7 @@ function buildBanner(position) {
       + '<div style="font-size:10px;font-weight:600;color:#374151;margin-top:4px;line-height:1.25;text-transform:uppercase;">' + esc(name) + '</div>'
       + '</div>'
     : '<div style="flex:1 1 0;min-width:0;">&nbsp;</div>';
-  return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:850px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
+  return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:800px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
     + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:10px 12px;overflow:hidden;">'
     + '<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;">'
     + '<div style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;box-sizing:border-box;word-break:break-word;overflow-wrap:anywhere;">'

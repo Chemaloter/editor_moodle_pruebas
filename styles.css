@@ -432,3 +432,44 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* ============================================================
+   AJUSTE RESPONSIVE DE ANCHO DE CONTENIDO
+   Único cambio: 800px en ordenador; ancho fluido en tablet y móvil.
+   ============================================================ */
+.editor-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+.editor-area{
+  width:100%;
+  max-width:800px;
+  margin-left:auto;
+  margin-right:auto;
+  box-sizing:border-box;
+}
+.editor-area table,
+.editor-area img,
+.editor-area iframe,
+.editor-area video{
+  max-width:100%;
+}
+@media screen and (max-width:900px){
+  .editor-wrap{
+    padding:12px;
+  }
+  .editor-area{
+    max-width:100%;
+  }
+}
+@media screen and (max-width:600px){
+  .editor-wrap{
+    padding:8px;
+  }
+  .editor-area{
+    max-width:100%;
+    padding-left:16px;
+    padding-right:16px;
+  }
+}
