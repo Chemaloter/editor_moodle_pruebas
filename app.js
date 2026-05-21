@@ -2,33 +2,33 @@
 //  ESTILOS DE EXPORTACIÓN MOODLE (inline, TinyMCE/Atto compatible)
 // ══════════════════════════════════════════════════════════════
 const EX = {
-  h1:   "display:inline-block;background-color:#C0272D;color:#ffffff;padding:12px 24px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;line-height:1.3;",
-  h2:   "display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2px;line-height:1.3;",
-  h3:   "display:inline-block;background-color:#fff0f0;color:#6b1215;border-left:4px solid #C0272D;padding:8px 18px;border-radius:0 5px 5px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;",
-  h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.1px;",
-  h5:   "display:inline-block;color:#7a1518;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;",
-  h6:   "display:inline-block;color:#999;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;font-style:italic;",
-  p:    "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;",
-  ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
-  ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
+  h1:   "display:inline-block;background-color:#C0272D;color:#ffffff;padding:12px 24px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;line-height:1.3;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  h2:   "display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2px;line-height:1.3;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  h3:   "display:inline-block;background-color:#fff0f0;color:#6b1215;border-left:4px solid #C0272D;padding:8px 18px;border-radius:0 5px 5px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1.4;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  h4:   "display:inline-block;color:#C0272D;border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.1px;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  h5:   "display:inline-block;color:#7a1518;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  h6:   "display:inline-block;color:#999;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;font-style:italic;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  p:    "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:10px 0;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
   li:   "margin:5px 0;font-weight:normal;",
-  table:"width:100%;border-collapse:collapse;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;",
-  th:   "background-color:#C0272D;color:#ffffff;padding:10px 14px;text-align:left;font-weight:700;border:1px solid #9b1f23;font-size:14px;",
-  td:   "padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;font-size:14px;line-height:1.6;",
-  tdalt:"padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;background-color:#fdf5f5;font-size:14px;line-height:1.6;",
-  goal: "display:inline-block;background-color:#f0faf1;border-left:5px solid #2e7d32;color:#1a4d1e;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  think:"display:inline-block;background-color:#faf5ff;border-left:5px solid #7b1fa2;color:#4a1570;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.6;",
-  note: "display:inline-block;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  info: "display:inline-block;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
-  tip:  "display:inline-block;background-color:#f0fdfa;border-left:5px solid #0d9488;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:600;line-height:1.6;",
-  step: "display:inline-block;background-color:#eef2ff;border-left:5px solid #4338ca;color:#1e1b4b;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  quote:"display:inline-block;background-color:#f8fafc;border-left:5px solid #94a3b8;color:#334155;padding:12px 22px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-style:italic;line-height:1.7;",
-  extra:"display:inline-block;background-color:#f9fafb;border:1px solid #d1d5db;border-left:4px solid #6b7280;color:#374151;padding:10px 18px;border-radius:0 6px 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;line-height:1.6;",
-  practice:"display:inline-block;background-color:#f0fdfa;border:2px solid #0f766e;border-left:6px solid #0f766e;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.6;",
-  defterm:"display:block;background-color:#eeeeee;color:#263238;padding:10px 14px;border-radius:6px 6px 0 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;line-height:1.4;",
-  defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.7;color:#2d2d2d;",
-  body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;",
-  list:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;",
+  table:"width:100%;border-collapse:collapse;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  th:   "background-color:#C0272D;color:#ffffff;padding:10px 14px;text-align:left;font-weight:700;border:1px solid #9b1f23;font-size:16px;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  td:   "padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;font-size:16px;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  tdalt:"padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;background-color:#fdf5f5;font-size:16px;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  goal: "display:inline-block;background-color:#f0faf1;border-left:5px solid #2e7d32;color:#1a4d1e;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  think:"display:inline-block;background-color:#faf5ff;border-left:5px solid #7b1fa2;color:#4a1570;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-style:italic;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  note: "display:inline-block;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  info: "display:inline-block;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  tip:  "display:inline-block;background-color:#f0fdfa;border-left:5px solid #0d9488;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  step: "display:inline-block;background-color:#eef2ff;border-left:5px solid #4338ca;color:#1e1b4b;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  quote:"display:inline-block;background-color:#f8fafc;border-left:5px solid #94a3b8;color:#334155;padding:12px 22px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-style:italic;line-height:1.7;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  extra:"display:inline-block;background-color:#f9fafb;border:1px solid #d1d5db;border-left:4px solid #6b7280;color:#374151;padding:10px 18px;border-radius:0 6px 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  practice:"display:inline-block;background-color:#f0fdfa;border:2px solid #0f766e;border-left:6px solid #0f766e;color:#134e4a;padding:12px 20px;border-radius:0 6px 6px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:1.6;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  defterm:"display:block;background-color:#eeeeee;color:#263238;padding:10px 14px;border-radius:6px 6px 0 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:1.4;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  defbody:"display:block;padding:12px 14px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 6px 6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:#2d2d2d;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
+  body:   "display:inline-block;padding:6px 10px;color:#2d2d2d;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;",
+  list:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;",
   divider:"display:block;border:none;border-top:2px solid #e5e7eb;margin:16px 0;"
 };
 
@@ -60,9 +60,9 @@ function isWordList(el) {
 // ══════════════════════════════════════════════════════════════
 //  ANCHO INSTITUCIONAL SOLO EN EXPORTACIÓN MOODLE
 // ══════════════════════════════════════════════════════════════
-const EXPORT_CONTENT_MAX = "850px";
-const EXPORT_TEXT_MAX    = "76ch";
-const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
+const EXPORT_CONTENT_MAX = "800px";
+const EXPORT_TEXT_MAX    = "800px";
+const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
 const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";
 function setExportBox(el, maxWidth, topBottom) {
   if (!el || !el.style) return;
@@ -78,20 +78,64 @@ function applyOptimizedReadingWidthForExport(clone) {
   clone.querySelectorAll('p').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_TEXT_STYLE); });
   clone.querySelectorAll('ul').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
   clone.querySelectorAll('ol').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
+
+  // Recursos embebidos y tablas: nunca deben superar el ancho institucional exportado.
+  clone.querySelectorAll('img,iframe,video,audio,table').forEach(el => {
+    if (!el || !el.style || el.closest('td,th')) return;
+    el.style.maxWidth = '100%';
+    el.style.boxSizing = 'border-box';
+  });
+
   Array.from(clone.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
     const tag = el.tagName.toLowerCase();
-    if (tag === 'table') { setExportBox(el, EXPORT_CONTENT_MAX, '24px'); return; }
-    if (tag === 'div' && el.querySelector('table')) { if (!el.style.overflowX) el.style.overflowX = 'auto'; setExportBox(el, EXPORT_CONTENT_MAX, '24px'); return; }
-    if (tag === 'div' && el.querySelector('iframe,video,audio,img')) { setExportBox(el, EXPORT_CONTENT_MAX, '24px'); return; }
+
+    if (tag === 'table') {
+      setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+      return;
+    }
+
+    if (tag === 'ul' || tag === 'ol') {
+      el.style.maxWidth = EXPORT_CONTENT_MAX;
+      el.style.width = '100%';
+      el.style.marginLeft = 'auto';
+      el.style.marginRight = 'auto';
+      el.style.boxSizing = 'border-box';
+      return;
+    }
+
+    if (tag === 'hr') {
+      setExportBox(el, EXPORT_CONTENT_MAX, '20px');
+      return;
+    }
+
+    if (tag === 'div' && el.querySelector('table')) {
+      if (!el.style.overflowX) el.style.overflowX = 'auto';
+      setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+      return;
+    }
+
+    if (tag === 'div' && el.querySelector('iframe,video,audio,img')) {
+      setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+      return;
+    }
+
     if (tag === 'div') {
       const first = el.firstElementChild;
       const style = el.getAttribute('style') || '';
       const firstStyle = first ? (first.getAttribute('style') || '') : '';
       const isTextualBlock = style.includes('margin:') || firstStyle.includes('display:inline-block') || el.classList.contains('sequence-block');
-      if (isTextualBlock) setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+      if (isTextualBlock) {
+        setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+        if (first && first.style) {
+          first.style.maxWidth = '100%';
+          first.style.boxSizing = 'border-box';
+          first.style.overflowWrap = 'anywhere';
+        }
+      }
     }
   });
+
   clone.querySelectorAll('.sequence-block').forEach(el => setExportBox(el, EXPORT_CONTENT_MAX, '24px'));
 }
 
@@ -310,7 +354,7 @@ function convertWordBody(body) {
         out += '</' + lt + '>\n'; st.li++;
         continue;
       }
-      if (tag === 'table') { out += '<div style="overflow-x:auto;margin:12px 0;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
+      if (tag === 'table') { out += '<div style="overflow-x:auto;margin:20px auto;width:100%;max-width:' + EXPORT_CONTENT_MAX + ';box-sizing:border-box;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
       if (tag === 'img') {
         const src = node.getAttribute('src') || '';
         const alt = node.getAttribute('alt') || '';
@@ -776,15 +820,15 @@ function addBlock(type) {
           <div style="flex-shrink: 0; width: 40px; height: 40px; background: ${color}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; ${shadow}">${i}</div>
           <div style="border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; width: 100%;">
             <h4 contenteditable="true" style="margin: 0 0 5px 0; color: #1a1a1a; font-size: 1.1rem; font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Título del Paso ${i}</h4>
-            <p contenteditable="true" style="margin: 0; color: #666; font-size: 0.95rem; line-height: 1.6; font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Descripción detallada de la fase operativa ${i}.</p>
+            <p contenteditable="true" style="margin: 0; color: #666; font-size:16px; line-height:1.6; font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Descripción detallada de la fase operativa ${i}.</p>
           </div>
         </div>`;
     }
 
     // 3. Montamos el bloque completo
     html = `
-      <div class="sequence-block" style="margin:30px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-        <div style="width:100%;max-width:none;margin:0;background-color: #ffffff; padding: 10px;">
+      <div class="sequence-block" style="margin:30px auto;width:100%;max-width:${EXPORT_CONTENT_MAX};box-sizing:border-box;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+        <div style="width:100%;max-width:100%;margin:0;background-color:#ffffff;padding:10px;box-sizing:border-box;">
           <div style="border: 1px solid #eee; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <p style="color: #c0272d; font-size: 0.80rem; text-transform: uppercase; margin-bottom: 25px; font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: inline-block;">
               Bloque: Secuencia Operativa
@@ -820,7 +864,7 @@ function confirmTable() {
   const rows = Math.max(1, Math.min(30, parseInt(document.getElementById('tableRows').value)||3));
   const head = document.getElementById('tableHeader').checked;
   closeTableModal();
-  let t = '<div style="overflow-x:auto;margin:12px 0;"><table style="' + EX.table + '">';
+  let t = '<div style="overflow-x:auto;margin:20px auto;width:100%;max-width:' + EXPORT_CONTENT_MAX + ';box-sizing:border-box;"><table style="' + EX.table + '">';
   if (head) {
     t += '<tr>';
     for (let i=0;i<cols;i++) t += '<th style="' + EX.th + '">Columna '+(i+1)+'</th>';
@@ -1116,20 +1160,20 @@ function compressAndInsertImage(file, width, caption) {
 // ══════════════════════════════════════════════════════════════
 function buildImageHTML(src, caption, width) {
   const isAuto = !width || width === 'auto';
-  const containerW = isAuto ? 'max-width:100%;' : 'width:' + width + ';';
+  const containerW = isAuto ? 'max-width:100%;' : 'width:' + width + ';max-width:100%;';
   const imgStyle   = isAuto
-    ? 'max-width:100%;width:auto;height:auto;border-radius:6px;display:block;margin:0 auto;'
-    : 'width:100%;height:auto;border-radius:6px;display:block;';
-  return '<div style="text-align:center;margin:20px 0;">' +
+    ? 'max-width:100%;width:auto;height:auto;border-radius:6px;display:block;margin:0 auto;box-sizing:border-box;'
+    : 'width:100%;max-width:100%;height:auto;border-radius:6px;display:block;box-sizing:border-box;';
+  return '<div style="text-align:center;margin:20px auto;width:100%;max-width:' + EXPORT_CONTENT_MAX + ';box-sizing:border-box;">' +
          '<div style="display:inline-block;' + containerW + 'background:#fff;' +
          'border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;' +
-         'box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">' +
-         '<div style="text-align:center;background:#f0f0f0;padding:16px;">' +
+         'box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;">' +
+         '<div style="text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;">' +
          '<img src="' + src + '" alt="' + esc(caption || 'Imagen') + '" ' +
          'style="' + imgStyle + '">' +
          '</div>' +
-         '<div style="padding:12px 16px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;">' +
-         '<span contenteditable="true" style="font-weight:700;color:#333;font-size:1em;display:block;outline:none;cursor:text;" ' +
+         '<div style="padding:12px 16px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;box-sizing:border-box;">' +
+         '<span contenteditable="true" style="font-weight:700;color:#333;font-size:16px;line-height:1.5;display:block;outline:none;cursor:text;overflow-wrap:anywhere;" ' +
          'title="Haz clic para editar el título">🖼️ ' + (caption ? esc(caption) : 'Haz clic para escribir el título') + '</span>' +
          '</div>' +
          '</div>' +
@@ -1137,15 +1181,15 @@ function buildImageHTML(src, caption, width) {
 }
 
 function buildPPTHTML(embedUrl, caption, height) {
-  return '<div style="width:100%;margin:20px auto;background:#fff;border:1px solid #d1d1d1;'
+  return '<div style="width:100%;max-width:' + EXPORT_CONTENT_MAX + ';box-sizing:border-box;margin:20px auto;background:#fff;border:1px solid #d1d1d1;'
        + 'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">'
-       + '<div style="position:relative;width:100%;height:' + height + ';background:#f5f5f5;">'
+       + '<div style="position:relative;width:100%;height:' + height + ';background:#f5f5f5;box-sizing:border-box;">'
        + '<iframe src="' + embedUrl + '" '
-       + 'style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" '
+       + 'style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;max-width:100%;box-sizing:border-box;" '
        + 'allowfullscreen></iframe>'
        + '</div>'
-       + '<div style="padding:10px 16px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;">'
-       + '<span contenteditable="true" style="font-weight:700;color:#333;font-size:1em;display:block;outline:none;cursor:text;" '
+       + '<div style="padding:10px 16px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;box-sizing:border-box;">'
+       + '<span contenteditable="true" style="font-weight:700;color:#333;font-size:16px;line-height:1.5;display:block;outline:none;cursor:text;overflow-wrap:anywhere;" '
        + 'title="Haz clic para editar el título">📊 ' + (caption ? esc(caption) : 'Haz clic para escribir el título') + '</span>'
        + '</div>'
        + '</div>';
@@ -1217,13 +1261,13 @@ function confirmMedia() {
     const ytShorts = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
     if (ytMatch)  embedUrl = 'https://www.youtube.com/embed/' + ytMatch[1];
     if (ytShorts) embedUrl = 'https://www.youtube.com/embed/' + ytShorts[1];
-    html = '<div style="width:100%;margin:20px auto;background:#fff;border:1px solid #d1d1d1;' +
+    html = '<div style="width:100%;max-width:' + EXPORT_CONTENT_MAX + ';box-sizing:border-box;margin:20px auto;background:#fff;border:1px solid #d1d1d1;' +
            'border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">' +
            '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;">' +
-           '<iframe src="' + embedUrl + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen></iframe>' +
+           '<iframe src="' + embedUrl + '" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;max-width:100%;box-sizing:border-box;" allowfullscreen></iframe>' +
            '</div>' +
            '<div style="padding:14px 18px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;">' +
-           '<span contenteditable="true" style="font-weight:700;color:#333;font-size:1.05em;display:block;outline:none;cursor:text;" ' +
+           '<span contenteditable="true" style="font-weight:700;color:#333;font-size:16px;line-height:1.5;display:block;outline:none;cursor:text;overflow-wrap:anywhere;" ' +
            'title="Haz clic para editar el título">🎬 ' + (caption ? esc(caption) : 'Haz clic para escribir el título') + '</span>' +
            '</div>' +
            '</div>';
@@ -1234,13 +1278,13 @@ function confirmMedia() {
     const protect   = document.getElementById('pdfProtect');
     const doProtect = protect ? protect.checked : false;
     const params = doProtect ? '#toolbar=0&navpanes=0&scrollbar=1' : '#scrollbar=1';
-    html = '<div style="width:100%;margin:20px auto;border-radius:10px;' +
+    html = '<div style="width:100%;max-width:' + EXPORT_CONTENT_MAX + ';box-sizing:border-box;margin:20px auto;border-radius:10px;' +
            'overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">' +
            '<iframe src="' + url + params + '" ' +
-           'style="width:100%;height:' + height + ';border:0;display:block;min-height:300px;">' +
+           'style="width:100%;max-width:100%;height:' + height + ';border:0;display:block;min-height:300px;box-sizing:border-box;">' +
            '</iframe>' +
            (caption ? '<div style="padding:14px 18px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;">' +
-             '<span style="font-weight:700;color:#333;font-size:1.05em;">📄 ' + esc(caption) + '</span></div>' : '') +
+             '<span style="font-weight:700;color:#333;font-size:16px;line-height:1.5;overflow-wrap:anywhere;">📄 ' + esc(caption) + '</span></div>' : '') +
            '</div>';
   }
   if (html) { closeMediaModal(); insertHTMLAtCursor(html); }
@@ -1284,7 +1328,7 @@ function buildBanner(position) {
       + '<div style="font-size:10px;font-weight:600;color:#374151;margin-top:4px;line-height:1.25;text-transform:uppercase;">' + esc(name) + '</div>'
       + '</div>'
     : '<div style="flex:1 1 0;min-width:0;">&nbsp;</div>';
-  return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:850px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
+  return '<div style="font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:800px;width:100%;box-sizing:border-box;margin-left:auto;margin-right:auto;' + marginTop + marginBottom
     + 'border:2px solid #c0272d;border-radius:8px;background:#f9f9f9;padding:10px 12px;overflow:hidden;">'
     + '<div style="display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px;width:100%;box-sizing:border-box;">'
     + '<div style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;box-sizing:border-box;word-break:break-word;overflow-wrap:anywhere;">'

@@ -432,3 +432,62 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* ============================================================
+   AJUSTE RESPONSIVE DE ANCHO DE CONTENIDO Y RECURSOS
+   Vista previa del editor: 800px en escritorio y fluido en tablet/móvil.
+   No afecta al modal ni al fichero externo de Maniobras.
+   ============================================================ */
+.editor-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+}
+.editor-area{
+  width:100%;
+  max-width:800px;
+  margin-left:auto;
+  margin-right:auto;
+  box-sizing:border-box;
+}
+.editor-area table,
+.editor-area img,
+.editor-area iframe,
+.editor-area video,
+.editor-area audio{
+  max-width:100%;
+  box-sizing:border-box;
+}
+.editor-area > div,
+.editor-area > table,
+.editor-area > ul,
+.editor-area > ol,
+.editor-area > hr{
+  max-width:800px;
+  box-sizing:border-box;
+}
+@media screen and (max-width:900px){
+  .editor-wrap{
+    padding:12px;
+  }
+  .editor-area{
+    max-width:100%;
+  }
+  .editor-area > div,
+  .editor-area > table,
+  .editor-area > ul,
+  .editor-area > ol,
+  .editor-area > hr{
+    max-width:100%;
+  }
+}
+@media screen and (max-width:600px){
+  .editor-wrap{
+    padding:8px;
+  }
+  .editor-area{
+    max-width:100%;
+    padding-left:16px;
+    padding-right:16px;
+  }
+}
