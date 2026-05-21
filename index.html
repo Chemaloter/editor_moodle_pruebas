@@ -1,322 +1,299 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Editor de Contenido Moodle · Bomberos CAM</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <!-- ── REACT + BABEL (Generador de Maniobras) ── -->
-<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin="" src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin="" src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js"></script>
 </head>
 <body>
-
 <!-- ══ HEADER ══ -->
 <header>
-  <div class="h-badge">🔥</div>
-  <div class="h-title">Editor de Contenido <em>Moodle</em></div>
-  <div class="h-divider"></div>
-  <div class="h-corp">Bomberos · C.A.M.</div>
-  <div class="h-pill">v6.1 · Herramienta interna</div>
+<div class="h-badge">🔥</div>
+<div class="h-title">Editor de Contenido <em>Moodle</em></div>
+<div class="h-divider"></div>
+<div class="h-corp">Bomberos · C.A.M.</div>
+<div class="h-pill">v6.7 · Herramienta interna</div>
 </header>
-
 <!-- ══ MAIN ══ -->
 <main>
-  <div class="left-col">
-
-    <!-- Zona de carga de archivo -->
-    <div class="upload-zone">
-      <label class="btn-upload">
+<div class="left-col"><div class="left-panel-scroll"><div class="upload-zone">
+<label class="btn-upload">
         📂 Abrir Word (.docx)
-        <input type="file" id="file-input" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-      </label>
-      <span class="upload-hint">O pega con <strong>Ctrl+V</strong> · O escribe directamente abajo</span>
-    </div>
-
-    <!-- Barra de herramientas de elementos -->
-    <div class="toolbar">
-      <div class="toolbar-section">
-        <span class="toolbar-label">Títulos</span>
-        <button class="btn-el be-h1" onclick="addBlock('h1')">H1</button>
-        <button class="btn-el be-h2" onclick="addBlock('h2')">H2</button>
-        <button class="btn-el be-h3" onclick="addBlock('h3')">H3</button>
-        <button class="btn-el be-h4" onclick="addBlock('h4')">H4</button>
-        <button class="btn-el be-body" onclick="addBlock('body')">¶ Párrafo</button>
-        <div class="toolbar-sep"></div>
-        <span class="toolbar-label">Listas</span>
-        <button class="btn-el be-list"  onclick="addBlock('list')">📋 Lista</button>
-        <button class="btn-el be-table" onclick="openTableModal()">📊 Tabla</button>
-        <button class="btn-el be-sep"   onclick="addBlock('divider')">— Línea divisoria</button>
-      </div>
-      <div class="toolbar-section">
-        <span class="toolbar-label">Bloques</span>
-        <button class="btn-el be-goal"      onclick="addBlock('goal')">🎯 Objetivo</button>
-        <button class="btn-el be-think"     onclick="addBlock('think')">🤔 Reflexión</button>
-        <button class="btn-el be-note"      onclick="addBlock('note')">⚠️ Aviso</button>
-        <button class="btn-el be-info"      onclick="addBlock('info')">ℹ️ Info</button>
-        <button class="btn-el be-tip"       onclick="addBlock('tip')">💡 Consejo</button>
-        <button class="btn-el be-step"      onclick="addBlock('step')">🔢 Paso</button>
-        <button class="btn-el be-practice"  onclick="addBlock('practice')">🛠️ Práctica</button>
-        <button class="btn-el be-quote"     onclick="addBlock('quote')">«» Cita</button>
-        <button class="btn-el be-extra"     onclick="addBlock('extra')">📚 Extra</button>
-        <button class="btn-el be-def"       onclick="addBlock('def')">📖 Definición</button>
-        <button class="btn-el be-sequence"  onclick="addBlock('sequence')">📋 Secuencia</button>
-      </div>
-      <div class="toolbar-section">
-        <span class="toolbar-label">Recursos</span>
-        <button class="btn-el be-img"   onclick="openMediaModal('img')">🖼️ Imagen</button>
-        <button class="btn-el be-img"   onclick="openMediaModal('imgurl')" style="background:#0e9488;">🔗 Imagen URL</button>
-        <button class="btn-el be-video" onclick="openMediaModal('video')">🎬 Vídeo</button>
-        <button class="btn-el be-pdf"   onclick="openMediaModal('pdf')">📄 PDF</button>
-        <button class="btn-el be-ppt"   onclick="openMediaModal('ppt')">📊 Presentación</button>
+        <input accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" id="file-input" type="file"/>
+</label>
+<span class="upload-hint">O pega con <strong>Ctrl+V</strong> · O escribe directamente abajo</span>
+</div><div class="toolbar">
+<div class="toolbar-section tools-titlelist">
+<span class="toolbar-label">Títulos</span>
+<button class="btn-el be-h1" onclick="addBlock('h1')">H1</button>
+<button class="btn-el be-h2" onclick="addBlock('h2')">H2</button>
+<button class="btn-el be-h3" onclick="addBlock('h3')">H3</button>
+<button class="btn-el be-h4" onclick="addBlock('h4')">H4</button>
+<button class="btn-el be-body" onclick="addBlock('body')">Párrafo</button>
 <div class="toolbar-sep"></div>
-<button class="btn-el" style="background:#7a1515;" onclick="openManiobrasModal()">🏗️ Maniobra</button>
-      </div>
-    </div>
-
-    <!-- Barra de formato de texto -->
-    <div class="format-bar">
-      <span class="format-label">Formato</span>
-      <div class="format-group">
-        <button class="fmt-btn" onclick="applyFmt('bold')" title="Negrita (Ctrl+B)"><strong>N</strong></button>
-        <button class="fmt-btn" onclick="applyFmt('italic')" title="Cursiva (Ctrl+I)"><em>K</em></button>
-        <button class="fmt-btn" onclick="applyFmt('underline')" title="Subrayado (Ctrl+U)"><u>S</u></button>
-
+<span class="toolbar-label">Listas</span>
+<button class="btn-el be-list" onclick="addBlock('list')">Lista</button>
+<button class="btn-el be-table" onclick="openTableModal()">Tabla</button>
+<button class="btn-el be-sep" onclick="addBlock('divider')">Línea</button>
+</div>
+<div class="toolbar-section tools-blocks">
+<span class="toolbar-label">Bloques</span>
+<button class="btn-el be-goal" onclick="addBlock('goal')">Objetivo</button>
+<button class="btn-el be-think" onclick="addBlock('think')">Reflexión</button>
+<button class="btn-el be-note" onclick="addBlock('note')">Aviso</button>
+<button class="btn-el be-info" onclick="addBlock('info')">Info</button>
+<button class="btn-el be-tip" onclick="addBlock('tip')">Consejo</button>
+<button class="btn-el be-step" onclick="addBlock('step')">Paso</button>
+<button class="btn-el be-practice" onclick="addBlock('practice')">Práctica</button>
+<button class="btn-el be-quote" onclick="addBlock('quote')">Cita</button>
+<button class="btn-el be-extra" onclick="addBlock('extra')">Extra</button>
+<button class="btn-el be-def" onclick="addBlock('def')">Definición</button>
+<button class="btn-el be-sequence" onclick="addBlock('sequence')">Secuencia</button>
+</div>
+<div class="toolbar-section tools-resources">
+<span class="toolbar-label">Recursos</span>
+<button class="btn-el be-img" onclick="openMediaModal('img')">Imagen</button>
+<button class="btn-el be-img" onclick="openMediaModal('imgurl')" style="background:#0e9488;">Imagen URL</button>
+<button class="btn-el be-video" onclick="openMediaModal('video')">Vídeo</button>
+<button class="btn-el be-pdf" onclick="openMediaModal('pdf')">PDF</button>
+<button class="btn-el be-ppt" onclick="openMediaModal('ppt')">Presentación</button>
+<div class="toolbar-sep"></div>
+<button class="btn-el" onclick="openManiobrasModal()" style="background:#7a1515;">Maniobra</button>
+</div>
+</div><div class="format-bar">
+<span class="format-label">Formato</span>
+<div class="format-group">
+<button class="fmt-btn" onclick="applyFmt('bold')" title="Negrita (Ctrl+B)"><strong>N</strong></button>
+<button class="fmt-btn" onclick="applyFmt('italic')" title="Cursiva (Ctrl+I)"><em>K</em></button>
+<button class="fmt-btn" onclick="applyFmt('underline')" title="Subrayado (Ctrl+U)"><u>S</u></button>
 <select class="t-select" onchange="applyFmt('fontName', this.value)" title="Tipo de letra">
-          <option value="Arial" selected>Arial</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Courier New">Courier New</option>
-          <option value="Georgia">Georgia</option>
-        </select>
-
-        <select class="t-select" onchange="applyFmt('fontSize', this.value)" title="Tamaño de letra">
-          <option value="3" selected>Tamaño normal</option>
-          <option value="1">Muy pequeño</option>
-          <option value="2">Pequeño</option>
-          <option value="4">Medio</option>
-          <option value="5">Grande</option>
-          <option value="6">Extra grande</option>
-        </select>
-
-      </div>
-      <div class="format-sep"></div>
-      <div class="format-group">
-        <button class="fmt-btn" onclick="applyFmt('justifyLeft')"   title="Alinear a la izquierda">⬛▪▪</button>
-        <button class="fmt-btn" onclick="applyFmt('justifyCenter')" title="Centrar">▪⬛▪</button>
-        <button class="fmt-btn" onclick="applyFmt('justifyRight')"  title="Alinear a la derecha">▪▪⬛</button>
-      </div>
-      <div class="format-sep"></div>
-      <div class="format-group">
-        <button class="fmt-btn" onclick="applyFmt('removeFormat')" title="Quitar formato" style="font-size:11px;letter-spacing:0;">✕ Quitar formato</button>
-      </div>
-    </div>
-
-    <!-- Selector de módulo -->
-    <div class="module-zone">
-      <span class="module-zone-label">📚 Módulo</span>
-      <select id="area-select" class="area-select-big" onchange="onAreaChange()">
-        <option value="">— Selecciona tu módulo antes de copiar —</option>
-        <option value="M01|HIDRÁULICA Y TENDIDOS">M01 · Hidráulica y tendidos</option>
-        <option value="M02|EXTINCIÓN DE INCENDIOS URBANOS E INDUSTRIALES">M02 · Extinción incendios urbanos e industriales</option>
-        <option value="M03|OPERACIONES DE EXTINCIÓN DE INCENDIOS FORESTALES">M03 · Extinción incendios forestales</option>
-        <option value="M04|INTERVENCIÓN EN EMERGENCIAS CON SUSTANCIAS PELIGROSAS">M04 · Intervención con sustancias peligrosas</option>
-        <option value="M05|POLÍGONO DE FUEGO">M05 · Polígono de fuego</option>
-        <option value="M06|CONDUCCIÓN TODO TERRENO">M06 · Conducción todo terreno</option>
-        <option value="M07|CONDUCCIÓN URBANA">M07 · Conducción urbana</option>
-        <option value="M08|OPERACIONES DE SALVAMENTO EN ALTURA Y EN ESPACIOS CONFINADOS">M08 · Salvamento en altura y espacios confinados</option>
-        <option value="M09|RESCATES EN ACCIDENTES DE TRÁFICO">M09 · Rescates en accidentes de tráfico</option>
-        <option value="M10|RESCATES EN MEDIO ACUÁTICO">M10 · Rescates en medio acuático</option>
-        <option value="M11|PHTLS Y SOPORTE VITAL BÁSICO">M11 · PHTLS y soporte vital básico</option>
-        <option value="M12|ACTUACIÓN EN SUCESOS POR FENÓMENOS NATURALES">M12 · Actuación en fenómenos naturales</option>
-        <option value="M13|APEOS, APUNTALAMIENTOS Y SANEAMIENTOS I">M13 · Apeos, apuntalamientos y saneamientos I</option>
-        <option value="M14|OPERACIONES TÉCNICAS DIVERSAS I">M14 · Operaciones técnicas diversas I</option>
-        <option value="M15|OPERACIONES TÉCNICAS DIVERSAS II">M15 · Operaciones técnicas diversas II</option>
-        <option value="M16|SISTEMAS Y COMUNICACIONES, PRL, IGUALDAD Y EDUCACIÓN FÍSICA">M16 · Sistemas, comunicaciones, PRL, igualdad y EF</option>
-        <option value="M17|INTERVENCIONES POR TENTATIVA SUICIDA">M17 · Intervenciones por tentativa suicida</option>
-        <option value="M18|MANEJO DE AUTOESCALA Y HABILITACIÓN DE CAMIÓN-GRÚA">M18 · Autoescala y camión-grúa</option>
-        <option value="M19|PRÁCTICAS DE CONDUCCIÓN I">M19 · Prácticas de conducción I</option>
-        <option value="M20|PRÁCTICAS DE CONDUCCIÓN II">M20 · Prácticas de conducción II</option>
-        <option value="M21|PRÁCTICAS DE PARQUE">M21 · Prácticas de parque</option>
-        <option value="M22|ERAS Y TENDIDOS">M22 · Eras y tendidos</option>
-        <option value="AYUDA|EQUIPO TÉCNICO CVC-CBCM">Ayuda · Equipo Técnico | CVC-CBCM</option>
-      </select>
-    </div>
-
-    <!-- Editor principal -->
-    <div class="editor-wrap">
-      <div id="editor" class="editor-area" contenteditable="true" spellcheck="true"
-           data-placeholder="Escribe aquí, pega con Ctrl+V desde Word, abre un .docx, o arrastra una imagen..."></div>
-    </div>
-
-    <!-- Barra de acciones -->
-    <div class="action-bar">
-      <button class="btn-action undo" onclick="doUndo()" title="Deshacer (Ctrl+Z)">↩ Deshacer</button>
-      <button class="btn-action undo" onclick="doRedo()" title="Rehacer (Ctrl+Y)">↪ Rehacer</button>
-      <button class="btn-action help" onclick="openHelp()" title="Cómo usar esta herramienta">❓ Cómo usar</button>
-      <button class="btn-action clear" onclick="clearAll()">✕ Limpiar todo</button>
-      <div style="flex:1;"></div>
-      <label class="banner-toggle" title="Activa para incluir encabezado y pie institucional. Desactiva si solo añades un bloque a una página ya existente en Moodle.">
-        <input type="checkbox" id="toggle-banner" checked onchange="onBannerToggle()">
-        <span class="banner-toggle-track">
-          <span class="banner-toggle-thumb"></span>
-        </span>
-        <span class="banner-toggle-label" id="banner-toggle-label">📄 Documento completo</span>
-      </label>
-      <div style="position:relative;">
-        <button class="btn-copy" id="btn-copy" onclick="copyHTML()" disabled
-          style="padding:8px 22px;font-size:13px;letter-spacing:1px;border-radius:8px;box-shadow:0 2px 8px rgba(192,39,45,.25);">
+<option selected="" value="Arial">Arial</option>
+<option value="Verdana">Verdana</option>
+<option value="Times New Roman">Times New Roman</option>
+<option value="Courier New">Courier New</option>
+<option value="Georgia">Georgia</option>
+</select>
+<select class="t-select" onchange="applyFmt('fontSize', this.value)" title="Tamaño de letra">
+<option selected="" value="3">Tamaño normal</option>
+<option value="1">Muy pequeño</option>
+<option value="2">Pequeño</option>
+<option value="4">Medio</option>
+<option value="5">Grande</option>
+<option value="6">Extra grande</option>
+</select>
+</div>
+<div class="format-sep"></div>
+<div class="format-group">
+<button class="fmt-btn" onclick="applyFmt('justifyLeft')" title="Alinear a la izquierda">⬛▪▪</button>
+<button class="fmt-btn" onclick="applyFmt('justifyCenter')" title="Centrar">▪⬛▪</button>
+<button class="fmt-btn" onclick="applyFmt('justifyRight')" title="Alinear a la derecha">▪▪⬛</button>
+</div>
+<div class="format-sep"></div>
+<div class="format-group">
+<button class="fmt-btn" onclick="applyFmt('removeFormat')" style="font-size:11px;letter-spacing:0;" title="Quitar formato">✕ Quitar formato</button>
+</div>
+</div><div class="module-zone">
+<span class="module-zone-label">📚 Módulo</span>
+<select class="area-select-big" id="area-select" onchange="onAreaChange()">
+<option value="">— Selecciona tu módulo antes de copiar —</option>
+<option value="M01|HIDRÁULICA Y TENDIDOS">M01 · Hidráulica y tendidos</option>
+<option value="M02|EXTINCIÓN DE INCENDIOS URBANOS E INDUSTRIALES">M02 · Extinción incendios urbanos e industriales</option>
+<option value="M03|OPERACIONES DE EXTINCIÓN DE INCENDIOS FORESTALES">M03 · Extinción incendios forestales</option>
+<option value="M04|INTERVENCIÓN EN EMERGENCIAS CON SUSTANCIAS PELIGROSAS">M04 · Intervención con sustancias peligrosas</option>
+<option value="M05|POLÍGONO DE FUEGO">M05 · Polígono de fuego</option>
+<option value="M06|CONDUCCIÓN TODO TERRENO">M06 · Conducción todo terreno</option>
+<option value="M07|CONDUCCIÓN URBANA">M07 · Conducción urbana</option>
+<option value="M08|OPERACIONES DE SALVAMENTO EN ALTURA Y EN ESPACIOS CONFINADOS">M08 · Salvamento en altura y espacios confinados</option>
+<option value="M09|RESCATES EN ACCIDENTES DE TRÁFICO">M09 · Rescates en accidentes de tráfico</option>
+<option value="M10|RESCATES EN MEDIO ACUÁTICO">M10 · Rescates en medio acuático</option>
+<option value="M11|PHTLS Y SOPORTE VITAL BÁSICO">M11 · PHTLS y soporte vital básico</option>
+<option value="M12|ACTUACIÓN EN SUCESOS POR FENÓMENOS NATURALES">M12 · Actuación en fenómenos naturales</option>
+<option value="M13|APEOS, APUNTALAMIENTOS Y SANEAMIENTOS I">M13 · Apeos, apuntalamientos y saneamientos I</option>
+<option value="M14|OPERACIONES TÉCNICAS DIVERSAS I">M14 · Operaciones técnicas diversas I</option>
+<option value="M15|OPERACIONES TÉCNICAS DIVERSAS II">M15 · Operaciones técnicas diversas II</option>
+<option value="M16|SISTEMAS Y COMUNICACIONES, PRL, IGUALDAD Y EDUCACIÓN FÍSICA">M16 · Sistemas, comunicaciones, PRL, igualdad y EF</option>
+<option value="M17|INTERVENCIONES POR TENTATIVA SUICIDA">M17 · Intervenciones por tentativa suicida</option>
+<option value="M18|MANEJO DE AUTOESCALA Y HABILITACIÓN DE CAMIÓN-GRÚA">M18 · Autoescala y camión-grúa</option>
+<option value="M19|PRÁCTICAS DE CONDUCCIÓN I">M19 · Prácticas de conducción I</option>
+<option value="M20|PRÁCTICAS DE CONDUCCIÓN II">M20 · Prácticas de conducción II</option>
+<option value="M21|PRÁCTICAS DE PARQUE">M21 · Prácticas de parque</option>
+<option value="M22|ERAS Y TENDIDOS">M22 · Eras y tendidos</option>
+<option value="AYUDA|EQUIPO TÉCNICO CVC-CBCM">Ayuda · Equipo Técnico | CVC-CBCM</option>
+</select>
+</div><div class="action-bar">
+<button class="btn-action undo" onclick="doUndo()" title="Deshacer (Ctrl+Z)">↩ Deshacer</button>
+<button class="btn-action undo" onclick="doRedo()" title="Rehacer (Ctrl+Y)">↪ Rehacer</button>
+<button class="btn-action help" onclick="openHelp()" title="Cómo usar esta herramienta">❓ Cómo usar</button>
+<button class="btn-action clear" onclick="clearAll()">✕ Limpiar todo</button>
+<div style="flex:1;"></div>
+<label class="banner-toggle" title="Documento completo / Solo bloque">
+<input checked="" id="toggle-banner" onchange="onBannerToggle()" type="checkbox"/>
+<span class="banner-toggle-track">
+<span class="banner-toggle-thumb"></span>
+</span>
+<span class="banner-toggle-label" id="banner-toggle-label">Documento completo</span>
+</label>
+<div style="position:relative;">
+<button class="btn-copy" disabled="" id="btn-copy" onclick="copyHTML()" style="padding:8px 22px;font-size:13px;letter-spacing:1px;border-radius:8px;box-shadow:0 2px 8px rgba(192,39,45,.25);">
           📋 Copiar para pegar en Moodle
         </button>
-        <div class="copy-success" id="copy-success" style="margin:0;border-radius:8px;">
-          <span class="cs-icon" style="font-size:20px;">✅</span>
-          <span class="cs-text" style="font-size:14px;">¡Copiado!</span>
-          <span class="cs-sub">Pega con Ctrl+V en el editor HTML de Moodle</span>
-        </div>
-      </div>
-    </div>
+<div class="copy-success" id="copy-success" style="margin:0;border-radius:8px;">
+<span class="cs-icon" style="font-size:20px;">✅</span>
+<span class="cs-text" style="font-size:14px;">¡Copiado!</span>
+<span class="cs-sub">Pega con Ctrl+V en el editor HTML de Moodle</span>
+</div>
+</div>
+</div></div>
+<!-- Zona de carga de archivo -->
 
-  </div>
+<!-- Barra de herramientas de elementos -->
+
+<!-- Barra de formato de texto -->
+
+<!-- Selector de módulo -->
+
+<!-- Editor principal -->
+<div class="editor-wrap">
+<div class="editor-area" contenteditable="true" data-placeholder="Escribe aquí, pega con Ctrl+V desde Word, abre un .docx, o arrastra una imagen..." id="editor" spellcheck="true"></div>
+</div>
+<!-- Barra de acciones -->
+
+</div>
 </main>
-
 <!-- ── MODAL TABLA ── -->
 <div class="modal-overlay" id="tableModal">
-  <div class="modal">
-    <div class="modal-hdr"><span>📊 Configurar tabla</span><button class="modal-close" onclick="closeTableModal()">✕</button></div>
-    <div class="modal-pad">
-      <div class="modal-row">
-        <div><label class="modal-label">Columnas</label><input id="tableCols" class="modal-input" type="number" min="1" max="10" value="3"></div>
-        <div><label class="modal-label">Filas de datos</label><input id="tableRows" class="modal-input" type="number" min="1" max="30" value="3"></div>
-      </div>
-      <label class="modal-check"><input type="checkbox" id="tableHeader" checked style="width:15px;height:15px;cursor:pointer;accent-color:var(--red);">Incluir fila de cabecera</label>
-      <div class="modal-btns">
-        <button class="modal-btn modal-btn-gray" onclick="closeTableModal()">Cancelar</button>
-        <button class="modal-btn modal-btn-red"  onclick="confirmTable()">Insertar tabla</button>
-      </div>
-    </div>
-  </div>
+<div class="modal">
+<div class="modal-hdr"><span>📊 Configurar tabla</span><button class="modal-close" onclick="closeTableModal()">✕</button></div>
+<div class="modal-pad">
+<div class="modal-row">
+<div><label class="modal-label">Columnas</label><input class="modal-input" id="tableCols" max="10" min="1" type="number" value="3"/></div>
+<div><label class="modal-label">Filas de datos</label><input class="modal-input" id="tableRows" max="30" min="1" type="number" value="3"/></div>
 </div>
-
+<label class="modal-check"><input checked="" id="tableHeader" style="width:15px;height:15px;cursor:pointer;accent-color:var(--red);" type="checkbox"/>Incluir fila de cabecera</label>
+<div class="modal-btns">
+<button class="modal-btn modal-btn-gray" onclick="closeTableModal()">Cancelar</button>
+<button class="modal-btn modal-btn-red" onclick="confirmTable()">Insertar tabla</button>
+</div>
+</div>
+</div>
+</div>
 <!-- ── MODAL AYUDA ── -->
 <div class="modal-overlay" id="helpModal">
-  <div class="help-modal">
-    <div class="help-modal-hdr">
-      <span>❓ Guía de uso</span>
-      <button class="modal-close" onclick="closeHelp()" style="width:32px;height:32px;font-size:16px;">✕</button>
-    </div>
-    <div class="help-modal-body" id="helpBody">
-      <div id="helpCards">
-        <p class="help-intro">Pulsa cualquier tarjeta para ver una explicación detallada.</p>
-        <div class="help-grid">
-          <div class="help-card" onclick="showHelpSection('s1')"><span class="hc-icon">📝</span><span class="hc-title">Crear contenido</span><span class="hc-sub">Escribir, pegar desde Word, abrir .docx</span></div>
-          <div class="help-card" onclick="showHelpSection('s2')"><span class="hc-icon">🧩</span><span class="hc-title">Bloques especiales</span><span class="hc-sub">Objetivos, avisos, pasos, prácticas...</span></div>
-          <div class="help-card" onclick="showHelpSection('s3')"><span class="hc-icon">🖼️</span><span class="hc-title">Imágenes</span><span class="hc-sub">Cómo insertar y configurar imágenes</span></div>
-          <div class="help-card" onclick="showHelpSection('s4')"><span class="hc-icon">🎬</span><span class="hc-title">Vídeos</span><span class="hc-sub">Insertar vídeos desde la Mediateca</span></div>
-          <div class="help-card" onclick="showHelpSection('s5')"><span class="hc-icon">📄</span><span class="hc-title">PDF</span><span class="hc-sub">Incrustar documentos PDF en Moodle</span></div>
-          <div class="help-card" onclick="showHelpSection('s6')"><span class="hc-icon">📊</span><span class="hc-title">Tablas</span><span class="hc-sub">Crear y editar tablas</span></div>
-          <div class="help-card" onclick="showHelpSection('s7')"><span class="hc-icon">📋</span><span class="hc-title">Copiar a Moodle</span><span class="hc-sub">Cómo pegar el resultado en Moodle</span></div>
-          <div class="help-card" onclick="showHelpSection('s8')"><span class="hc-icon">⌨️</span><span class="hc-title">Atajos de teclado</span><span class="hc-sub">Comandos rápidos para trabajar mejor</span></div>
-          <div class="help-card" onclick="showHelpSection('s9')"><span class="hc-icon">✉️</span><span class="hc-title">Contacto</span><span class="hc-sub">Incidencias y sugerencias</span></div>
-          <div class="help-card" onclick="showHelpSection('s10')"><span class="hc-icon">📚</span><span class="hc-title">Selector de módulo</span><span class="hc-sub">Cómo elegir tu área temática</span></div>
+<div class="help-modal">
+<div class="help-modal-hdr">
+<span>❓ Guía de uso</span>
+<button class="modal-close" onclick="closeHelp()" style="width:32px;height:32px;font-size:16px;">✕</button>
+</div>
+<div class="help-modal-body" id="helpBody">
+<div id="helpCards">
+<p class="help-intro">Pulsa cualquier tarjeta para ver una explicación detallada.</p>
+<div class="help-grid">
+<div class="help-card" onclick="showHelpSection('s1')"><span class="hc-icon">📝</span><span class="hc-title">Crear contenido</span><span class="hc-sub">Escribir, pegar desde Word, abrir .docx</span></div>
+<div class="help-card" onclick="showHelpSection('s2')"><span class="hc-icon">🧩</span><span class="hc-title">Bloques especiales</span><span class="hc-sub">Objetivos, avisos, pasos, prácticas...</span></div>
+<div class="help-card" onclick="showHelpSection('s3')"><span class="hc-icon">🖼️</span><span class="hc-title">Imágenes</span><span class="hc-sub">Cómo insertar y configurar imágenes</span></div>
+<div class="help-card" onclick="showHelpSection('s4')"><span class="hc-icon">🎬</span><span class="hc-title">Vídeos</span><span class="hc-sub">Insertar vídeos desde la Mediateca</span></div>
+<div class="help-card" onclick="showHelpSection('s5')"><span class="hc-icon">📄</span><span class="hc-title">PDF</span><span class="hc-sub">Incrustar documentos PDF en Moodle</span></div>
+<div class="help-card" onclick="showHelpSection('s6')"><span class="hc-icon">📊</span><span class="hc-title">Tablas</span><span class="hc-sub">Crear y editar tablas</span></div>
+<div class="help-card" onclick="showHelpSection('s7')"><span class="hc-icon">📋</span><span class="hc-title">Copiar a Moodle</span><span class="hc-sub">Cómo pegar el resultado en Moodle</span></div>
+<div class="help-card" onclick="showHelpSection('s8')"><span class="hc-icon">⌨️</span><span class="hc-title">Atajos de teclado</span><span class="hc-sub">Comandos rápidos para trabajar mejor</span></div>
+<div class="help-card" onclick="showHelpSection('s9')"><span class="hc-icon">✉️</span><span class="hc-title">Contacto</span><span class="hc-sub">Incidencias y sugerencias</span></div>
+<div class="help-card" onclick="showHelpSection('s10')"><span class="hc-icon">📚</span><span class="hc-title">Selector de módulo</span><span class="hc-sub">Cómo elegir tu área temática</span></div>
 <div class="help-card" onclick="showHelpSection('s11')">
-  <span class="hc-icon">⚙️</span>
-  <span class="hc-title">Cómo funciona el editor</span>
-  <span class="hc-sub">Comportamiento y lógica interna</span>
+<span class="hc-icon">⚙️</span>
+<span class="hc-title">Cómo funciona el editor</span>
+<span class="hc-sub">Comportamiento y lógica interna</span>
 </div>
-        </div>
-      </div>
-      <div id="helpSection" style="display:none;">
-        <button class="help-back" onclick="showHelpCards()">← Volver</button>
-        <div id="helpSectionContent"></div>
-      </div>
-    </div>
-  </div>
 </div>
-
+</div>
+<div id="helpSection" style="display:none;">
+<button class="help-back" onclick="showHelpCards()">← Volver</button>
+<div id="helpSectionContent"></div>
+</div>
+</div>
+</div>
+</div>
 <!-- ── MODAL AVISO MÓDULO ── -->
 <div class="modal-overlay" id="moduleWarnModal">
-  <div class="modal" style="max-width:400px;">
-    <div class="modal-hdr" style="background:#fff8ed;border-bottom:2px solid #f59e0b;">
-      <span style="color:#92400e;">⚠️ Módulo no seleccionado</span>
-      <button class="modal-close" onclick="closeModuleWarn()">✕</button>
-    </div>
-    <div class="modal-pad" style="gap:16px;">
-      <p style="font-size:14px;color:var(--text);line-height:1.6;">
+<div class="modal" style="max-width:400px;">
+<div class="modal-hdr" style="background:#fff8ed;border-bottom:2px solid #f59e0b;">
+<span style="color:#92400e;">⚠️ Módulo no seleccionado</span>
+<button class="modal-close" onclick="closeModuleWarn()">✕</button>
+</div>
+<div class="modal-pad" style="gap:16px;">
+<p style="font-size:14px;color:var(--text);line-height:1.6;">
         Antes de copiar el contenido debes seleccionar el <strong>módulo</strong> al que pertenece este material.
       </p>
-      <p style="font-size:13px;color:var(--muted);line-height:1.5;">
+<p style="font-size:13px;color:var(--muted);line-height:1.5;">
         El módulo aparece en el encabezado y pie de página del documento que se generará en Moodle.
       </p>
-      <div class="modal-btns">
-        <button class="modal-btn modal-btn-red" onclick="closeModuleWarn()">Entendido — ir a seleccionar</button>
-      </div>
-    </div>
-  </div>
+<div class="modal-btns">
+<button class="modal-btn modal-btn-red" onclick="closeModuleWarn()">Entendido — ir a seleccionar</button>
 </div>
-
+</div>
+</div>
+</div>
 <!-- ── MODAL MULTIMEDIA ── -->
 <div class="modal-overlay" id="mediaModal">
-  <div class="modal">
-    <div class="modal-hdr">
-      <span id="mediaModal-title">Insertar recurso</span>
-      <button class="modal-close" onclick="closeMediaModal()">✕</button>
-    </div>
-    <div class="modal-pad">
-      <div id="mediaFileRow" style="display:none;">
-        <label class="modal-label">Selecciona una imagen de tu equipo</label>
-        <label class="img-file-label" id="imgFileLabel">
-          📁 Elegir imagen...
-          <input type="file" id="mediaFileInput" accept="image/*" style="display:none;">
-        </label>
-        <div id="imgPreviewWrap" style="display:none;margin-top:8px;text-align:center;">
-          <img id="imgPreview" style="max-height:120px;max-width:100%;border-radius:6px;border:1px solid var(--border);">
-          <p id="imgFileInfo" style="font-size:11px;color:var(--muted);margin-top:4px;"></p>
-        </div>
-      </div>
-      <div id="mediaUrlRow">
-        <label class="modal-label" id="mediaModal-label">URL del recurso</label>
-        <input id="mediaUrl" class="modal-input" type="url"
-          style="font-size:13px;text-align:left;font-weight:400;letter-spacing:0;"
-          placeholder="https://...">
-      </div>
-      <div id="mediaExtra"></div>
-      <p id="mediaModal-hint" class="modal-hint"></p>
-      <div class="modal-btns">
-        <button class="modal-btn modal-btn-gray" onclick="closeMediaModal()">Cancelar</button>
-        <button class="modal-btn modal-btn-red"  onclick="confirmMedia()">Insertar</button>
-      </div>
-    </div>
-  </div>
+<div class="modal">
+<div class="modal-hdr">
+<span id="mediaModal-title">Insertar recurso</span>
+<button class="modal-close" onclick="closeMediaModal()">✕</button>
 </div>
-
+<div class="modal-pad">
+<div id="mediaFileRow" style="display:none;">
+<label class="modal-label">Selecciona una imagen de tu equipo</label>
+<label class="img-file-label" id="imgFileLabel">
+          📁 Elegir imagen...
+          <input accept="image/*" id="mediaFileInput" style="display:none;" type="file"/>
+</label>
+<div id="imgPreviewWrap" style="display:none;margin-top:8px;text-align:center;">
+<img id="imgPreview" style="max-height:120px;max-width:100%;border-radius:6px;border:1px solid var(--border);"/>
+<p id="imgFileInfo" style="font-size:11px;color:var(--muted);margin-top:4px;"></p>
+</div>
+</div>
+<div id="mediaUrlRow">
+<label class="modal-label" id="mediaModal-label">URL del recurso</label>
+<input class="modal-input" id="mediaUrl" placeholder="https://..." style="font-size:13px;text-align:left;font-weight:400;letter-spacing:0;" type="url"/>
+</div>
+<div id="mediaExtra"></div>
+<p class="modal-hint" id="mediaModal-hint"></p>
+<div class="modal-btns">
+<button class="modal-btn modal-btn-gray" onclick="closeMediaModal()">Cancelar</button>
+<button class="modal-btn modal-btn-red" onclick="confirmMedia()">Insertar</button>
+</div>
+</div>
+</div>
+</div>
 <div class="toast" id="toast"></div>
 <div id="img-size-toolbar">
-  <span style="color:rgba(255,255,255,.4);font-size:10px;font-family:var(--font-hd);padding:0 6px 0 4px;letter-spacing:1px;">↔</span>
-  <button class="img-size-btn" data-size="100%">100%</button>
-  <button class="img-size-btn" data-size="75%">75%</button>
-  <button class="img-size-btn" data-size="50%">50%</button>
-  <button class="img-size-btn" data-size="auto">Auto</button>
+<span style="color:rgba(255,255,255,.4);font-size:10px;font-family:var(--font-hd);padding:0 6px 0 4px;letter-spacing:1px;">↔</span>
+<button class="img-size-btn" data-size="100%">100%</button>
+<button class="img-size-btn" data-size="75%">75%</button>
+<button class="img-size-btn" data-size="50%">50%</button>
+<button class="img-size-btn" data-size="auto">Auto</button>
 </div>
-
 <!-- ── MODAL GENERADOR DE MANIOBRAS ── -->
 <div class="modal-overlay" id="maniobrasModal">
-  <div class="maniobras-shell">
-    <div class="maniobras-shell-hdr">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="background:#7a1515;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;">CBCM</div>
-        <span style="font-weight:700;font-size:14px;color:#fff;">Generador de Maniobras de Parque</span>
-      </div>
-      <button class="modal-close" onclick="closeManiobrasModal()" style="background:rgba(255,255,255,.15);color:#fff;width:30px;height:30px;font-size:15px;">✕</button>
-    </div>
-    <div id="maniobras-root" style="flex:1;overflow:hidden;"></div>
-  </div>
+<div class="maniobras-shell">
+<div class="maniobras-shell-hdr">
+<div style="display:flex;align-items:center;gap:10px;">
+<div style="background:#7a1515;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;">CBCM</div>
+<span style="font-weight:700;font-size:14px;color:#fff;">Generador de Maniobras de Parque</span>
 </div>
-
-<script type="text/babel" src="generador_maniobras.js" data-presets="react"></script>
-
+<button class="modal-close" onclick="closeManiobrasModal()" style="background:rgba(255,255,255,.15);color:#fff;width:30px;height:30px;font-size:15px;">✕</button>
+</div>
+<div id="maniobras-root" style="flex:1;overflow:hidden;"></div>
+</div>
+</div>
+<script data-presets="react" src="generador_maniobras.js" type="text/babel"></script>
 <script src="app.js"></script>
 </body>
 </html>
