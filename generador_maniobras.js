@@ -62,42 +62,69 @@ function generateHTML(d) {
   const red = "#C0272D";
   const redDark = "#9b1e23";
   const textColor = "#1f2937";
+  const headingColor = "#374151";
   const muted = "#6b7280";
   const border = "#e4e7ec";
+  const borderSoft = "#edf0f4";
   const contentMax = "800px";
   const mediaMax = "1000px";
 
   const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:${textColor};background:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;`;
+  const contentStyle = `max-width:${contentMax};width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box;`;
   const mediaWrapStyle = `max-width:${mediaMax};width:100%;margin:18px auto;box-sizing:border-box;`;
   const sectionStyle = `max-width:${contentMax};width:100%;margin:22px auto;padding:20px 22px;background:#ffffff;border:1px solid ${border};border-left:6px solid ${red};border-radius:14px;box-sizing:border-box;box-shadow:0 3px 12px rgba(15,23,42,.05);`;
-  const h2Style = `font-family:${fontStack};font-size:21px;line-height:1.25;font-weight:800;color:${redDark};margin:0 0 14px 0;`;
-  const h3Style = `font-family:${fontStack};font-size:17px;line-height:1.35;font-weight:800;color:#374151;margin:18px 0 8px 0;`;
-  const pStyle = `margin:0 0 12px 0;line-height:1.8;color:${textColor};`;
-  const smallPStyle = `margin:0 0 10px 0;line-height:1.65;color:${muted};font-size:14px;`;
-  const listStyle = `margin:8px 0 14px 0;padding-left:24px;line-height:1.75;color:${textColor};`;
-  const liStyle = `margin:0 0 7px 0;line-height:1.75;`;
+  const sectionHeaderStyle = `display:flex;align-items:center;gap:10px;margin:0 0 8px 0;box-sizing:border-box;`;
+  const numBadgeStyle = `display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;background:${red};color:#ffffff;font-family:${fontStack};font-weight:800;font-size:14px;line-height:30px;text-align:center;box-sizing:border-box;`;
+  const h2Style = `font-family:${fontStack};font-size:21px;line-height:1.25;font-weight:800;color:${redDark};margin:0;letter-spacing:.01em;`;
+  const h3Style = `font-family:${fontStack};font-size:17px;line-height:1.35;font-weight:800;color:${headingColor};margin:18px 0 8px 0;`;
+  const pStyle = `margin:0 0 12px 0;line-height:1.8;color:${textColor};font-family:${fontStack};font-size:16px;`;
+  const smallPStyle = `margin:0 0 10px 0;line-height:1.65;color:${muted};font-family:${fontStack};font-size:14px;`;
+  const listStyle = `margin:8px 0 14px 0;padding-left:24px;line-height:1.75;color:${textColor};font-family:${fontStack};font-size:16px;`;
+  const liStyle = `margin:0 0 7px 0;line-height:1.75;color:${textColor};font-family:${fontStack};font-size:16px;`;
   const tableWrapStyle = `max-width:${mediaMax};width:100%;margin:18px auto;overflow-x:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box;`;
-  const tableStyle = `width:100%;border-collapse:separate;border-spacing:0;border:1px solid ${border};border-radius:12px;overflow:hidden;background:#fff;box-sizing:border-box;`;
-  const thStyle = `background:#fff7f7;color:${redDark};font-weight:800;font-size:13px;text-align:left;padding:10px 12px;border-bottom:1px solid ${border};`;
-  const tdStyle = `padding:10px 12px;border-bottom:1px solid ${border};vertical-align:top;font-size:14px;line-height:1.65;color:${textColor};`;
+  const tableBoxStyle = `width:100%;margin:14px auto 16px auto;border:1px solid ${border};border-radius:14px;overflow:hidden;background:#ffffff;box-sizing:border-box;`;
+  const tableStyle = `width:100%;border-collapse:collapse;border-spacing:0;margin:0;background:#ffffff;box-sizing:border-box;`;
+  const thStyle = `background:#fff7f7;color:${redDark};font-family:${fontStack};font-weight:800;font-size:13px;text-align:left;padding:10px 12px;border-bottom:1px solid ${border};vertical-align:top;line-height:1.55;box-sizing:border-box;`;
+  const tdStyle = `padding:10px 12px;border-bottom:1px solid ${borderSoft};vertical-align:top;font-family:${fontStack};font-size:14px;line-height:1.65;color:${textColor};box-sizing:border-box;`;
+  const tdLastStyle = `padding:10px 12px;border-bottom:none;vertical-align:top;font-family:${fontStack};font-size:14px;line-height:1.65;color:${textColor};box-sizing:border-box;`;
 
   const nl2br = (s) => mEsc(s).replace(/\r?\n/g, "<br>");
-  const paragraph = (txt, extraStyle) => txt && String(txt).trim() ? `<p style="${extraStyle || pStyle}">${nl2br(txt)}</p>` : "";
-  const listItems = (arr) => (arr || []).filter(x => String(x || "").trim()).map(x => `<li style="${liStyle}">${nl2br(x)}</li>`).join("");
-  const listBlock = (arr) => { const items = listItems(arr); return items ? `<ul style="${listStyle}">${items}</ul>` : ""; };
-  const subsection = (title, body) => body ? `<h4 style="${h3Style}">${mEsc(title)}</h4>${body}` : "";
-  const section = (num, title, body) => body ? `<div style="${sectionStyle}"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;background:${red};color:#fff;font-weight:800;font-size:14px;">${mEsc(num)}</span><h3 style="${h2Style}">${mEsc(title)}</h3></div>${body}</div>` : "";
+  const paragraph = (txt, extraStyle) => txt && String(txt).trim()
+    ? `<p style="${extraStyle || pStyle}">${nl2br(txt)}</p>`
+    : "";
+  const listItems = (arr) => (arr || [])
+    .filter(x => String(x || "").trim())
+    .map(x => `<li style="${liStyle}">${nl2br(x)}</li>`)
+    .join("");
+  const listBlock = (arr) => {
+    const items = listItems(arr);
+    return items ? `<ul style="${listStyle}">${items}</ul>` : "";
+  };
+  const subsection = (title, body) => body
+    ? `<h4 style="${h3Style}">${mEsc(title)}</h4>${body}`
+    : "";
+  const section = (num, title, body) => body
+    ? `<div style="${sectionStyle}"><div style="${sectionHeaderStyle}"><span style="${numBadgeStyle}">${mEsc(num)}</span><h3 style="${h2Style}">${mEsc(title)}</h3></div><div style="${contentStyle}">${body}</div></div>`
+    : "";
 
   const renderImageSafe = (item) => {
     const src = typeof item === "string" ? item.trim() : item && item.mode === "file" ? item.src : ((item && item.url) || "").trim();
     if (!src) return "";
-    return `<div style="${mediaWrapStyle}"><img src="${mEsc(src)}" alt="Recurso visual" style="display:block;width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid ${border};box-sizing:border-box;" /></div>`;
+    return `<div style="${mediaWrapStyle}"><img src="${mEsc(src)}" alt="Recurso visual" style="display:block;width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid ${border};box-sizing:border-box;margin:0 auto;" /></div>`;
   };
-  const renderImages = (arr) => (arr || []).filter(img => typeof img === "string" ? img.trim() : img && (img.mode === "file" ? img.src : (img.url || "").trim())).map(renderImageSafe).join("\n");
-  const renderVideos = (arr) => (arr || []).filter(v => String(v || "").trim()).map(v => `<div style="${mediaWrapStyle}">${embedVideoUrl(v)}</div>`).join("\n");
+  const renderImages = (arr) => (arr || [])
+    .filter(img => typeof img === "string" ? img.trim() : img && (img.mode === "file" ? img.src : (img.url || "").trim()))
+    .map(renderImageSafe)
+    .join("\n");
+  const renderVideos = (arr) => (arr || [])
+    .filter(v => String(v || "").trim())
+    .map(v => `<div style="${mediaWrapStyle}">${embedVideoUrl(v)}</div>`)
+    .join("\n");
 
   const validItCodes = (d.itCodes || []).filter(c => String(c || "").trim());
-  const codesHtml = validItCodes.length ? `<div style="margin-top:10px;">${validItCodes.map(c => `<span style="display:inline-block;margin:3px 5px 0 0;padding:4px 9px;border-radius:999px;background:#fff;border:1px solid rgba(255,255,255,.75);color:#9b1e23;font-size:12px;font-weight:800;">${mEsc(c)}</span>`).join("")}</div>` : "";
+  const codesHtml = validItCodes.length
+    ? `<div style="margin-top:10px;box-sizing:border-box;">${validItCodes.map(c => `<span style="display:inline-block;margin:3px 5px 0 0;padding:4px 9px;border-radius:999px;background:#ffffff;border:1px solid rgba(255,255,255,.75);color:${redDark};font-family:${fontStack};font-size:12px;font-weight:800;line-height:1.35;box-sizing:border-box;">${mEsc(c)}</span>`).join("")}</div>`
+    : "";
 
   const recursosBody = [
     subsection("EPI's", listBlock(d.epis)),
@@ -107,19 +134,42 @@ function generateHTML(d) {
     renderVideos(d.recursosVideos)
   ].join("\n");
 
-  const stepRows = (d.pasos || []).filter(p => String(p || "").trim()).map((p, i) => `<tr><td style="${tdStyle}width:54px;text-align:center;"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:${red};color:#fff;font-weight:800;">${i + 1}</span></td><td style="${tdStyle}">${nl2br(p)}</td></tr>`).join("");
-  const stepsHtml = stepRows ? `<div style="${tableWrapStyle}"><table style="${tableStyle}"><tbody>${stepRows}</tbody></table></div>` : "";
-  const riskRows = (d.riesgos || []).map(r => `<tr><td style="${tdStyle}">${nl2br(r.riesgo)}</td><td style="${tdStyle}">${nl2br(r.causa)}</td><td style="${tdStyle}"><span style="${badgeStyle(r.grado)}">${mEsc(r.grado)}</span></td><td style="${tdStyle}">${nl2br(r.medida)}</td></tr>`).join("");
+  const validSteps = (d.pasos || []).filter(p => String(p || "").trim());
+  const stepRows = validSteps.map((p, i) => {
+    const isLast = i === validSteps.length - 1;
+    const rowTdStyle = isLast ? tdLastStyle : tdStyle;
+    const rowStyle = `background:#ffffff;box-sizing:border-box;`;
+    const numberCellStyle = `${rowTdStyle}width:62px;text-align:center;vertical-align:middle;`;
+    const textCellStyle = `${rowTdStyle}vertical-align:middle;font-size:15px;line-height:1.65;`;
+    return `<tr style="${rowStyle}"><td style="${numberCellStyle}"><span style="${numBadgeStyle}">${i + 1}</span></td><td style="${textCellStyle}">${nl2br(p)}</td></tr>`;
+  }).join("");
+  const stepsHtml = stepRows
+    ? `<div style="${tableBoxStyle}"><table style="${tableStyle}"><tbody style="margin:0;padding:0;box-sizing:border-box;">${stepRows}</tbody></table></div>`
+    : "";
 
-  const recordadBlock = d.recordad && d.recordad.trim() ? `<div style="margin:14px 0 0 0;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;border-left:5px solid #f97316;color:#713f12;"><strong>Recordad:</strong> ${nl2br(d.recordad)}</div>` : "";
-  const planSosBody = `<div style="padding:14px 16px;border-radius:12px;background:#fff7f7;border:1px solid #f0d6d6;border-left:5px solid ${red};">${paragraph(d.planSOS.senal, `margin:0 0 10px 0;line-height:1.7;color:${redDark};font-weight:800;`)}${paragraph(d.planSOS.intro1)}${paragraph(d.planSOS.intro2)}${subsection(d.planSOS.leveTitulo, listBlock(d.planSOS.leveItems))}${subsection(d.planSOS.graveTitulo, listBlock(d.planSOS.graveItems))}${paragraph(d.planSOS.cierre)}</div>`;
+  const validRisks = (d.riesgos || []);
+  const riskRows = validRisks.map((r, i) => {
+    const isLast = i === validRisks.length - 1;
+    const cell = isLast ? tdLastStyle : tdStyle;
+    return `<tr style="background:#ffffff;box-sizing:border-box;"><td style="${cell}">${nl2br(r.riesgo)}</td><td style="${cell}">${nl2br(r.causa)}</td><td style="${cell}"><span style="${badgeStyle(r.grado)}">${mEsc(r.grado)}</span></td><td style="${cell}">${nl2br(r.medida)}</td></tr>`;
+  }).join("");
+
+  const recordadBlock = d.recordad && d.recordad.trim()
+    ? `<div style="margin:14px 0 0 0;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;border-left:5px solid #f97316;color:#713f12;font-family:${fontStack};font-size:15px;line-height:1.65;box-sizing:border-box;"><span style="font-weight:800;color:#713f12;">Recordad:</span> ${nl2br(d.recordad)}</div>`
+    : "";
+
+  const planSosBody = `<div style="padding:14px 16px;border-radius:12px;background:#fff7f7;border:1px solid #f0d6d6;border-left:5px solid ${red};box-sizing:border-box;">${paragraph(d.planSOS.senal, `margin:0 0 10px 0;line-height:1.7;color:${redDark};font-family:${fontStack};font-size:15px;font-weight:800;`)}${paragraph(d.planSOS.intro1)}${paragraph(d.planSOS.intro2)}${subsection(d.planSOS.leveTitulo, listBlock(d.planSOS.leveItems))}${subsection(d.planSOS.graveTitulo, listBlock(d.planSOS.graveItems))}${paragraph(d.planSOS.cierre)}</div>`;
 
   let evaluacionHtml = "";
   if (d.evaluacion.mostrar) {
     evaluacionHtml = section("II", "Anexo II — Criterios de evaluación", `${paragraph("Durante las maniobras se realizarán rúbricas de evaluación divididas en tres bloques diferenciados.")}${subsection("Bloque 1 — Críticos", paragraph("Será necesario cumplirlos todos para poder dar por apta la maniobra; aseguran el aprobado.") + (listBlock(d.evaluacion.criticos) || listBlock(["Sin ítems definidos"])))}${subsection("Bloque 2 — Técnicos", paragraph("Estos ítems permiten alcanzar la máxima calificación técnica.") + (listBlock(d.evaluacion.tecnicos) || listBlock(["Sin ítems definidos"])))}${subsection("Bloque 3 — Actitudinales", paragraph("Estos ítems no suman, pero sí pueden restar.") + (listBlock(d.evaluacion.actitudinales) || listBlock(["Sin ítems definidos"])))}`);
   }
 
-  return `<div style="${pageStyle}"><div style="max-width:${mediaMax};width:100%;margin:0 auto 26px auto;background:${red};border-radius:16px;overflow:hidden;box-shadow:0 8px 22px rgba(192,39,45,.18);box-sizing:border-box;"><div style="padding:18px 22px;color:#fff;box-sizing:border-box;"><div style="display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">CBCM · Práctica</div><h2 style="font-family:${fontStack};font-size:25px;line-height:1.25;font-weight:800;margin:12px 0 4px 0;color:#fff;">${mEsc(d.titulo || "Maniobra de parque")}</h2>${d.subtitulo ? `<p style="margin:0;color:rgba(255,255,255,.86);font-size:15px;line-height:1.55;">${nl2br(d.subtitulo)}</p>` : ""}${codesHtml}</div></div>${section("1", "Descripción", paragraph(d.descripcion))}${section("2", "Objetivo pedagógico", paragraph(d.objetivo))}${section("3", "Destinatarios", paragraph(d.destinatarios))}${section("4", "Escenario", `${paragraph(d.escenario)}${renderImages(d.escenarioImagenes || [])}`)}${section("5", "Recursos", recursosBody)}${section("6", "Organización del grupo", `${paragraph(d.organizacion)}${subsection("Rol del " + (d.rolMandoTitulo || "responsable"), listBlock(d.rolesJT || []))}`)}${section("7", "Desarrollo explicativo de la práctica", `${paragraph("Documentación de referencia: " + (d.refDoc || ""), smallPStyle)}${d.aspectosGenerales && d.aspectosGenerales.trim() ? subsection("Aspectos generales", paragraph(d.aspectosGenerales)) : ""}${d.desarrolloManiobra && d.desarrolloManiobra.trim() ? subsection("Desarrollo de la maniobra", paragraph(d.desarrolloManiobra)) : ""}${d.escenarioDesarrollo && d.escenarioDesarrollo.trim() ? subsection("Escenario", paragraph(d.escenarioDesarrollo)) : ""}${renderImages(d.desarrolloImagenes || [])}${renderVideos(d.videos || [])}${subsection("Explicación secuencial de la maniobra", stepsHtml)}${subsection("Precauciones", paragraph(d.precauciones) + recordadBlock)}`)}<div style="${sectionStyle}"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;background:${red};color:#fff;font-weight:800;font-size:14px;">8</span><h3 style="${h2Style}">Evaluación de riesgos de la maniobra</h3></div><div style="${tableWrapStyle}"><table style="${tableStyle}"><thead><tr><th style="${thStyle}">Riesgo</th><th style="${thStyle}">Causa</th><th style="${thStyle}">Grado</th><th style="${thStyle}">Medida preventiva</th></tr></thead><tbody>${riskRows}</tbody></table></div></div>${section("I", "Anexo I — Plan SOS", planSosBody)}${evaluacionHtml}<div style="max-width:${mediaMax};width:100%;margin:26px auto 0 auto;border-top:1px solid ${border};padding-top:12px;color:${muted};font-size:12px;line-height:1.55;box-sizing:border-box;"><table style="width:100%;border-collapse:collapse;"><tbody><tr><td style="vertical-align:top;padding:4px 8px 4px 0;width:140px;"><strong>Revisión ${mEsc(d.revision)}</strong></td><td style="vertical-align:top;padding:4px 8px;">${nl2br(d.pieTexto)}</td><td style="vertical-align:top;padding:4px 0 4px 8px;text-align:right;width:90px;">Pág. 1 de 1</td></tr></tbody></table></div></div>`;
+  const risksTableHtml = `<div style="${sectionStyle}"><div style="${sectionHeaderStyle}"><span style="${numBadgeStyle}">8</span><h3 style="${h2Style}">Evaluación de riesgos de la maniobra</h3></div><div style="${tableWrapStyle}"><div style="${tableBoxStyle}"><table style="${tableStyle}"><thead style="margin:0;padding:0;box-sizing:border-box;"><tr style="background:#fff7f7;box-sizing:border-box;"><th style="${thStyle}">Riesgo</th><th style="${thStyle}">Causa</th><th style="${thStyle}">Grado</th><th style="${thStyle}">Medida preventiva</th></tr></thead><tbody style="margin:0;padding:0;box-sizing:border-box;">${riskRows}</tbody></table></div></div></div>`;
+
+  const footerHtml = `<div style="max-width:${mediaMax};width:100%;margin:26px auto 0 auto;border-top:1px solid ${border};padding-top:12px;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;"><table style="width:100%;border-collapse:collapse;border-spacing:0;margin:0;background:transparent;box-sizing:border-box;"><tbody style="margin:0;padding:0;box-sizing:border-box;"><tr style="margin:0;padding:0;box-sizing:border-box;"><td style="vertical-align:top;padding:4px 8px 4px 0;width:140px;border:none;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;"><span style="font-weight:800;color:${muted};">Revisión ${mEsc(d.revision)}</span></td><td style="vertical-align:top;padding:4px 8px;border:none;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;">${nl2br(d.pieTexto)}</td><td style="vertical-align:top;padding:4px 0 4px 8px;text-align:right;width:90px;border:none;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;">Pág. 1 de 1</td></tr></tbody></table></div>`;
+
+  return `<div style="${pageStyle}"><div style="max-width:${mediaMax};width:100%;margin:0 auto 26px auto;background:${red};border-radius:16px;overflow:hidden;box-shadow:0 8px 22px rgba(192,39,45,.18);box-sizing:border-box;"><div style="padding:18px 22px;color:#ffffff;box-sizing:border-box;"><div style="display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:4px 10px;font-family:${fontStack};font-size:12px;font-weight:800;letter-spacing:.08em;line-height:1.35;text-transform:uppercase;color:#ffffff;box-sizing:border-box;">CBCM · Práctica</div><h2 style="font-family:${fontStack};font-size:25px;line-height:1.25;font-weight:800;margin:12px 0 4px 0;color:#ffffff;box-sizing:border-box;">${mEsc(d.titulo || "Maniobra de parque")}</h2>${d.subtitulo ? `<p style="margin:0;color:rgba(255,255,255,.86);font-family:${fontStack};font-size:15px;line-height:1.55;box-sizing:border-box;">${nl2br(d.subtitulo)}</p>` : ""}${codesHtml}</div></div>${section("1", "Descripción", paragraph(d.descripcion))}${section("2", "Objetivo pedagógico", paragraph(d.objetivo))}${section("3", "Destinatarios", paragraph(d.destinatarios))}${section("4", "Escenario", `${paragraph(d.escenario)}${renderImages(d.escenarioImagenes || [])}`)}${section("5", "Recursos", recursosBody)}${section("6", "Organización del grupo", `${paragraph(d.organizacion)}${subsection("Rol del " + (d.rolMandoTitulo || "responsable"), listBlock(d.rolesJT || []))}`)}${section("7", "Desarrollo explicativo de la práctica", `${paragraph("Documentación de referencia: " + (d.refDoc || ""), smallPStyle)}${d.aspectosGenerales && d.aspectosGenerales.trim() ? subsection("Aspectos generales", paragraph(d.aspectosGenerales)) : ""}${d.desarrolloManiobra && d.desarrolloManiobra.trim() ? subsection("Desarrollo de la maniobra", paragraph(d.desarrolloManiobra)) : ""}${d.escenarioDesarrollo && d.escenarioDesarrollo.trim() ? subsection("Escenario", paragraph(d.escenarioDesarrollo)) : ""}${renderImages(d.desarrolloImagenes || [])}${renderVideos(d.videos || [])}${subsection("Explicación secuencial de la maniobra", stepsHtml)}${subsection("Precauciones", paragraph(d.precauciones) + recordadBlock)}`)}${risksTableHtml}${section("I", "Anexo I — Plan SOS", planSosBody)}${evaluacionHtml}${footerHtml}</div>`;
 }
 
 /* ─── UI COMPONENTS ─── */
