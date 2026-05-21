@@ -97,7 +97,7 @@ function generateHTML(d) {
   const renderVideos = (arr) => (arr || []).filter(v => String(v || "").trim()).map(v => `<div style="${mediaWrapStyle}">${embedVideoUrl(v)}</div>`).join("\n");
 
   const validItCodes = (d.itCodes || []).filter(c => String(c || "").trim());
-  const codesHtml = validItCodes.length ? `<div style="margin-top:10px;">${validItCodes.map(c => `<span style="display:inline-block;margin:3px 5px 0 0;padding:4px 9px;border-radius:999px;background:#fff;border:1px solid rgba(255,255,255,.45);color:#fff;font-size:12px;font-weight:700;">${mEsc(c)}</span>`).join("")}</div>` : "";
+  const codesHtml = validItCodes.length ? `<div style="margin-top:10px;">${validItCodes.map(c => `<span style="display:inline-block;margin:3px 5px 0 0;padding:4px 9px;border-radius:999px;background:#fff;border:1px solid rgba(255,255,255,.75);color:#9b1e23;font-size:12px;font-weight:800;">${mEsc(c)}</span>`).join("")}</div>` : "";
 
   const recursosBody = [
     subsection("EPI's", listBlock(d.epis)),
