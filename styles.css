@@ -1627,3 +1627,19 @@ body {
 }
 
 /* INTRO COHERENTE EN BLOQUES · v6.7: la lógica está en app.js; sin cambios visuales necesarios. */
+
+
+/* ============================================================
+   v6.8 · Preview coherente de maniobras sin tablas HTML reales
+   El HTML final usa DIVs con estilos inline; estas reglas solo ayudan
+   al editor local a no aplicar estilos heredados de tablas antiguas.
+   ============================================================ */
+.editor-area table,
+.editor-area th,
+.editor-area td{
+  border-color:#edf0f4 !important;
+}
+.editor-area table{
+  border-collapse:separate !important;
+  border-spacing:0 !important;
+}

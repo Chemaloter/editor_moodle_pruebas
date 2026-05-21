@@ -12,10 +12,10 @@ const EX = {
   ul:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
   ol:   "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;",
   li:   "margin:5px 0;font-weight:normal;",
-  table:"width:100%;border-collapse:collapse;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;",
-  th:   "background-color:#C0272D;color:#ffffff;padding:10px 14px;text-align:left;font-weight:700;border:1px solid #9b1f23;font-size:14px;",
-  td:   "padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;font-size:14px;line-height:1.6;",
-  tdalt:"padding:9px 14px;border:1px solid #e0e0e0;color:#2d2d2d;vertical-align:middle;background-color:#fdf5f5;font-size:14px;line-height:1.6;",
+  table:"width:100%;border-collapse:separate;border-spacing:0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;border:1px solid #edf0f4;border-radius:10px;overflow:hidden;background:#ffffff;",
+  th:   "background-color:#fff7f7;color:#9b1e23;padding:10px 14px;text-align:left;font-weight:800;border:none;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4;font-size:13px;",
+  td:   "padding:9px 14px;border:none;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4;color:#2d2d2d;vertical-align:middle;font-size:14px;line-height:1.6;",
+  tdalt:"padding:9px 14px;border:none;border-right:1px solid #edf0f4;border-bottom:1px solid #edf0f4;color:#2d2d2d;vertical-align:middle;background-color:#ffffff;font-size:14px;line-height:1.6;",
   goal: "display:block;width:100%;max-width:800px;margin:14px auto;box-sizing:border-box;overflow-wrap:anywhere;word-break:normal;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;background-color:#f0faf1;border-left:5px solid #2e7d32;color:#1a4d1e;padding:12px 20px;border-radius:0 6px 6px 0;font-weight:700;line-height:1.6;",
   think:"display:block;width:100%;max-width:800px;margin:14px auto;box-sizing:border-box;overflow-wrap:anywhere;word-break:normal;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;background-color:#faf5ff;border-left:5px solid #7b1fa2;color:#4a1570;padding:12px 20px;border-radius:0 6px 6px 0;font-style:italic;line-height:1.6;",
   note: "display:block;width:100%;max-width:800px;margin:14px auto;box-sizing:border-box;overflow-wrap:anywhere;word-break:normal;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-weight:700;line-height:1.6;",
@@ -2299,3 +2299,62 @@ document.getElementById('maniobrasModal').addEventListener('click', e => {
 })();
 
 // v6.7: Intro uniforme dentro de bloques editables.
+
+
+/* ============================================================
+   PARCHE v6.8 · TABLAS MOODLE SIN BORDES NEGROS
+   - El generador de maniobras ya no usa tablas reales para pasos/riesgos.
+   - Si queda alguna tabla antigua o importada, se fuerza borde suave inline.
+   ============================================================ */
+(function(){
+  if (typeof buildFinalHTML !== 'function') return;
+  const __buildFinalHTML_v68 = buildFinalHTML;
+  function softenTablesInHtml(html) {
+    if (!html || html.indexOf('<table') === -1) return html;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.querySelectorAll('table').forEach(table => {
+      table.style.borderCollapse = 'separate';
+      table.style.borderSpacing = '0';
+      table.style.border = '1px solid #edf0f4';
+      table.style.borderRadius = '12px';
+      table.style.overflow = 'hidden';
+      table.style.background = '#ffffff';
+      table.style.boxSizing = 'border-box';
+      table.style.width = table.style.width || '100%';
+    });
+    tmp.querySelectorAll('th').forEach(th => {
+      th.style.backgroundColor = th.style.backgroundColor || '#fff7f7';
+      th.style.color = th.style.color || '#9b1e23';
+      th.style.borderTop = 'none';
+      th.style.borderLeft = 'none';
+      th.style.borderRight = '1px solid #edf0f4';
+      th.style.borderBottom = '1px solid #edf0f4';
+      th.style.fontWeight = th.style.fontWeight || '800';
+      th.style.boxSizing = 'border-box';
+    });
+    tmp.querySelectorAll('td').forEach(td => {
+      td.style.borderTop = 'none';
+      td.style.borderLeft = 'none';
+      td.style.borderRight = '1px solid #edf0f4';
+      td.style.borderBottom = '1px solid #edf0f4';
+      td.style.boxSizing = 'border-box';
+    });
+    tmp.querySelectorAll('tr').forEach(tr => {
+      const cells = Array.from(tr.children).filter(el => /^(TD|TH)$/.test(el.tagName));
+      if (cells.length) cells[cells.length - 1].style.borderRight = 'none';
+    });
+    tmp.querySelectorAll('table').forEach(table => {
+      const rows = Array.from(table.querySelectorAll('tr'));
+      if (!rows.length) return;
+      Array.from(rows[rows.length - 1].children).forEach(cell => {
+        if (/^(TD|TH)$/.test(cell.tagName)) cell.style.borderBottom = 'none';
+      });
+    });
+    return tmp.innerHTML;
+  }
+  buildFinalHTML = function() {
+    return softenTablesInHtml(__buildFinalHTML_v68());
+  };
+  if (typeof refreshOutput === 'function') refreshOutput();
+})();
