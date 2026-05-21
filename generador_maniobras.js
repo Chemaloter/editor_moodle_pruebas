@@ -15,9 +15,9 @@ function mEsc(s) {
 }
 
 function badgeStyle(g) {
-  if (g === "Notable")  return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#ffe0b2;color:#bf360c;";
-  if (g === "Moderado") return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#fff9c4;color:#827717;";
-  return "display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;background:#e8f5e9;color:#1b5e20;";
+  if (g === "Notable") return "display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;";
+  if (g === "Moderado") return "display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#fffbeb;color:#92400e;border:1px solid #fde68a;";
+  return "display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;";
 }
 
 function embedVideoUrl(url) {
@@ -59,263 +59,85 @@ function renderImage(item) {
 /* ─── HTML GENERATOR ────────────────────────────────────────── */
 function generateHTML(d) {
   const fontStack = "'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-  const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:#1f2937;background:transparent;background-color:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;overflow:hidden;`;
-  const cardStyle = "background:#ffffff;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);padding:28px;margin:40px auto;width:95%;max-width:850px;box-sizing:border-box;overflow:hidden;";
-  const textStyle = "max-width:800px;margin:0 auto 14px auto;line-height:1.8;";
-  const h2Style = "font-family:" + fontStack + ";font-size:24px;line-height:1.3;font-weight:800;color:#B22222;margin:0 0 18px 0;border-bottom:2px solid #f3d4d4;padding-bottom:10px;";
-  const h3Style = "font-family:" + fontStack + ";font-size:18px;line-height:1.4;font-weight:800;color:#374151;margin:20px 0 10px 0;";
-  const listStyle = "max-width:800px;margin:8px auto 16px auto;padding-left:24px;line-height:1.8;";
-  const liStyle = "margin-bottom:8px;line-height:1.8;";
-  const tableWrapStyle = "width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;";
+  const red = "#C0272D";
+  const redDark = "#9b1e23";
+  const textColor = "#1f2937";
+  const muted = "#6b7280";
+  const border = "#e4e7ec";
+  const contentMax = "800px";
+  const mediaMax = "1000px";
 
-  const section = (num, title, body) => `
-    <div style="${cardStyle}">
-      <h2 style="${h2Style}">${num}. ${title}</h2>
-      ${body}
-    </div>`;
+  const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:${textColor};background:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;`;
+  const mediaWrapStyle = `max-width:${mediaMax};width:100%;margin:18px auto;box-sizing:border-box;`;
+  const sectionStyle = `max-width:${contentMax};width:100%;margin:22px auto;padding:20px 22px;background:#ffffff;border:1px solid ${border};border-left:6px solid ${red};border-radius:14px;box-sizing:border-box;box-shadow:0 3px 12px rgba(15,23,42,.05);`;
+  const h2Style = `font-family:${fontStack};font-size:21px;line-height:1.25;font-weight:800;color:${redDark};margin:0 0 14px 0;`;
+  const h3Style = `font-family:${fontStack};font-size:17px;line-height:1.35;font-weight:800;color:#374151;margin:18px 0 8px 0;`;
+  const pStyle = `margin:0 0 12px 0;line-height:1.8;color:${textColor};`;
+  const smallPStyle = `margin:0 0 10px 0;line-height:1.65;color:${muted};font-size:14px;`;
+  const listStyle = `margin:8px 0 14px 0;padding-left:24px;line-height:1.75;color:${textColor};`;
+  const liStyle = `margin:0 0 7px 0;line-height:1.75;`;
+  const tableWrapStyle = `max-width:${mediaMax};width:100%;margin:18px auto;overflow-x:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box;`;
+  const tableStyle = `width:100%;border-collapse:separate;border-spacing:0;border:1px solid ${border};border-radius:12px;overflow:hidden;background:#fff;box-sizing:border-box;`;
+  const thStyle = `background:#fff7f7;color:${redDark};font-weight:800;font-size:13px;text-align:left;padding:10px 12px;border-bottom:1px solid ${border};`;
+  const tdStyle = `padding:10px 12px;border-bottom:1px solid ${border};vertical-align:top;font-size:14px;line-height:1.65;color:${textColor};`;
 
-  const paragraph = (txt) => `<p style="${textStyle}">${mEsc(txt)}</p>`;
+  const nl2br = (s) => mEsc(s).replace(/\r?\n/g, "<br>");
+  const paragraph = (txt, extraStyle) => txt && String(txt).trim() ? `<p style="${extraStyle || pStyle}">${nl2br(txt)}</p>` : "";
+  const listItems = (arr) => (arr || []).filter(x => String(x || "").trim()).map(x => `<li style="${liStyle}">${nl2br(x)}</li>`).join("");
+  const listBlock = (arr) => { const items = listItems(arr); return items ? `<ul style="${listStyle}">${items}</ul>` : ""; };
+  const subsection = (title, body) => body ? `<h4 style="${h3Style}">${mEsc(title)}</h4>${body}` : "";
+  const section = (num, title, body) => body ? `<div style="${sectionStyle}"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;background:${red};color:#fff;font-weight:800;font-size:14px;">${mEsc(num)}</span><h3 style="${h2Style}">${mEsc(title)}</h3></div>${body}</div>` : "";
 
-  const epiItems = d.epis.filter(e => e.trim())
-    .map(e => `<li style="${liStyle}">${mEsc(e)}</li>`).join("\n              ");
+  const renderImageSafe = (item) => {
+    const src = typeof item === "string" ? item.trim() : item && item.mode === "file" ? item.src : ((item && item.url) || "").trim();
+    if (!src) return "";
+    return `<div style="${mediaWrapStyle}"><img src="${mEsc(src)}" alt="Recurso visual" style="display:block;width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid ${border};box-sizing:border-box;" /></div>`;
+  };
+  const renderImages = (arr) => (arr || []).filter(img => typeof img === "string" ? img.trim() : img && (img.mode === "file" ? img.src : (img.url || "").trim())).map(renderImageSafe).join("\n");
+  const renderVideos = (arr) => (arr || []).filter(v => String(v || "").trim()).map(v => `<div style="${mediaWrapStyle}">${embedVideoUrl(v)}</div>`).join("\n");
 
-  const matItems = d.materiales.filter(m => m.trim())
-    .map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("\n              ");
+  const validItCodes = (d.itCodes || []).filter(c => String(c || "").trim());
+  const codesHtml = validItCodes.length ? `<div style="margin-top:10px;">${validItCodes.map(c => `<span style="display:inline-block;margin:3px 5px 0 0;padding:4px 9px;border-radius:999px;background:#fff;border:1px solid rgba(255,255,255,.45);color:#fff;font-size:12px;font-weight:700;">${mEsc(c)}</span>`).join("")}</div>` : "";
 
-  const matAdicItems = (d.materialAdicional || []).filter(m => m.trim())
-    .map(m => `<li style="${liStyle}">${mEsc(m)}</li>`).join("\n              ");
+  const recursosBody = [
+    subsection("EPI's", listBlock(d.epis)),
+    subsection("Materiales y herramientas", listBlock(d.materiales)),
+    listBlock(d.materialAdicional || []) ? subsection("Material adicional", listBlock(d.materialAdicional || [])) : "",
+    renderImages(d.recursosImagenes),
+    renderVideos(d.recursosVideos)
+  ].join("\n");
 
-  const escImagenesHtml = (d.escenarioImagenes || []).filter(img => {
-    if (typeof img === "string") return img.trim();
-    return img.mode === "file" ? img.src : (img.url || "").trim();
-  }).map(img => renderImage(img)).join("\n");
+  const stepRows = (d.pasos || []).filter(p => String(p || "").trim()).map((p, i) => `<tr><td style="${tdStyle}width:54px;text-align:center;"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:${red};color:#fff;font-weight:800;">${i + 1}</span></td><td style="${tdStyle}">${nl2br(p)}</td></tr>`).join("");
+  const stepsHtml = stepRows ? `<div style="${tableWrapStyle}"><table style="${tableStyle}"><tbody>${stepRows}</tbody></table></div>` : "";
+  const riskRows = (d.riesgos || []).map(r => `<tr><td style="${tdStyle}">${nl2br(r.riesgo)}</td><td style="${tdStyle}">${nl2br(r.causa)}</td><td style="${tdStyle}"><span style="${badgeStyle(r.grado)}">${mEsc(r.grado)}</span></td><td style="${tdStyle}">${nl2br(r.medida)}</td></tr>`).join("");
 
-  const recImagenesHtml = d.recursosImagenes.filter(img => {
-    if (typeof img === "string") return img.trim();
-    return img.mode === "file" ? img.src : (img.url || "").trim();
-  }).map(img => renderImage(img)).join("\n");
-  
-  const recVideosHtml = d.recursosVideos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
+  const recordadBlock = d.recordad && d.recordad.trim() ? `<div style="margin:14px 0 0 0;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;border-left:5px solid #f97316;color:#713f12;"><strong>Recordad:</strong> ${nl2br(d.recordad)}</div>` : "";
+  const planSosBody = `<div style="padding:14px 16px;border-radius:12px;background:#fff7f7;border:1px solid #f0d6d6;border-left:5px solid ${red};">${paragraph(d.planSOS.senal, `margin:0 0 10px 0;line-height:1.7;color:${redDark};font-weight:800;`)}${paragraph(d.planSOS.intro1)}${paragraph(d.planSOS.intro2)}${subsection(d.planSOS.leveTitulo, listBlock(d.planSOS.leveItems))}${subsection(d.planSOS.graveTitulo, listBlock(d.planSOS.graveItems))}${paragraph(d.planSOS.cierre)}</div>`;
 
-  const stepRows = d.pasos.filter(p => p.trim()).map((p, i) => `
-      <table style="width:100%;border-collapse:separate;border-spacing:0;margin-bottom:14px;table-layout:fixed;" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="width:46px;vertical-align:top;padding-right:12px;">
-            <div style="background:#B22222;color:#ffffff;font-weight:800;font-size:15px;width:34px;height:34px;border-radius:50%;text-align:center;line-height:34px;box-shadow:0 8px 18px rgba(178,34,34,0.25);">${i + 1}</div>
-          </td>
-          <td style="vertical-align:top;background:#ffffff;border:1px solid #f0d6d6;border-radius:20px;padding:14px 16px;line-height:1.8;word-wrap:break-word;overflow-wrap:anywhere;box-shadow:0 8px 18px rgba(0,0,0,0.06);">${mEsc(p)}</td>
-        </tr>
-      </table>`).join("");
-
-  const riskRows = d.riesgos.map((r, i) => `
-          <tr${i % 2 === 1 ? ' style="background:#fff7f7;"' : ""}>
-            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;line-height:1.8;min-width:160px;">${mEsc(r.riesgo)}</td>
-            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;line-height:1.8;min-width:180px;">${mEsc(r.causa)}</td>
-            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;text-align:center;min-width:120px;"><span style="${badgeStyle(r.grado)}">${r.grado}</span></td>
-            <td style="border:1px solid #f0d6d6;padding:12px 14px;vertical-align:top;line-height:1.8;min-width:220px;">${mEsc(r.medida)}</td>
-          </tr>`).join("");
-
-  const desImagenesHtml = d.desarrolloImagenes.filter(img => {
-    if (typeof img === "string") return img.trim();
-    return img.mode === "file" ? img.src : (img.url || "").trim();
-  }).map(img => renderImage(img)).join("\n");
-  
-  const desVideosHtml = d.videos.filter(vid => vid.trim()).map(vid => embedVideoUrl(vid)).join("\n");
-
-  const recordadBlock = d.recordad.trim()
-    ? `        <div style="max-width:800px;margin:22px auto 0 auto;background:#fff7ed;border-left:6px solid #f97316;border-radius:20px;padding:16px 18px;line-height:1.8;box-shadow:0 8px 18px rgba(0,0,0,0.06);"><strong style="font-weight:800;color:#9a3412;">Recordad:</strong> ${mEsc(d.recordad)}</div>\n`
-    : "";
-
-  const planSosLeveItems = d.planSOS.leveItems.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
-  const planSosGraveItems = d.planSOS.graveItems.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
-
-  const jtItems = (d.rolesJT || []).filter(r => r.trim())
-    .map(r => `<li style="${liStyle}">${mEsc(r)}</li>`).join("\n        ");
-
-  const validItCodes = d.itCodes.filter(c => c.trim());
-  let itCodeHtml = "";
-  if (validItCodes.length > 0) {
-    const codesStr = validItCodes.map(c => `<div style="font-weight:800;font-size:13px;letter-spacing:1px;margin-top:6px;line-height:1.4;">${mEsc(c)}</div>`).join("");
-    itCodeHtml = `\n      <td style="width:150px;background-color:#7a1515;text-align:center;vertical-align:middle;padding:16px 12px;font-size:11px;color:#ffffff;line-height:1.5;border:0!important;border:none!important;outline:0!important;margin:0!important;">INSTRUCCI&Oacute;N T&Eacute;CNICA${codesStr}</td>`;
-  }
-
-  /* HTML Criterios de Evaluación */
   let evaluacionHtml = "";
   if (d.evaluacion.mostrar) {
-    const criticosItems = d.evaluacion.criticos.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
-    const tecnicosItems = d.evaluacion.tecnicos.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
-    const actitudinalesItems = d.evaluacion.actitudinales.filter(i => i.trim()).map(i => `<li style="${liStyle}">${mEsc(i)}</li>`).join("");
-
-    evaluacionHtml = `
-    <div style="${cardStyle}">
-      <h2 style="${h2Style}">ANEXO II — Criterios de Evaluación</h2>
-      <p style="${textStyle}">Durante las maniobras se realizarán unas rúbricas de evaluación divididas en tres bloques diferenciados:</p>
-      <h3 style="${h3Style}">BLOQUE 1 - CRÍTICOS</h3>
-      <p style="${textStyle}">Será necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.</p>
-      <ul style="${listStyle}">${criticosItems || '<li style="margin-bottom:8px;line-height:1.8;">Sin ítems definidos</li>'}</ul>
-      <h3 style="${h3Style}">BLOQUE 2 - TÉCNICOS</h3>
-      <p style="${textStyle}">Estos ítems son los que nos permitirán alcanzar el 10 (los 5 puntos restantes).</p>
-      <ul style="${listStyle}">${tecnicosItems || '<li style="margin-bottom:8px;line-height:1.8;">Sin ítems definidos</li>'}</ul>
-      <h3 style="${h3Style}">BLOQUE 3 - ACTITUDINALES</h3>
-      <p style="${textStyle}">Estos ítems no suman, pero sí que restan.</p>
-      <ul style="${listStyle}">${actitudinalesItems || '<li style="margin-bottom:8px;line-height:1.8;">Sin ítems definidos</li>'}</ul>
-    </div>`;
+    evaluacionHtml = section("II", "Anexo II — Criterios de evaluación", `${paragraph("Durante las maniobras se realizarán rúbricas de evaluación divididas en tres bloques diferenciados.")}${subsection("Bloque 1 — Críticos", paragraph("Será necesario cumplirlos todos para poder dar por apta la maniobra; aseguran el aprobado.") + (listBlock(d.evaluacion.criticos) || listBlock(["Sin ítems definidos"])))}${subsection("Bloque 2 — Técnicos", paragraph("Estos ítems permiten alcanzar la máxima calificación técnica.") + (listBlock(d.evaluacion.tecnicos) || listBlock(["Sin ítems definidos"])))}${subsection("Bloque 3 — Actitudinales", paragraph("Estos ítems no suman, pero sí pueden restar.") + (listBlock(d.evaluacion.actitudinales) || listBlock(["Sin ítems definidos"])))}`);
   }
 
-  return `
-<div style="${pageStyle}">
-  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:28px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:transparent;background-color:transparent;border:0!important;border:none!important;outline:0!important;padding:0!important;line-height:0;">
-    <div style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:0!important;border:none!important;outline:0!important;margin:0!important;margin-bottom:0!important;padding:0!important;line-height:0;">
-      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:520px;border:0!important;border:none!important;outline:0!important;margin:0!important;margin-bottom:0!important;padding:0!important;line-height:1.8;" cellpadding="0" cellspacing="0" border="0">
-        <tr style="border:0!important;border:none!important;outline:0!important;margin:0!important;padding:0!important;">
-          <td style="width:110px;background-color:#B22222;color:#ffffff;text-align:center;vertical-align:middle;padding:20px 14px;font-weight:800;font-size:20px;letter-spacing:1px;border:0!important;border:none!important;outline:0!important;margin:0!important;line-height:1.8;">CBCM</td>
-          <td style="background-color:#ffffff;color:#111827;vertical-align:middle;padding:20px 18px;border:0!important;border:none!important;outline:0!important;margin:0!important;line-height:1.8;">
-            <div style="font-size:22px;font-weight:800;line-height:1.35;">PRÁCTICA: ${mEsc(d.titulo)}</div>
-            <div style="font-size:15px;font-weight:400;line-height:1.6;color:#4b5563;margin-top:4px;">${mEsc(d.subtitulo)}</div>
-          </td>${itCodeHtml}
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  ${section("1", "Descripción", paragraph(d.descripcion))}
-  ${section("2", "Objetivo Pedagógico", paragraph(d.objetivo))}
-  ${section("3", "Destinatarios", paragraph(d.destinatarios))}
-  ${section("4", "Escenario", `${paragraph(d.escenario)}${escImagenesHtml}`)}
-  ${section("5", "Recursos", `
-      <h3 style="${h3Style}">EPI's</h3>
-      <ul style="${listStyle}">${epiItems}</ul>
-      <h3 style="${h3Style}">Materiales y Herramientas</h3>
-      <ul style="${listStyle}">${matItems}</ul>
-      ${matAdicItems ? `<h3 style="${h3Style}">Material Adicional</h3><ul style="${listStyle}">${matAdicItems}</ul>` : ""}
-      ${recImagenesHtml}${recVideosHtml}`)}
-  ${section("6", "Organización del Grupo", `
-      ${paragraph(d.organizacion)}
-      <h3 style="${h3Style}">Rol del ${mEsc(d.rolMandoTitulo)}:</h3>
-      <ul style="${listStyle}">${jtItems}</ul>`)}
-  ${section("7", "Desarrollo Explicativo de la Práctica", `
-      <p style="${textStyle}"><strong style="font-weight:800;color:#111827;">Documentación de referencia:</strong> ${mEsc(d.refDoc)}</p>
-      ${d.aspectosGenerales.trim() ? `<h3 style="${h3Style}">Aspectos generales:</h3>${paragraph(d.aspectosGenerales)}` : ""}
-      ${d.desarrolloManiobra.trim() ? `<h3 style="${h3Style}">Desarrollo de la maniobra:</h3>${paragraph(d.desarrolloManiobra)}` : ""}
-      ${d.escenarioDesarrollo.trim() ? `<h3 style="${h3Style}">Escenario:</h3>${paragraph(d.escenarioDesarrollo)}` : ""}
-      ${desImagenesHtml}${desVideosHtml}
-      <h3 style="${h3Style}">Explicación secuencial de la maniobra:</h3>
-      <div style="max-width:800px;margin:0 auto;">${stepRows}</div>
-      <h3 style="${h3Style}">PRECAUCIONES</h3>
-      ${paragraph(d.precauciones)}
-      ${recordadBlock}`)}
-  <div style="${cardStyle}">
-    <h2 style="${h2Style}">8. Evaluación de Riesgos de la Maniobra</h2>
-    <div style="${tableWrapStyle}">
-      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:760px;background:#ffffff;border-radius:20px;overflow:hidden;" cellpadding="0" cellspacing="0">
-        <tr>
-          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:left;font-weight:800;line-height:1.4;">Riesgo</th>
-          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:left;font-weight:800;line-height:1.4;">Causa</th>
-          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:center;font-weight:800;line-height:1.4;">Grado</th>
-          <th style="background:#B22222;color:#ffffff;border:1px solid #B22222;padding:13px 14px;text-align:left;font-weight:800;line-height:1.4;">Medida Preventiva</th>
-        </tr>
-        ${riskRows}
-      </table>
-    </div>
-  </div>
-
-  <div style="${cardStyle}">
-    <h2 style="${h2Style}">ANEXO I — Plan SOS</h2>
-    <div style="max-width:800px;margin:0 auto;background:#fee2e2;border-left:6px solid #B22222;border-radius:20px;padding:16px 18px;line-height:1.8;font-weight:800;color:#7f1d1d;box-shadow:0 8px 18px rgba(0,0,0,0.06);">${mEsc(d.planSOS.senal)}</div>
-    <p style="${textStyle};margin-top:18px;">${mEsc(d.planSOS.intro1)}</p>
-    <p style="${textStyle}">${mEsc(d.planSOS.intro2)}</p>
-    <h3 style="${h3Style}">${mEsc(d.planSOS.leveTitulo)}</h3>
-    <ul style="${listStyle}">${planSosLeveItems}</ul>
-    <h3 style="${h3Style}">${mEsc(d.planSOS.graveTitulo)}</h3>
-    <ul style="${listStyle}">${planSosGraveItems}</ul>
-    <p style="${textStyle}">${mEsc(d.planSOS.cierre)}</p>
-  </div>
-
-  ${evaluacionHtml}
-
-  <div style="width:95%;max-width:850px;margin:40px auto;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;">
-    <div style="${tableWrapStyle}">
-      <table style="width:100%;border-collapse:separate;border-spacing:0;min-width:620px;border:0!important;border:none!important;outline:0!important;margin:0!important;margin-bottom:0!important;" cellpadding="0" cellspacing="0" border="0">
-        <tr style="border:0!important;border:none!important;outline:0!important;margin:0!important;padding:0!important;">
-          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;margin:0!important;">Revisión ${mEsc(d.revision)}</td>
-          <td style="width:60%;background:#ffffff;color:#4b5563;padding:16px 14px;vertical-align:middle;font-size:12px;line-height:1.8;border:0!important;border:none!important;outline:0!important;margin:0!important;">${mEsc(d.pieTexto)}</td>
-          <td style="width:20%;background:#f3f4f6;color:#374151;padding:16px 14px;vertical-align:middle;text-align:right;font-weight:800;line-height:1.6;border:0!important;border:none!important;outline:0!important;margin:0!important;">Pág. 1 de 1</td>
-        </tr>
-      </table>
-    </div>
-  </div>
-</div>`;
+  return `<div style="${pageStyle}"><div style="max-width:${mediaMax};width:100%;margin:0 auto 26px auto;background:${red};border-radius:16px;overflow:hidden;box-shadow:0 8px 22px rgba(192,39,45,.18);box-sizing:border-box;"><div style="padding:18px 22px;color:#fff;box-sizing:border-box;"><div style="display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">CBCM · Práctica</div><h2 style="font-family:${fontStack};font-size:25px;line-height:1.25;font-weight:800;margin:12px 0 4px 0;color:#fff;">${mEsc(d.titulo || "Maniobra de parque")}</h2>${d.subtitulo ? `<p style="margin:0;color:rgba(255,255,255,.86);font-size:15px;line-height:1.55;">${nl2br(d.subtitulo)}</p>` : ""}${codesHtml}</div></div>${section("1", "Descripción", paragraph(d.descripcion))}${section("2", "Objetivo pedagógico", paragraph(d.objetivo))}${section("3", "Destinatarios", paragraph(d.destinatarios))}${section("4", "Escenario", `${paragraph(d.escenario)}${renderImages(d.escenarioImagenes || [])}`)}${section("5", "Recursos", recursosBody)}${section("6", "Organización del grupo", `${paragraph(d.organizacion)}${subsection("Rol del " + (d.rolMandoTitulo || "responsable"), listBlock(d.rolesJT || []))}`)}${section("7", "Desarrollo explicativo de la práctica", `${paragraph("Documentación de referencia: " + (d.refDoc || ""), smallPStyle)}${d.aspectosGenerales && d.aspectosGenerales.trim() ? subsection("Aspectos generales", paragraph(d.aspectosGenerales)) : ""}${d.desarrolloManiobra && d.desarrolloManiobra.trim() ? subsection("Desarrollo de la maniobra", paragraph(d.desarrolloManiobra)) : ""}${d.escenarioDesarrollo && d.escenarioDesarrollo.trim() ? subsection("Escenario", paragraph(d.escenarioDesarrollo)) : ""}${renderImages(d.desarrolloImagenes || [])}${renderVideos(d.videos || [])}${subsection("Explicación secuencial de la maniobra", stepsHtml)}${subsection("Precauciones", paragraph(d.precauciones) + recordadBlock)}`)}<div style="${sectionStyle}"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;background:${red};color:#fff;font-weight:800;font-size:14px;">8</span><h3 style="${h2Style}">Evaluación de riesgos de la maniobra</h3></div><div style="${tableWrapStyle}"><table style="${tableStyle}"><thead><tr><th style="${thStyle}">Riesgo</th><th style="${thStyle}">Causa</th><th style="${thStyle}">Grado</th><th style="${thStyle}">Medida preventiva</th></tr></thead><tbody>${riskRows}</tbody></table></div></div>${section("I", "Anexo I — Plan SOS", planSosBody)}${evaluacionHtml}<div style="max-width:${mediaMax};width:100%;margin:26px auto 0 auto;border-top:1px solid ${border};padding-top:12px;color:${muted};font-size:12px;line-height:1.55;box-sizing:border-box;"><table style="width:100%;border-collapse:collapse;"><tbody><tr><td style="vertical-align:top;padding:4px 8px 4px 0;width:140px;"><strong>Revisión ${mEsc(d.revision)}</strong></td><td style="vertical-align:top;padding:4px 8px;">${nl2br(d.pieTexto)}</td><td style="vertical-align:top;padding:4px 0 4px 8px;text-align:right;width:90px;">Pág. 1 de 1</td></tr></tbody></table></div></div>`;
 }
 
 /* ─── UI COMPONENTS ─── */
+const UI = { red:"#C0272D", redDark:"#9b1e23", redSoft:"rgba(192,39,45,.08)", surface:"#ffffff", panel:"#f7f8fa", border:"#d9dee7", text:"#111827", muted:"#6b7280", sub:"#9ca3af", font:"'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif" };
+const uiInput = { width:"100%", border:"1.5px solid #d9dee7", borderRadius:"10px", background:"#fff", padding:"9px 12px", fontSize:"13px", color:UI.text, outline:"none", fontFamily:"inherit", boxSizing:"border-box", transition:"border-color .15s, box-shadow .15s" };
+const uiBtnSecondary = { padding:"8px 14px", fontSize:"12px", fontWeight:"750", border:"1.5px solid #d9dee7", borderRadius:"10px", background:"#fff", color:UI.muted, cursor:"pointer", whiteSpace:"nowrap", fontFamily:"inherit", transition:"all .15s" };
+const uiBtnPrimary = { padding:"10px 18px", background:UI.red, color:"#fff", fontSize:"13px", fontWeight:"800", border:"none", borderRadius:"10px", cursor:"pointer", whiteSpace:"nowrap", fontFamily:"inherit", boxShadow:"0 3px 10px rgba(192,39,45,.22)", transition:"all .15s" };
 const TABS = [
-  { label: "1 · Cabecera",     short: "Cab."      },
-  { label: "2 · Info General", short: "Info"      },
-  { label: "3 · Recursos",     short: "Rec."      },
-  { label: "4 · Organización", short: "Org."      },
-  { label: "5 · Desarrollo",   short: "Des."      },
-  { label: "6 · Riesgos",      short: "Rie."      },
-  { label: "7 · Plan SOS",     short: "SOS"       },
-  { label: "8 · Evaluación",   short: "Eva."      },
-  { label: "9 · Pie",          short: "Pie"       },
-  { label: "⚡ Generar",       short: "⚡"        },
+  { label: "1 · Cabecera", short: "Cab." }, { label: "2 · Info General", short: "Info" }, { label: "3 · Recursos", short: "Rec." }, { label: "4 · Organización", short: "Org." }, { label: "5 · Desarrollo", short: "Des." }, { label: "6 · Riesgos", short: "Rie." }, { label: "7 · Plan SOS", short: "SOS" }, { label: "8 · Evaluación", short: "Eva." }, { label: "9 · Pie", short: "Pie" }, { label: "⚡ Generar", short: "⚡" },
 ];
-
-const SectionTitle = ({ children }) => (
-  <h2 style={{ fontSize:"15px", fontWeight:"700", color:"#1f2937", marginBottom:"4px", marginTop:"0" }}>{children}</h2>
-);
-const Hint = ({ children }) => (
-  <p style={{ fontSize:"12px", color:"#9ca3af", marginBottom:"20px", marginTop:"0" }}>{children}</p>
-);
-const Label = ({ children, required, style }) => (
-  <label style={{ display:"block", fontSize:"11px", fontWeight:"700", color:"#6b7280",
-    textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:"4px", ...style }}>
-    {children}{required && <span style={{ color:"#ef4444", marginLeft:"2px" }}>*</span>}
-  </label>
-);
-const Inp = ({ value, onChange, placeholder }) => (
-  <input
-    style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:"6px",
-      background:"#fff", padding:"7px 10px", fontSize:"13px", color:"#1f2937",
-      outline:"none", fontFamily:"inherit", boxSizing:"border-box" }}
-    value={value}
-    onChange={e => onChange(e.target.value)}
-    placeholder={placeholder}
-    onFocus={e => e.target.style.borderColor = "#B22222"}
-    onBlur={e  => e.target.style.borderColor = "#e5e7eb"}
-  />
-);
-const Txt = ({ value, onChange, placeholder, rows = 3 }) => (
-  <textarea
-    style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:"6px",
-      background:"#fff", padding:"7px 10px", fontSize:"13px", color:"#1f2937",
-      outline:"none", fontFamily:"inherit", resize:"vertical", boxSizing:"border-box" }}
-    value={value}
-    onChange={e => onChange(e.target.value)}
-    placeholder={placeholder}
-    rows={rows}
-    onFocus={e => e.target.style.borderColor = "#B22222"}
-    onBlur={e  => e.target.style.borderColor = "#e5e7eb"}
-  />
-);
-const AddBtn = ({ onClick, label }) => (
-  <button type="button" onClick={onClick} style={{ marginTop:"8px", fontSize:"12px", fontWeight:"700",
-    color:"#B22222", border:"1px solid #fca5a5", borderRadius:"6px",
-    padding:"5px 12px", background:"none", cursor:"pointer" }}>
-    {label}
-  </button>
-);
-const RemBtn = ({ onClick }) => (
-  <button type="button" onClick={onClick} title="Eliminar" style={{ marginLeft:"8px", width:"24px", height:"24px",
-    flexShrink:"0", display:"flex", alignItems:"center", justifyContent:"center",
-    color:"#d1d5db", background:"none", border:"none", fontSize:"20px",
-    lineHeight:"1", cursor:"pointer" }}>
-    ×
-  </button>
-);
-const Divider = () => (
-  <div style={{ borderTop:"1px solid #f3f4f6", margin:"20px 0" }} />
-);
+const SectionTitle = ({ children }) => (<h2 style={{ fontSize:"18px", fontWeight:"800", color:UI.redDark, marginBottom:"5px", marginTop:"0", letterSpacing:".01em" }}>{children}</h2>);
+const Hint = ({ children }) => (<p style={{ fontSize:"13px", color:UI.muted, marginBottom:"18px", marginTop:"0", lineHeight:"1.55" }}>{children}</p>);
+const Label = ({ children, required, style }) => (<label style={{ display:"block", fontSize:"11px", fontWeight:"800", color:UI.redDark, textTransform:"uppercase", letterSpacing:"0.11em", marginBottom:"6px", ...style }}>{children}{required && <span style={{ color:UI.red, marginLeft:"2px" }}>*</span>}</label>);
+const Inp = ({ value, onChange, placeholder }) => (<input style={uiInput} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} onFocus={e => { e.target.style.borderColor = UI.red; e.target.style.boxShadow = "0 0 0 3px rgba(192,39,45,.08)"; }} onBlur={e => { e.target.style.borderColor = UI.border; e.target.style.boxShadow = "none"; }} />);
+const Txt = ({ value, onChange, placeholder, rows = 3 }) => (<textarea style={{ ...uiInput, resize:"vertical", minHeight:"74px", lineHeight:"1.55" }} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows} onFocus={e => { e.target.style.borderColor = UI.red; e.target.style.boxShadow = "0 0 0 3px rgba(192,39,45,.08)"; }} onBlur={e => { e.target.style.borderColor = UI.border; e.target.style.boxShadow = "none"; }} />);
+const AddBtn = ({ onClick, label }) => (<button type="button" onClick={onClick} style={{ marginTop:"9px", fontSize:"12px", fontWeight:"800", color:UI.redDark, border:"1.5px solid #efd3d5", borderLeft:`5px solid ${UI.red}`, borderRadius:"10px", padding:"7px 12px", background:"#fff", cursor:"pointer", fontFamily:"inherit" }}>{label}</button>);
+const RemBtn = ({ onClick }) => (<button type="button" onClick={onClick} title="Eliminar" aria-label="Eliminar" style={{ marginLeft:"8px", width:"28px", height:"28px", flexShrink:"0", display:"flex", alignItems:"center", justifyContent:"center", color:"#9ca3af", background:"#fff", border:"1px solid #e4e7ec", borderRadius:"9px", fontSize:"18px", lineHeight:"1", cursor:"pointer", transition:"all .15s" }}>×</button>);
+const Divider = () => (<div style={{ borderTop:"1px solid #eef0f3", margin:"22px 0" }} />);
 
 /* ─── MAIN COMPONENT ────────────────────────────────────────── */
 function GeneradorManiobras() {
@@ -558,10 +380,10 @@ function GeneradorManiobras() {
                   {["url", "file"].map(mode => (
                     <button type="button" key={mode} onClick={() => updImg("escenarioImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
+                        borderRadius:"9px", cursor:"pointer",
+                        borderColor: img.mode === mode ? "#C0272D" : "#e5e7eb",
                         background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                        color:       img.mode === mode ? "#C0272D" : "#6b7280" }}>
                       {mode === "url" ? "URL" : "Archivo local"}
                     </button>
                   ))}
@@ -581,7 +403,7 @@ function GeneradorManiobras() {
                   </label>
                   {img.src && (
                     <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
+                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"9px", display:"block" }} />
                   )}
                 </div>
               )}
@@ -659,10 +481,10 @@ function GeneradorManiobras() {
                   {["url", "file"].map(mode => (
                     <button type="button" key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
+                        borderRadius:"9px", cursor:"pointer",
+                        borderColor: img.mode === mode ? "#C0272D" : "#e5e7eb",
                         background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                        color:       img.mode === mode ? "#C0272D" : "#6b7280" }}>
                       {mode === "url" ? "URL" : "Archivo local"}
                     </button>
                   ))}
@@ -682,7 +504,7 @@ function GeneradorManiobras() {
                   </label>
                   {img.src && (
                     <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
+                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"9px", display:"block" }} />
                   )}
                 </div>
               )}
@@ -729,7 +551,7 @@ function GeneradorManiobras() {
                 value={opcion}
                 checked={d.rolMandoTitulo === opcion}
                 onChange={() => upd("rolMandoTitulo", opcion)}
-                style={{ marginRight:"8px", accentColor:"#B22222" }}
+                style={{ marginRight:"8px", accentColor:UI.red }}
               />
               {opcion}
             </label>
@@ -742,7 +564,7 @@ function GeneradorManiobras() {
           {(d.rolesJT || []).map((rol, i) => (
             <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
               <div style={{ marginTop:"12px", flexShrink:"0", width:"22px", height:"22px",
-                borderRadius:"4px", background:"#f3f4f6", border:"1px solid #d1d5db", 
+                borderRadius:"9px", background:"#f3f4f6", border:"1px solid #d1d5db", 
                 color:"#374151", fontSize:"11px", fontWeight:"bold", display:"flex",
                 alignItems:"center", justifyContent:"center" }}>
                 {i + 1}
@@ -790,10 +612,10 @@ function GeneradorManiobras() {
                   {["url", "file"].map(mode => (
                     <button type="button" key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
                       style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"4px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#B22222" : "#e5e7eb",
+                        borderRadius:"9px", cursor:"pointer",
+                        borderColor: img.mode === mode ? "#C0272D" : "#e5e7eb",
                         background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#B22222" : "#6b7280" }}>
+                        color:       img.mode === mode ? "#C0272D" : "#6b7280" }}>
                       {mode === "url" ? "URL" : "Archivo local"}
                     </button>
                   ))}
@@ -813,7 +635,7 @@ function GeneradorManiobras() {
                   </label>
                   {img.src && (
                     <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"4px", display:"block" }} />
+                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"9px", display:"block" }} />
                   )}
                 </div>
               )}
@@ -846,7 +668,7 @@ function GeneradorManiobras() {
           {d.pasos.map((p, i) => (
             <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
               <div style={{ marginTop:"8px", flexShrink:"0", width:"28px", height:"28px",
-                borderRadius:"50%", background:"#B22222", color:"#fff",
+                borderRadius:"50%", background:"#C0272D", color:"#fff",
                 fontSize:"12px", fontWeight:"bold", display:"flex",
                 alignItems:"center", justifyContent:"center" }}>
                 {i + 1}
@@ -991,7 +813,7 @@ function GeneradorManiobras() {
           id="eval_mostrar" 
           checked={d.evaluacion.mostrar} 
           onChange={e => updEval("mostrar", e.target.checked)} 
-          style={{ accentColor: "#B22222", width:"16px", height:"16px", cursor:"pointer" }} 
+          style={{ accentColor: UI.red, width:"16px", height:"16px", cursor:"pointer" }} 
         />
         <label htmlFor="eval_mostrar" style={{ fontSize:"13px", fontWeight:"600", color:"#374151", cursor:"pointer", userSelect:"none" }}>
           Incluir bloque de Criterios de Evaluación en el documento
@@ -1093,7 +915,7 @@ function GeneradorManiobras() {
             <button type="button" onClick={insertInEditor}
               style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
                 fontWeight:"700", border:"none", cursor:"pointer",
-                background: inserted ? "#16a34a" : "#B22222",
+                background: inserted ? "#16a34a" : "#C0272D",
                 color:"#fff", transition:"background 0.2s" }}>
               {inserted ? "✓ ¡Insertado en el editor!" : "⬆️ Insertar en el editor"}
             </button>
@@ -1133,68 +955,22 @@ function GeneradorManiobras() {
   ];
 
   return (
-    <div style={{ height:"100%", display:"flex", flexDirection:"column",
-      fontFamily:"system-ui, -apple-system, sans-serif", background:"#f9fafb" }}>
-
-      <div style={{ height:"3px", background:"#7f1d1d", flexShrink:"0" }}>
-        <div style={{ height:"100%", background:"#fca5a5",
-          width:`${((tab + 1) / TABS.length) * 100}%`, transition:"width 0.3s" }} />
-      </div>
-
-      <div style={{ background:"#fff", borderBottom:"1px solid #e5e7eb",
-        flexShrink:"0", overflowX:"auto" }}>
-        <div style={{ display:"flex", minWidth:"max-content" }}>
-          {TABS.map((t, i) => (
-            <button type="button" key={i} onClick={() => setTab(i)}
-              style={{ padding:"10px 12px", fontSize:"12px", fontWeight:"600",
-                whiteSpace:"nowrap", border:"none", borderBottom:"2px solid",
-                cursor:"pointer", transition:"all 0.15s", background:"transparent",
-                borderBottomColor: tab === i ? "#B22222" : "transparent",
-                color: tab === i ? "#B22222" : "#9ca3af" }}>
-              <span>{t.label}</span>
-            </button>
-          ))}
+    <div style={{ height:"100%", display:"flex", flexDirection:"column", fontFamily:UI.font, background:"linear-gradient(180deg,#f3f4f6 0%,#eef0f3 100%)", color:UI.text }}>
+      <div style={{ height:"4px", background:"#f1d5d7", flexShrink:"0" }}><div style={{ height:"100%", background:UI.red, width:`${((tab + 1) / TABS.length) * 100}%`, transition:"width 0.25s ease" }} /></div>
+      <div style={{ background:"#fff", borderBottom:"1px solid #dfe3ea", flexShrink:"0", overflowX:"auto", padding:"10px 12px" }}>
+        <div style={{ display:"flex", minWidth:"max-content", gap:"7px" }}>
+          {TABS.map((t, i) => (<button type="button" key={i} onClick={() => setTab(i)} aria-current={tab === i ? "step" : undefined} style={{ padding:"8px 11px", fontSize:"12px", fontWeight:"800", whiteSpace:"nowrap", border:"1.5px solid", borderRadius:"999px", cursor:"pointer", transition:"all 0.15s", fontFamily:"inherit", background: tab === i ? UI.redSoft : "#fff", borderColor: tab === i ? "#efd3d5" : UI.border, color: tab === i ? UI.redDark : UI.muted, boxShadow: tab === i ? "0 2px 8px rgba(192,39,45,.08)" : "none" }}><span>{t.label}</span></button>))}
         </div>
       </div>
-
-      <div style={{ flex:"1", overflowY:"auto", paddingBottom:"70px" }}>
-        <div style={{ maxWidth:"1000px", margin:"0 auto", padding:"20px 16px" }}>
-          {panels[tab]}
+      <div style={{ flex:"1", overflowY:"auto", paddingBottom:"78px" }}><div style={{ maxWidth:"980px", margin:"0 auto", padding:"20px 16px" }}><div style={{ background:"#fff", border:"1px solid #d9dee7", borderRadius:"16px", padding:"20px", boxShadow:"0 10px 28px rgba(15,23,42,.07)" }}>{panels[tab]}</div></div></div>
+      <div style={{ position:"sticky", bottom:"0", background:"rgba(255,255,255,.96)", borderTop:"1px solid #dfe3ea", padding:"10px 16px", zIndex:"10", boxShadow:"0 -8px 20px rgba(15,23,42,.06)" }}>
+        <div style={{ maxWidth:"980px", margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", flexWrap:"wrap" }}>
+          <button type="button" onClick={() => setTab(t => Math.max(0, t - 1))} disabled={tab === 0} style={{ ...uiBtnSecondary, color: tab === 0 ? "#c9cfd8" : UI.muted, cursor: tab === 0 ? "not-allowed" : "pointer", opacity: tab === 0 ? .65 : 1 }}>← Anterior</button>
+          <button type="button" onClick={generate} style={{ ...uiBtnPrimary, flex:"1", maxWidth:"260px" }}>⚡ Generar HTML</button>
+          <button type="button" onClick={() => setTab(t => Math.min(TABS.length - 1, t + 1))} disabled={tab === TABS.length - 1} style={{ ...uiBtnSecondary, color: tab === TABS.length - 1 ? "#c9cfd8" : UI.muted, cursor: tab === TABS.length - 1 ? "not-allowed" : "pointer", opacity: tab === TABS.length - 1 ? .65 : 1 }}>Siguiente →</button>
+          <button type="button" onClick={resetAll} style={{ ...uiBtnSecondary, borderColor:"#efd3d5", color:UI.redDark }}>🗑 Borrar todo</button>
         </div>
       </div>
-
-      <div style={{ position:"sticky", bottom:"0", background:"#fff",
-        borderTop:"1px solid #e5e7eb", padding:"10px 16px", zIndex:"10" }}>
-        <div style={{ maxWidth:"1000px", margin:"0 auto",
-          display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px" }}>
-          <button type="button" onClick={() => setTab(t => Math.max(0, t - 1))} disabled={tab === 0}
-            style={{ padding:"8px 16px", fontSize:"13px", border:"1.5px solid #e5e7eb",
-              borderRadius:"6px", background:"#fff", color: tab === 0 ? "#d1d5db" : "#6b7280",
-              cursor: tab === 0 ? "not-allowed" : "pointer", whiteSpace:"nowrap" }}>
-            ← Anterior
-          </button>
-          <button type="button" onClick={generate}
-            style={{ flex:"1", maxWidth:"240px", padding:"10px", background:"#B22222",
-              color:"#fff", fontSize:"13px", fontWeight:"700", border:"none",
-              borderRadius:"6px", cursor:"pointer" }}>
-            ⚡ Generar HTML
-          </button>
-          <button type="button" onClick={() => setTab(t => Math.min(TABS.length - 1, t + 1))}
-            disabled={tab === TABS.length - 1}
-            style={{ padding:"8px 16px", fontSize:"13px", border:"1.5px solid #e5e7eb",
-              borderRadius:"6px", background:"#fff",
-              color: tab === TABS.length - 1 ? "#d1d5db" : "#6b7280",
-              cursor: tab === TABS.length - 1 ? "not-allowed" : "pointer", whiteSpace:"nowrap" }}>
-            Siguiente →
-          </button>
-          <button type="button" onClick={resetAll}
-            style={{ padding:"8px 14px", fontSize:"12px", fontWeight:"700", border:"1.5px solid #fca5a5",
-              borderRadius:"6px", background:"#fff", color:"#B22222", cursor:"pointer", whiteSpace:"nowrap" }}>
-            🗑 Borrar todo
-          </button>
-        </div>
-      </div>
-
     </div>
   );
 }
