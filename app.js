@@ -405,6 +405,7 @@ function convertWordBody(body) {
 //  ESTADO GLOBAL DEL EDITOR
 // ══════════════════════════════════════════════════════════════
 const editor = document.getElementById('editor');
+window.editor = editor;
 let savedRange = null;
 let refreshTimer = null;
 
