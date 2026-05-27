@@ -1,1028 +1,557 @@
 /* ══════════════════════════════════════════════════════════════
-   GENERADOR DE MANIOBRAS DE PARQUE — CBCM
-   Cargado con Babel Standalone (sin Node.js / sin bundler)
-   Requiere: React 18 CDN · ReactDOM 18 CDN · Babel Standalone CDN
+   GENERADOR DE MANIOBRAS DE PARQUE · CBCM · v2.0
+   Cargado con Babel Standalone. Requiere React 18 + ReactDOM 18.
+   Genera HTML Moodle-safe, coherente con la estética del editor principal.
    ══════════════════════════════════════════════════════════════ */
 
 const { useState } = React;
 
-/* ─── HTML HELPERS ─────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Utilidades HTML
+   ───────────────────────────────────────────────────────────── */
 function mEsc(s) {
   return String(s || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
-
-function badgeStyle(g) {
-  if (g === "Notable") return "display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;";
-  if (g === "Moderado") return "display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#fffbeb;color:#92400e;border:1px solid #fde68a;";
-  return "display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;";
+function nl2br(s) {
+  return mEsc(s).replace(/\r?\n/g, "<br>");
 }
-
-function embedVideoUrl(url) {
-  if (!url || !url.trim()) return "";
-  let src = url.trim();
-  
-  try {
-    if (src.includes("youtube.com/watch")) {
-      const queryParams = src.split("?")[1];
-      if (queryParams) {
-        const urlParams = new URLSearchParams(queryParams);
-        const v = urlParams.get("v");
-        if (v) src = "https://www.youtube.com/embed/" + v;
-      }
-    } else if (src.includes("youtu.be/")) {
-      const part = src.split("youtu.be/")[1];
-      if (part) src = "https://www.youtube.com/embed/" + part.split("?")[0];
-    } else if (src.includes("vimeo.com/")) {
-      const part = src.split("vimeo.com/")[1];
-      if (part) src = "https://player.vimeo.com/video/" + part.split("?")[0];
-    }
-  } catch (e) {
-    console.warn("Error al procesar URL de vídeo:", e);
-  }
-
-  if (src.match(/\.(mp4|webm|ogg)$/i)) {
-    return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;"><video style="width:100%;max-width:100%;height:auto;display:block;border-radius:24px;" controls><source src="${mEsc(src)}" type="video/mp4">Tu navegador no soporta vídeo.</video></div>`;
-  }
-  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#111827;"><div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" src="${mEsc(src)}" allowfullscreen></iframe></div></div>`;
+function hasText(v) {
+  return String(v || "").trim().length > 0;
 }
-
-function renderImage(item) {
-  const src = typeof item === "string" ? item.trim()
-    : item.mode === "file" ? item.src : (item.url || "").trim();
-  if (!src) return "";
-  return `<div style="width:95%;max-width:850px;margin:24px auto;overflow:hidden;border-radius:24px;box-shadow:0 15px 35px rgba(0,0,0,0.12);background:#ffffff;"><img src="${item.mode === "file" ? src : mEsc(src)}" style="width:100%;max-width:100%;height:auto;border-radius:24px;display:block;" alt="Recurso visual" /></div>`;
+function cleanArr(arr) {
+  return (arr || []).filter(x => hasText(typeof x === "string" ? x : JSON.stringify(x || {})));
 }
-
-/* ─── HTML GENERATOR ────────────────────────────────────────── */
-function generateHTML(d) {
-  const fontStack = "'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-  const red = "#C0272D";
-  const redDark = "#9b1e23";
-  const textColor = "#1f2937";
-  const headingColor = "#374151";
-  const muted = "#6b7280";
-  const border = "#e4e7ec";
-  const borderSoft = "#edf0f4";
-  const contentMax = "800px";
-  const mediaMax = "1000px";
-
-  const pageStyle = `font-family:${fontStack};font-size:16px;line-height:1.8;color:${textColor};background:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;`;
-  const contentStyle = `max-width:${contentMax};width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box;`;
-  const mediaWrapStyle = `max-width:${mediaMax};width:100%;margin:18px auto;box-sizing:border-box;`;
-  const sectionStyle = `max-width:${contentMax};width:100%;margin:22px auto;padding:20px 22px;background:#ffffff;border:1px solid ${border};border-left:6px solid ${red};border-radius:14px;box-sizing:border-box;box-shadow:0 3px 12px rgba(15,23,42,.05);`;
-  const sectionHeaderStyle = `display:flex;align-items:center;gap:10px;margin:0 0 8px 0;box-sizing:border-box;`;
-  const numBadgeStyle = `display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;background:${red};color:#ffffff;font-family:${fontStack};font-weight:800;font-size:14px;line-height:30px;text-align:center;box-sizing:border-box;`;
-  const h2Style = `font-family:${fontStack};font-size:21px;line-height:1.25;font-weight:800;color:${redDark};margin:0;letter-spacing:.01em;`;
-  const h3Style = `font-family:${fontStack};font-size:17px;line-height:1.35;font-weight:800;color:${headingColor};margin:18px 0 8px 0;`;
-  const pStyle = `margin:0 0 12px 0;line-height:1.8;color:${textColor};font-family:${fontStack};font-size:16px;`;
-  const smallPStyle = `margin:0 0 10px 0;line-height:1.65;color:${muted};font-family:${fontStack};font-size:14px;`;
-  const listStyle = `margin:8px 0 14px 0;padding-left:24px;line-height:1.75;color:${textColor};font-family:${fontStack};font-size:16px;`;
-  const liStyle = `margin:0 0 7px 0;line-height:1.75;color:${textColor};font-family:${fontStack};font-size:16px;`;
-  const fakeTableBoxStyle = `width:100%;margin:14px auto 16px auto;border:1px solid ${borderSoft};border-radius:14px;overflow:hidden;background:#ffffff;box-sizing:border-box;`;
-  const fakeRowStyle = `display:flex;width:100%;margin:0;padding:0;background:#ffffff;box-sizing:border-box;`;
-  const fakeCellBase = `padding:10px 12px;vertical-align:middle;font-family:${fontStack};font-size:14px;line-height:1.65;color:${textColor};box-sizing:border-box;min-width:0;`;
-
-  const nl2br = (s) => mEsc(s).replace(/\r?\n/g, "<br>");
-  const paragraph = (txt, extraStyle) => txt && String(txt).trim()
-    ? `<p style="${extraStyle || pStyle}">${nl2br(txt)}</p>`
-    : "";
-  const listItems = (arr) => (arr || [])
-    .filter(x => String(x || "").trim())
-    .map(x => `<li style="${liStyle}">${nl2br(x)}</li>`)
-    .join("");
-  const listBlock = (arr) => {
-    const items = listItems(arr);
-    return items ? `<ul style="${listStyle}">${items}</ul>` : "";
-  };
-  const subsection = (title, body) => body
-    ? `<h4 style="${h3Style}">${mEsc(title)}</h4>${body}`
-    : "";
-  const section = (num, title, body) => body
-    ? `<div style="${sectionStyle}"><div style="${sectionHeaderStyle}"><span style="${numBadgeStyle}">${mEsc(num)}</span><h3 style="${h2Style}">${mEsc(title)}</h3></div><div style="${contentStyle}">${body}</div></div>`
-    : "";
-
-  const renderImageSafe = (item) => {
-    const src = typeof item === "string" ? item.trim() : item && item.mode === "file" ? item.src : ((item && item.url) || "").trim();
-    if (!src) return "";
-    return `<div style="${mediaWrapStyle}"><img src="${mEsc(src)}" alt="Recurso visual" style="display:block;width:100%;max-width:100%;height:auto;border-radius:12px;border:1px solid ${border};box-sizing:border-box;margin:0 auto;" /></div>`;
-  };
-  const renderImages = (arr) => (arr || [])
-    .filter(img => typeof img === "string" ? img.trim() : img && (img.mode === "file" ? img.src : (img.url || "").trim()))
-    .map(renderImageSafe)
-    .join("\n");
-  const renderVideos = (arr) => (arr || [])
-    .filter(v => String(v || "").trim())
-    .map(v => `<div style="${mediaWrapStyle}">${embedVideoUrl(v)}</div>`)
-    .join("\n");
-
-  const validItCodes = (d.itCodes || []).filter(c => String(c || "").trim());
-  const codesHtml = validItCodes.length
-    ? `<div style="margin-top:10px;box-sizing:border-box;">${validItCodes.map(c => `<span style="display:inline-block;margin:3px 5px 0 0;padding:4px 9px;border-radius:999px;background:#ffffff;border:1px solid rgba(255,255,255,.75);color:${redDark};font-family:${fontStack};font-size:12px;font-weight:800;line-height:1.35;box-sizing:border-box;">${mEsc(c)}</span>`).join("")}</div>`
-    : "";
-
-  const recursosBody = [
-    subsection("EPI's", listBlock(d.epis)),
-    subsection("Materiales y herramientas", listBlock(d.materiales)),
-    listBlock(d.materialAdicional || []) ? subsection("Material adicional", listBlock(d.materialAdicional || [])) : "",
-    renderImages(d.recursosImagenes),
-    renderVideos(d.recursosVideos)
-  ].join("\n");
-
-  // IMPORTANTE: sin <table>, <tr>, <td> ni <th>. Moodle no puede aplicar CSS global de tablas.
-  const validSteps = (d.pasos || []).filter(p => String(p || "").trim());
-  const stepsHtml = validSteps.length ? `<div style="${fakeTableBoxStyle}">${validSteps.map((p, i) => {
-    const isLast = i === validSteps.length - 1;
-    return `<div style="${fakeRowStyle}${isLast ? "" : `border-bottom:1px solid ${borderSoft};`}"><div style="${fakeCellBase}width:62px;flex:0 0 62px;text-align:center;"><span style="${numBadgeStyle}">${i + 1}</span></div><div style="${fakeCellBase}flex:1 1 auto;font-size:15px;text-transform:uppercase;">${nl2br(p)}</div></div>`;
-  }).join("")}</div>` : "";
-
-  const validRisks = (d.riesgos || []);
-  const riskHeaderCell = `padding:10px 12px;background:#fff7f7;color:${redDark};font-family:${fontStack};font-weight:800;font-size:13px;line-height:1.55;box-sizing:border-box;min-width:0;`;
-  const riskCell = `padding:10px 12px;color:${textColor};font-family:${fontStack};font-size:14px;line-height:1.65;box-sizing:border-box;min-width:0;`;
-  const col1 = `flex:1 1 23%;`;
-  const col2 = `flex:1 1 23%;`;
-  const col3 = `flex:0 0 120px;`;
-  const col4 = `flex:1.3 1 31%;`;
-  const vr = `border-right:1px solid ${borderSoft};`;
-  const riskRows = validRisks.map((r, i) => {
-    const isLast = i === validRisks.length - 1;
-    const bottom = isLast ? "" : `border-bottom:1px solid ${borderSoft};`;
-    return `<div style="${fakeRowStyle}${bottom}"><div style="${riskCell}${col1}${vr}">${nl2br(r.riesgo)}</div><div style="${riskCell}${col2}${vr}">${nl2br(r.causa)}</div><div style="${riskCell}${col3}${vr}"><span style="${badgeStyle(r.grado)}">${mEsc(r.grado)}</span></div><div style="${riskCell}${col4}">${nl2br(r.medida)}</div></div>`;
-  }).join("");
-  const risksBlock = `<div style="${sectionStyle}"><div style="${sectionHeaderStyle}"><span style="${numBadgeStyle}">8</span><h3 style="${h2Style}">Evaluación de riesgos de la maniobra</h3></div><div style="${fakeTableBoxStyle}"><div style="${fakeRowStyle}border-bottom:1px solid ${borderSoft};"><div style="${riskHeaderCell}${col1}${vr}">Riesgo</div><div style="${riskHeaderCell}${col2}${vr}">Causa</div><div style="${riskHeaderCell}${col3}${vr}">Grado</div><div style="${riskHeaderCell}${col4}">Medida preventiva</div></div>${riskRows}</div></div>`;
-
-  const recordadBlock = d.recordad && d.recordad.trim()
-    ? `<div style="margin:14px 0 0 0;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;border-left:5px solid #f97316;color:#713f12;font-family:${fontStack};font-size:15px;line-height:1.65;box-sizing:border-box;"><span style="font-weight:800;color:#713f12;">Recordad:</span> ${nl2br(d.recordad)}</div>`
-    : "";
-
-  const planSosBody = `<div style="padding:14px 16px;border-radius:12px;background:#fff7f7;border:1px solid #f0d6d6;border-left:5px solid ${red};box-sizing:border-box;">${paragraph(d.planSOS.senal, `margin:0 0 10px 0;line-height:1.7;color:${redDark};font-family:${fontStack};font-size:15px;font-weight:800;`)}${paragraph(d.planSOS.intro1)}${paragraph(d.planSOS.intro2)}${subsection(d.planSOS.leveTitulo, listBlock(d.planSOS.leveItems))}${subsection(d.planSOS.graveTitulo, listBlock(d.planSOS.graveItems))}${paragraph(d.planSOS.cierre)}</div>`;
-
-  let evaluacionHtml = "";
-  if (d.evaluacion.mostrar) {
-    evaluacionHtml = section("II", "Anexo II — Criterios de evaluación", `${paragraph("Durante las maniobras se realizarán rúbricas de evaluación divididas en tres bloques diferenciados.")}${subsection("Bloque 1 — Críticos", paragraph("Será necesario cumplirlos todos para poder dar por apta la maniobra; aseguran el aprobado.") + (listBlock(d.evaluacion.criticos) || listBlock(["Sin ítems definidos"])))}${subsection("Bloque 2 — Técnicos", paragraph("Estos ítems permiten alcanzar la máxima calificación técnica.") + (listBlock(d.evaluacion.tecnicos) || listBlock(["Sin ítems definidos"])))}${subsection("Bloque 3 — Actitudinales", paragraph("Estos ítems no suman, pero sí pueden restar.") + (listBlock(d.evaluacion.actitudinales) || listBlock(["Sin ítems definidos"])))}`);
-  }
-
-  const footerHtml = `<div style="max-width:${mediaMax};width:100%;margin:26px auto 0 auto;border-top:1px solid ${border};padding-top:12px;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;"><div style="display:flex;width:100%;gap:12px;align-items:flex-start;box-sizing:border-box;"><div style="flex:0 0 140px;min-width:0;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;"><span style="font-weight:800;color:${muted};">Revisión ${mEsc(d.revision)}</span></div><div style="flex:1 1 auto;min-width:0;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;">${nl2br(d.pieTexto)}</div><div style="flex:0 0 90px;min-width:0;text-align:right;color:${muted};font-family:${fontStack};font-size:12px;line-height:1.55;box-sizing:border-box;">Pág. 1 de 1</div></div></div>`;
-
-  return `<div style="${pageStyle}"><div style="max-width:${mediaMax};width:100%;margin:0 auto 26px auto;background:${red};border-radius:16px;overflow:hidden;box-shadow:0 8px 22px rgba(192,39,45,.18);box-sizing:border-box;"><div style="padding:18px 22px;color:#ffffff;box-sizing:border-box;"><div style="display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:4px 10px;font-family:${fontStack};font-size:12px;font-weight:800;letter-spacing:.08em;line-height:1.35;text-transform:uppercase;color:#ffffff;box-sizing:border-box;">CBCM · Práctica</div><h2 style="font-family:${fontStack};font-size:25px;line-height:1.25;font-weight:800;margin:12px 0 4px 0;color:#ffffff;box-sizing:border-box;">${mEsc(d.titulo || "Maniobra de parque")}</h2>${d.subtitulo ? `<p style="margin:0;color:rgba(255,255,255,.86);font-family:${fontStack};font-size:15px;line-height:1.55;box-sizing:border-box;">${nl2br(d.subtitulo)}</p>` : ""}${codesHtml}</div></div>${section("1", "Descripción", paragraph(d.descripcion))}${section("2", "Objetivo pedagógico", paragraph(d.objetivo))}${section("3", "Destinatarios", paragraph(d.destinatarios))}${section("4", "Escenario", `${paragraph(d.escenario)}${renderImages(d.escenarioImagenes || [])}`)}${section("5", "Recursos", recursosBody)}${section("6", "Organización del grupo", `${paragraph(d.organizacion)}${subsection("Rol del " + (d.rolMandoTitulo || "responsable"), listBlock(d.rolesJT || []))}`)}${section("7", "Desarrollo explicativo de la práctica", `${paragraph("Documentación de referencia: " + (d.refDoc || ""), smallPStyle)}${d.aspectosGenerales && d.aspectosGenerales.trim() ? subsection("Aspectos generales", paragraph(d.aspectosGenerales)) : ""}${d.desarrolloManiobra && d.desarrolloManiobra.trim() ? subsection("Desarrollo de la maniobra", paragraph(d.desarrolloManiobra)) : ""}${d.escenarioDesarrollo && d.escenarioDesarrollo.trim() ? subsection("Escenario", paragraph(d.escenarioDesarrollo)) : ""}${renderImages(d.desarrolloImagenes || [])}${renderVideos(d.videos || [])}${subsection("Explicación secuencial de la maniobra", stepsHtml)}${subsection("Precauciones", paragraph(d.precauciones) + recordadBlock)}`)}${risksBlock}${section("I", "Anexo I — Plan SOS", planSosBody)}${evaluacionHtml}${footerHtml}</div>`;
+function todayRevision() {
+  return new Date().toISOString().slice(0, 10).replace(/-/g, "");
 }
-
-/* ─── UI COMPONENTS ─── */
-const UI = { red:"#C0272D", redDark:"#9b1e23", redSoft:"rgba(192,39,45,.08)", surface:"#ffffff", panel:"#f7f8fa", border:"#d9dee7", text:"#111827", muted:"#6b7280", sub:"#9ca3af", font:"'Montserrat','Segoe UI',Roboto,Helvetica,Arial,sans-serif" };
-const uiInput = { width:"100%", border:"1.5px solid #d9dee7", borderRadius:"10px", background:"#fff", padding:"9px 12px", fontSize:"13px", color:UI.text, outline:"none", fontFamily:"inherit", boxSizing:"border-box", transition:"border-color .15s, box-shadow .15s" };
-const uiBtnSecondary = { padding:"8px 14px", fontSize:"12px", fontWeight:"750", border:"1.5px solid #d9dee7", borderRadius:"10px", background:"#fff", color:UI.muted, cursor:"pointer", whiteSpace:"nowrap", fontFamily:"inherit", transition:"all .15s" };
-const uiBtnPrimary = { padding:"10px 18px", background:UI.red, color:"#fff", fontSize:"13px", fontWeight:"800", border:"none", borderRadius:"10px", cursor:"pointer", whiteSpace:"nowrap", fontFamily:"inherit", boxShadow:"0 3px 10px rgba(192,39,45,.22)", transition:"all .15s" };
-const TABS = [
-  { label: "1 · Cabecera", short: "Cab." }, { label: "2 · Info General", short: "Info" }, { label: "3 · Recursos", short: "Rec." }, { label: "4 · Organización", short: "Org." }, { label: "5 · Desarrollo", short: "Des." }, { label: "6 · Riesgos", short: "Rie." }, { label: "7 · Plan SOS", short: "SOS" }, { label: "8 · Evaluación", short: "Eva." }, { label: "9 · Pie", short: "Pie" }, { label: "⚡ Generar", short: "⚡" },
-];
-const SectionTitle = ({ children }) => (<h2 style={{ fontSize:"18px", fontWeight:"800", color:UI.redDark, marginBottom:"5px", marginTop:"0", letterSpacing:".01em" }}>{children}</h2>);
-const Hint = ({ children }) => (<p style={{ fontSize:"13px", color:UI.muted, marginBottom:"18px", marginTop:"0", lineHeight:"1.55" }}>{children}</p>);
-const Label = ({ children, required, style }) => (<label style={{ display:"block", fontSize:"11px", fontWeight:"800", color:UI.redDark, textTransform:"uppercase", letterSpacing:"0.11em", marginBottom:"6px", ...style }}>{children}{required && <span style={{ color:UI.red, marginLeft:"2px" }}>*</span>}</label>);
-const Inp = ({ value, onChange, placeholder }) => (<input style={uiInput} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} onFocus={e => { e.target.style.borderColor = UI.red; e.target.style.boxShadow = "0 0 0 3px rgba(192,39,45,.08)"; }} onBlur={e => { e.target.style.borderColor = UI.border; e.target.style.boxShadow = "none"; }} />);
-const Txt = ({ value, onChange, placeholder, rows = 3 }) => (<textarea style={{ ...uiInput, resize:"vertical", minHeight:"74px", lineHeight:"1.55" }} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows} onFocus={e => { e.target.style.borderColor = UI.red; e.target.style.boxShadow = "0 0 0 3px rgba(192,39,45,.08)"; }} onBlur={e => { e.target.style.borderColor = UI.border; e.target.style.boxShadow = "none"; }} />);
-const AddBtn = ({ onClick, label }) => (<button type="button" onClick={onClick} style={{ marginTop:"9px", fontSize:"12px", fontWeight:"800", color:UI.redDark, border:"1.5px solid #efd3d5", borderLeft:`5px solid ${UI.red}`, borderRadius:"10px", padding:"7px 12px", background:"#fff", cursor:"pointer", fontFamily:"inherit" }}>{label}</button>);
-const RemBtn = ({ onClick }) => (<button type="button" onClick={onClick} title="Eliminar" aria-label="Eliminar" style={{ marginLeft:"8px", width:"28px", height:"28px", flexShrink:"0", display:"flex", alignItems:"center", justifyContent:"center", color:"#9ca3af", background:"#fff", border:"1px solid #e4e7ec", borderRadius:"9px", fontSize:"18px", lineHeight:"1", cursor:"pointer", transition:"all .15s" }}>×</button>);
-const Divider = () => (<div style={{ borderTop:"1px solid #eef0f3", margin:"22px 0" }} />);
-
-/* ─── MAIN COMPONENT ────────────────────────────────────────── */
-function GeneradorManiobras() {
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const [tab, setTab]       = useState(0);
-  const [html, setHtml]     = useState("");
-  const [copied, setCopied] = useState(false);
-  const [preview, setPreview] = useState(false);
-  const [inserted, setInserted] = useState(false);
-
-  const [d, setD] = useState({
-    titulo: "", subtitulo: "", itCodes: [""],
-    descripcion: "", objetivo: "", destinatarios: "", escenario: "",
-    escenarioImagenes: [],
-    epis: ["", "", ""],
-    materiales: ["", "", "", ""],
-    materialAdicional: [""],
-    recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
-    recursosVideos: [""],
+function newImage() {
+  return { mode: "url", url: "", src: "", name: "", caption: "", width: "100%" };
+}
+function newVideo() {
+  return { url: "", titulo: "", descripcion: "" };
+}
+function newStep() {
+  return { titulo: "", texto: "", imagenes: [], videos: [] };
+}
+function newRole() {
+  return { nombre: "", acciones: [""] };
+}
+function newSubmaniobra() {
+  return { titulo: "", descripcion: "", pasos: [newStep()], imagenes: [], videos: [] };
+}
+function newPractica() {
+  return {
+    titulo: "",
+    descripcion: "",
     organizacion: "",
-    rolMandoTitulo: "JEFE DE TURNO",
-    rolesJT: [
-        "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
-        "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
-    ],
-    refDoc: "",
-    aspectosGenerales: "",
-    desarrolloManiobra: "",
-    escenarioDesarrollo: "",
-    videos: [""],
-    desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
-    pasos: ["", "", "", "", "", ""],
-    precauciones: "", recordad: "",
-    planSOS: {
-      senal: "SEÑAL DE EMERGENCIA: 3 REPETICIONES DE LA PALABRA «EMERGENCIA»",
-      intro1: "En caso de accidente durante el desarrollo de la práctica, cualquier integrante podrá alertar con la señal indicada. A partir de ese momento, todo el personal paraliza su actuación con seguridad y sigue las instrucciones de los instructores.",
-      intro2: "Cuando haya personal disperso en el terreno, se dispondrá necesariamente de emisoras.",
-      leveTitulo: "Accidente Leve",
-      leveItems: [
-        "Primera atención básica con medios disponibles (botiquín, DESA, etc.).",
-        "Avisar al médico de alerta si afecta a personal del CBCM.",
-        "Si se necesitan recursos de guardia: aviso inmediato a CECOP (918 354 918)."
-      ],
-      graveTitulo: "Accidente Grave o Muy Grave",
-      graveItems: [
-        "Todo lo previsto para accidente leve.",
-        "Traslado de aviso al 112."
-      ],
-      cierre: "En ambos casos, el Parte de Accidente/Suceso (PAS) se realizará conforme a la normativa interna del CBCM."
-    },
-    evaluacion: {
-      mostrar: false,
-      criticos: [""],
-      tecnicos: [""],
-      actitudinales: [""]
-    },
-    pieTexto: "Este documento es propiedad del Cuerpo de Bomberos de la Comunidad de Madrid, protegido bajo licencia CC BY-NC-SA 4.0. Se permite la copia y distribución acreditando autoría, sin fines comerciales y compartiendo bajo la misma licencia.",
-    riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
-    revision: today,
-  });
-
-  const upd    = (k, v) => setD(p => ({ ...p, [k]: v }));
-  const updArr = (k, i, v) => setD(p => { const a = [...p[k]]; a[i] = v; return { ...p, [k]: a }; });
-  const addArr = (k, def = "") => setD(p => ({ ...p, [k]: [...p[k], def] }));
-  const remArr = (k, i) => setD(p => { const a = [...p[k]]; a.splice(i, 1); return { ...p, [k]: a }; });
-  
-  const updRisk = (i, f, v) => setD(p => {
-    const a = [...p.riesgos]; a[i] = { ...a[i], [f]: v }; return { ...p, riesgos: a };
-  });
-
-  const updImg = (key, i, field, val) => setD(p => {
-    const a = [...p[key]]; a[i] = { ...a[i], [field]: val }; return { ...p, [key]: a };
-  });
-  const handleImgFile = (key, i, file) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => setD(p => {
-      const a = [...p[key]];
-      a[i] = { ...a[i], src: e.target.result, name: file.name };
-      return { ...p, [key]: a };
-    });
-    reader.readAsDataURL(file);
+    roles: [newRole()],
+    pasos: [newStep()],
+    submaniobras: [],
+    imagenes: [],
+    videos: [],
+    precauciones: "",
+    recordatorio: ""
   };
-  const addImg = (key) => setD(p => ({ ...p, [key]: [...p[key], { mode: "url", url: "", src: "", name: "" }] }));
-  const remImg = (key, i) => setD(p => ({ ...p, [key]: p[key].filter((_, j) => j !== i) }));
+}
+function newRisk() {
+  return { riesgo: "", causa: "", grado: "Notable", medida: "" };
+}
+function newChecklistItem() {
+  return { campo: "", descripcion: "" };
+}
 
-  const updSos = (f, v) => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: v } }));
-  const updSosArr = (f, i, v) => setD(p => {
-    const a = [...p.planSOS[f]]; a[i] = v; 
-    return { ...p, planSOS: { ...p.planSOS, [f]: a } };
-  });
-  const addSosArr = (f, def = "") => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: [...p.planSOS[f], def] } }));
-  const remSosArr = (f, i) => setD(p => ({ ...p, planSOS: { ...p.planSOS, [f]: p.planSOS[f].filter((_, j) => j !== i) } }));
+/* ─────────────────────────────────────────────────────────────
+   Estilos de salida: coherentes con el editor principal
+   ───────────────────────────────────────────────────────────── */
+const OUT = {
+  font: "Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif",
+  red: "#C0272D",
+  redDark: "#9b1e23",
+  text: "#2d2d2d",
+  muted: "#6b7280",
+  border: "#e4e7ec",
+  borderSoft: "#edf0f4",
+  contentMax: "800px",
+  mediaMax: "1000px"
+};
+const pageStyle = `font-family:${OUT.font};font-size:16px;line-height:1.8;color:${OUT.text};background:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;`;
+const contentBox = `max-width:${OUT.contentMax};width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box;`;
+const mediaBox = `max-width:${OUT.mediaMax};width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box;`;
+const pStyle = `font-family:${OUT.font};font-size:15px;line-height:1.8;color:${OUT.text};margin:10px 0;`;
+const smallStyle = `font-family:${OUT.font};font-size:14px;line-height:1.65;color:${OUT.muted};margin:8px 0;`;
+const h1Style = `display:inline-block;background-color:${OUT.red};color:#ffffff;padding:12px 24px;border-radius:6px;font-family:${OUT.font};font-size:20px;font-weight:800;letter-spacing:.3px;line-height:1.3;`;
+const h2Style = `display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:${OUT.font};font-size:17px;font-weight:800;letter-spacing:.2px;line-height:1.3;`;
+const h3Style = `display:inline-block;background-color:#fff0f0;color:#6b1215;border-left:4px solid ${OUT.red};padding:8px 18px;border-radius:0 5px 5px 0;font-family:${OUT.font};font-size:15px;font-weight:800;line-height:1.4;`;
+const h4Style = `display:inline-block;color:${OUT.red};border-bottom:2px solid #e8b4b5;padding:4px 2px;font-family:${OUT.font};font-size:14px;font-weight:800;letter-spacing:.1px;`;
+const blockStyle = `display:block;width:100%;max-width:${OUT.contentMax};margin:18px auto;box-sizing:border-box;overflow-wrap:anywhere;word-break:normal;font-family:${OUT.font};font-size:16px;background-color:#ffffff;border:1px solid ${OUT.border};border-left:5px solid ${OUT.red};color:${OUT.text};padding:14px 20px;border-radius:0 8px 8px 0;line-height:1.7;`;
+const infoBlockStyle = `display:block;width:100%;max-width:${OUT.contentMax};margin:14px auto;box-sizing:border-box;font-family:${OUT.font};font-size:15px;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-weight:600;line-height:1.6;`;
+const noteBlockStyle = `display:block;width:100%;max-width:${OUT.contentMax};margin:14px auto;box-sizing:border-box;font-family:${OUT.font};font-size:15px;background-color:#fffbeb;border-top:4px solid #f59e0b;border-left:4px solid #f59e0b;color:#78350f;padding:12px 20px;border-radius:0 6px 6px 6px;font-weight:700;line-height:1.6;`;
+const tableStyle = `width:100%;border-collapse:separate;border-spacing:0;font-family:${OUT.font};font-size:14px;border:1px solid ${OUT.borderSoft};border-radius:12px;overflow:hidden;background:#ffffff;box-sizing:border-box;`;
+const thStyle = `background-color:#fff7f7;color:${OUT.redDark};padding:10px 14px;text-align:left;font-weight:800;border:none;border-right:1px solid ${OUT.borderSoft};border-bottom:1px solid ${OUT.borderSoft};font-size:13px;line-height:1.55;`;
+const tdStyle = `padding:9px 14px;border:none;border-right:1px solid ${OUT.borderSoft};border-bottom:1px solid ${OUT.borderSoft};color:${OUT.text};vertical-align:top;font-size:14px;line-height:1.6;`;
 
-  /* Helpers Criterios Evaluación */
-  const updEval = (f, v) => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: v } }));
-  const updEvalArr = (f, i, v) => setD(p => {
-    const a = [...p.evaluacion[f]]; a[i] = v; 
-    return { ...p, evaluacion: { ...p.evaluacion, [f]: a } };
-  });
-  const addEvalArr = (f, def = "") => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: [...p.evaluacion[f], def] } }));
-  const remEvalArr = (f, i) => setD(p => ({ ...p, evaluacion: { ...p.evaluacion, [f]: p.evaluacion[f].filter((_, j) => j !== i) } }));
-
-  const generate = () => { setHtml(generateHTML(d)); setTab(9); setPreview(false); setInserted(false); };
-
-  const resetAll = () => {
-    if (!window.confirm("¿Borrar todo y empezar una maniobra nueva?")) return;
-    const t = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    setD({
-      titulo: "", subtitulo: "", itCodes: [""],
-      descripcion: "", objetivo: "", destinatarios: "", escenario: "",
-      escenarioImagenes: [],
-      epis: ["", "", ""],
-      materiales: ["", "", "", ""],
-      materialAdicional: [""],
-      recursosImagenes: [{ mode: "url", url: "", src: "", name: "" }],
-      recursosVideos: [""],
-      organizacion: "",
-      rolMandoTitulo: "JEFE DE TURNO",
-      rolesJT: [
-        "Explicará a los BX el desarrollo de la práctica, identificando los objetivos, riesgos, secuencia de acciones y el Plan SOS.",
-        "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando en todo momento las condiciones de seguridad. En caso de incidente, activará el Plan SOS."
-      ],
-      refDoc: "",
-      aspectosGenerales: "",
-      desarrolloManiobra: "",
-      escenarioDesarrollo: "",
-      videos: [""],
-      desarrolloImagenes: [{ mode: "url", url: "", src: "", name: "" }],
-      pasos: ["", "", "", "", "", ""],
-      precauciones: "", recordad: "",
-      planSOS: {
-        senal: "SEÑAL DE EMERGENCIA: 3 REPETICIONES DE LA PALABRA «EMERGENCIA»",
-        intro1: "En caso de accidente durante el desarrollo de la práctica, cualquier integrante podrá alertar con la señal indicada. A partir de ese momento, todo el personal paraliza su actuación con seguridad y sigue las instrucciones de los instructores.",
-        intro2: "Cuando haya personal disperso en el terreno, se dispondrá necesariamente de emisoras.",
-        leveTitulo: "Accidente Leve",
-        leveItems: [
-          "Primera atención básica con medios disponibles (botiquín, DESA, etc.).",
-          "Avisar al médico de alerta si afecta a personal del CBCM.",
-          "Si se necesitan recursos de guardia: aviso inmediato a CECOP (918 354 918)."
-        ],
-        graveTitulo: "Accidente Grave o Muy Grave",
-        graveItems: [
-          "Todo lo previsto para accidente leve.",
-          "Traslado de aviso al 112."
-        ],
-        cierre: "En ambos casos, el Parte de Accidente/Suceso (PAS) se realizará conforme a la normativa interna del CBCM."
-      },
-      evaluacion: {
-        mostrar: false,
-        criticos: [""],
-        tecnicos: [""],
-        actitudinales: [""]
-      },
-      pieTexto: "Este documento es propiedad del Cuerpo de Bomberos de la Comunidad de Madrid, protegido bajo licencia CC BY-NC-SA 4.0. Se permite la copia y distribución acreditando autoría, sin fines comerciales y compartiendo bajo la misma licencia.",
-      riesgos: [{ riesgo: "", causa: "", grado: "Notable", medida: "" }],
-      revision: t,
-    });
-    setHtml(""); setTab(0); setPreview(false); setInserted(false); setCopied(false);
-  };
-
-  const copy = () => {
-    navigator.clipboard.writeText(html).then(() => {
-      setCopied(true); setTimeout(() => setCopied(false), 2500);
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = html; ta.style.cssText = 'position:fixed;opacity:0;';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta);
-      setCopied(true); setTimeout(() => setCopied(false), 2500);
-    });
-  };
-
-  const insertInEditor = () => {
-    if (typeof window.insertHTMLAtCursor === 'function') {
-      window.insertHTMLAtCursor(html);
-      setInserted(true);
-      setTimeout(() => {
-        if (typeof window.closeManiobrasModal === 'function') window.closeManiobrasModal();
-      }, 800);
-    }
-  };
-
-  /* ── TAB PANELS ── */
-  const spY = { display:"flex", flexDirection:"column", gap:"20px" };
-
-  const panels = [
-
-    /* 0 · Cabecera */
-    <div style={spY} key="tab0">
-      <SectionTitle>Cabecera del documento</SectionTitle>
-      <Hint>Identificación de la maniobra y sus códigos de instrucción técnica (si aplica).</Hint>
-      <div><Label required>Título de la práctica</Label>
-        <Inp value={d.titulo} onChange={v => upd("titulo", v)} placeholder="ej: BOMBEO EN SERIE DESDE HIDRANTE" /></div>
-      <div><Label>Subtítulo (opcional)</Label>
-        <Inp value={d.subtitulo} onChange={v => upd("subtitulo", v)} placeholder="ej: Verificación de presión de red y riesgo de cavitación" /></div>
-      <div>
-        <Label>Códigos de Instrucción Técnica (Opcional)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.itCodes.map((c, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={c} onChange={v => updArr("itCodes", i, v)} placeholder="ej: IT.JUT1.102" />
-              </div>
-              {d.itCodes.length > 1 && <RemBtn onClick={() => remArr("itCodes", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("itCodes")} label="＋ Añadir código" />
+function wrapContent(html) {
+  return `<div style="${contentBox}">${html}</div>`;
+}
+function heading(level, text) {
+  if (!hasText(text)) return "";
+  const style = level === 1 ? h1Style : level === 2 ? h2Style : level === 3 ? h3Style : h4Style;
+  return `<div style="${contentBox};margin-top:18px;margin-bottom:10px;"><div style="${style}">${mEsc(text)}</div></div>`;
+}
+function paragraph(text, style = pStyle) {
+  return hasText(text) ? `<p style="${style}">${nl2br(text)}</p>` : "";
+}
+function listBlock(items) {
+  const vals = (items || []).filter(v => hasText(v));
+  if (!vals.length) return "";
+  return `<ul style="font-family:${OUT.font};font-size:15px;line-height:1.8;color:${OUT.text};margin:10px 0;padding-left:28px;">${vals.map(v => `<li style="margin:5px 0;">${nl2br(v)}</li>`).join("")}</ul>`;
+}
+function fieldListBlock(title, items) {
+  const vals = (items || []).filter(v => hasText(v));
+  if (!vals.length) return "";
+  return `${heading(4, title)}${wrapContent(listBlock(vals))}`;
+}
+function renderImages(images) {
+  return (images || []).map(img => {
+    const src = img.mode === "file" ? img.src : img.url;
+    if (!hasText(src)) return "";
+    const width = img.width || "100%";
+    const isAuto = width === "auto";
+    const containerW = isAuto ? "max-width:100%;" : `width:${width};max-width:100%;`;
+    const imgStyle = isAuto
+      ? "max-width:100%;width:auto;height:auto;border-radius:6px;display:block;margin:0 auto;box-sizing:border-box;"
+      : "width:100%;max-width:100%;height:auto;border-radius:6px;display:block;box-sizing:border-box;";
+    const caption = img.caption || img.name || "Recurso visual";
+    return `<div class="moodle-media-block" style="text-align:center;margin:20px auto;width:100%;max-width:${OUT.mediaMax};box-sizing:border-box;">
+      <div style="display:inline-block;${containerW}background:#fff;border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:${OUT.font};box-sizing:border-box;">
+        <div style="text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;"><img src="${src}" alt="${mEsc(caption)}" style="${imgStyle}"></div>
+        <div style="padding:12px 16px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;box-sizing:border-box;"><span style="font-weight:700;color:#333;font-size:16px;line-height:1.5;display:block;overflow-wrap:anywhere;">🖼️ ${mEsc(caption)}</span></div>
       </div>
-    </div>,
-
-    /* 1 · Info General */
-    <div style={spY} key="tab1">
-      <SectionTitle>Información General</SectionTitle>
-      <Hint>Secciones 1 a 4 del documento generado.</Hint>
-      <div><Label required>1 · Descripción</Label>
-        <Txt value={d.descripcion} onChange={v => upd("descripcion", v)} rows={10}
-          placeholder="Qué se monta, qué se verifica, aspectos técnicos clave..." /></div>
-      <Divider />
-      <div><Label required>2 · Objetivo Pedag&oacute;gico</Label>
-        <Txt value={d.objetivo} onChange={v => upd("objetivo", v)} rows={10}
-          placeholder="ej: Comprobar ventajas e inconvenientes de un bombeo en serie desde un hidrante" /></div>
-      <Divider />
-      <div><Label required>3 · Destinatarios</Label>
-        <Txt value={d.destinatarios} onChange={v => upd("destinatarios", v)} rows={10}
-          placeholder="ej: Personal operativo de guardia" /></div>
-      <Divider />
-      <div><Label required>4 · Escenario</Label>
-        <Txt value={d.escenario} onChange={v => upd("escenario", v)} rows={10}
-          placeholder="ej: La práctica se desarrollará en el hidrante de abastecimiento del parque" /></div>
-      <Divider />
-      <div>
-        <Label>Imágenes para el Escenario (Opcional)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {d.escenarioImagenes && d.escenarioImagenes.map((img, i) => (
-            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                <div style={{ display:"flex", gap:"4px" }}>
-                  {["url", "file"].map(mode => (
-                    <button type="button" key={mode} onClick={() => updImg("escenarioImagenes", i, "mode", mode)}
-                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"9px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#C0272D" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#C0272D" : "#6b7280" }}>
-                      {mode === "url" ? "URL" : "Archivo local"}
-                    </button>
-                  ))}
-                </div>
-                <RemBtn onClick={() => remImg("escenarioImagenes", i)} />
-              </div>
-              {img.mode === "url" ? (
-                <Inp value={img.url} onChange={v => updImg("escenarioImagenes", i, "url", v)} placeholder="https://ejemplo.com/imagen.jpg" />
-              ) : (
-                <div>
-                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
-                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
-                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
-                    <input type="file" accept="image/*" style={{ display:"none" }}
-                      onChange={e => handleImgFile("escenarioImagenes", i, e.target.files[0])} />
-                  </label>
-                  {img.src && (
-                    <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"9px", display:"block" }} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addImg("escenarioImagenes")} label="＋ Añadir imagen al escenario" />
-      </div>
-    </div>,
-
-    /* 2 · Recursos */
-    <div style={spY} key="tab2">
-      <SectionTitle>Recursos</SectionTitle>
-      <Hint>EPIs, materiales y recursos multimedia necesarios para la maniobra.</Hint>
-      <div>
-        <Label>EPI's</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.epis.map((e, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <span style={{ fontSize:"12px", color:"#9ca3af", width:"24px", textAlign:"right", marginRight:"8px" }}>{i + 1}.</span>
-              <div style={{ flex:"1" }}>
-                <Inp value={e} onChange={v => updArr("epis", i, v)}
-                  placeholder={["U1 completo + casco F1", "Botas de intervención con punta de acero", "Guantes de protección"][i] || "EPI..."} />
-              </div>
-              {d.epis.length > 1 && <RemBtn onClick={() => remArr("epis", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("epis")} label="＋ Añadir EPI" />
-      </div>
-      <Divider />
-      <div>
-        <Label>Materiales y Herramientas</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.materiales.map((m, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <span style={{ fontSize:"12px", color:"#9ca3af", width:"24px", textAlign:"right", marginRight:"8px" }}>{i + 1}.</span>
-              <div style={{ flex:"1" }}>
-                <Inp value={m} onChange={v => updArr("materiales", i, v)}
-                  placeholder={["BRP o BFP", "Llave de hidrante / columna", "2 mangueras de 70Ø", "1 manguera de 45Ø"][i] || "Material..."} />
-              </div>
-              {d.materiales.length > 1 && <RemBtn onClick={() => remArr("materiales", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("materiales")} label="＋ Añadir material" />
-      </div>
-      <Divider />
-      <div>
-        <Label>Material Adicional (Opcional)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {(d.materialAdicional || []).map((m, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <span style={{ fontSize:"12px", color:"#9ca3af", width:"24px", textAlign:"right", marginRight:"8px" }}>{i + 1}.</span>
-              <div style={{ flex:"1" }}>
-                <Inp value={m} onChange={v => updArr("materialAdicional", i, v)}
-                  placeholder="Material adicional, herramientas específicas..." />
-              </div>
-              {(d.materialAdicional || []).length > 1 && <RemBtn onClick={() => remArr("materialAdicional", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("materialAdicional")} label="＋ Añadir material adicional" />
-      </div>
-
-      <Divider />
-             
-      <div>
-        <Label>Imágenes</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {d.recursosImagenes.map((img, i) => (
-            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                <div style={{ display:"flex", gap:"4px" }}>
-                  {["url", "file"].map(mode => (
-                    <button type="button" key={mode} onClick={() => updImg("recursosImagenes", i, "mode", mode)}
-                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"9px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#C0272D" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#C0272D" : "#6b7280" }}>
-                      {mode === "url" ? "URL" : "Archivo local"}
-                    </button>
-                  ))}
-                </div>
-                {d.recursosImagenes.length > 1 && <RemBtn onClick={() => remImg("recursosImagenes", i)} />}
-              </div>
-              {img.mode === "url" ? (
-                <Inp value={img.url} onChange={v => updImg("recursosImagenes", i, "url", v)} placeholder="https://ejemplo.com/imagen.jpg" />
-              ) : (
-                <div>
-                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
-                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
-                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
-                    <input type="file" accept="image/*" style={{ display:"none" }}
-                      onChange={e => handleImgFile("recursosImagenes", i, e.target.files[0])} />
-                  </label>
-                  {img.src && (
-                    <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"9px", display:"block" }} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addImg("recursosImagenes")} label="＋ Añadir imagen" />
-      </div>
-      <Divider />
-      <div>
-        <Label>Vídeos (URLs - YouTube, Vimeo, mp4)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.recursosVideos.map((vid, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={vid} onChange={v => updArr("recursosVideos", i, v)} placeholder="https://youtube.com/..." />
-              </div>
-              {d.recursosVideos.length > 1 && <RemBtn onClick={() => remArr("recursosVideos", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("recursosVideos")} label="＋ Añadir vídeo" />
-      </div>
-    </div>,
-
-    /* 3 · Organización */
-    <div style={spY} key="tab3">
-      <SectionTitle>Organización del Grupo</SectionTitle>
-      <Hint>Define la estructura y las funciones del personal durante la maniobra.</Hint>
-      <div><Label required>Descripción general</Label>
-        <Txt value={d.organizacion} onChange={v => upd("organizacion", v)} rows={10}
-          placeholder="ej: Práctica para todos los componentes del turno operativo." /></div>
-      
-      <Divider />
-      
-      <div>
-        <Label>Título del Responsable</Label>
-        <div style={{ display:"flex", gap:"20px", marginBottom:"15px", background:"#fff", padding:"12px", borderRadius:"6px", border:"1.5px solid #e5e7eb" }}>
-          {["JEFE DE TURNO", "RESPONSABLE DE LA MANIOBRA"].map(opcion => (
-            <label key={opcion} style={{ display:"flex", alignItems:"center", fontSize:"13px", cursor:"pointer", fontWeight:"600", color:"#374151" }}>
-              <input
-                type="radio"
-                name="rolMandoTitulo"
-                value={opcion}
-                checked={d.rolMandoTitulo === opcion}
-                onChange={() => upd("rolMandoTitulo", opcion)}
-                style={{ marginRight:"8px", accentColor:UI.red }}
-              />
-              {opcion}
-            </label>
-          ))}
-        </div>
-        
-        <Label>Funciones del {d.rolMandoTitulo}</Label>
-        <Hint>Añade las responsabilidades específicas para el mando de la maniobra.</Hint>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {(d.rolesJT || []).map((rol, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
-              <div style={{ marginTop:"12px", flexShrink:"0", width:"22px", height:"22px",
-                borderRadius:"9px", background:"#f3f4f6", border:"1px solid #d1d5db", 
-                color:"#374151", fontSize:"11px", fontWeight:"bold", display:"flex",
-                alignItems:"center", justifyContent:"center" }}>
-                {i + 1}
-              </div>
-              <div style={{ flex:"1" }}>
-                <Txt value={rol} onChange={v => updArr("rolesJT", i, v)} rows={3} 
-                  placeholder={`Describa la función del ${d.rolMandoTitulo}...`} />
-              </div>
-              {d.rolesJT.length > 1 && <RemBtn onClick={() => remArr("rolesJT", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("rolesJT", "")} label={`＋ Añadir función al ${d.rolMandoTitulo}`} />
-      </div>
-    </div>,
-
-    /* 4 · Desarrollo */
-    <div style={spY} key="tab4">
-      <SectionTitle>Desarrollo Explicativo</SectionTitle>
-      <Hint>Referencia, bloques de contexto, multimedia, pasos secuenciales y precauciones.</Hint>
-      <div><Label>Documentación de referencia</Label>
-        <Inp value={d.refDoc} onChange={v => upd("refDoc", v)}
-          placeholder="ej: 2023 Reciclaje Hidráulica y Abastecimientos" /></div>
-      
-      <div><Label>Aspectos generales</Label>
-        <Txt value={d.aspectosGenerales} onChange={v => upd("aspectosGenerales", v)} rows={4}
-          placeholder="Descripción de los aspectos generales clave..." /></div>
-      
-      <div><Label>Desarrollo de la maniobra</Label>
-        <Txt value={d.desarrolloManiobra} onChange={v => upd("desarrolloManiobra", v)} rows={4}
-          placeholder="Explicación detallada del desarrollo..." /></div>
-
-      <div><Label>Escenario</Label>
-        <Txt value={d.escenarioDesarrollo} onChange={v => upd("escenarioDesarrollo", v)} rows={4}
-          placeholder="Detalles específicos sobre el escenario de trabajo..." /></div>
-      
-      <Divider />
-      <div>
-        <Label>Imágenes del desarrollo</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-          {d.desarrolloImagenes.map((img, i) => (
-            <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"6px", padding:"10px", background:"#fff" }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
-                <div style={{ display:"flex", gap:"4px" }}>
-                  {["url", "file"].map(mode => (
-                    <button type="button" key={mode} onClick={() => updImg("desarrolloImagenes", i, "mode", mode)}
-                      style={{ padding:"3px 10px", fontSize:"11px", fontWeight:"700", border:"1.5px solid",
-                        borderRadius:"9px", cursor:"pointer",
-                        borderColor: img.mode === mode ? "#C0272D" : "#e5e7eb",
-                        background:  img.mode === mode ? "#fff0f0" : "#f9fafb",
-                        color:       img.mode === mode ? "#C0272D" : "#6b7280" }}>
-                      {mode === "url" ? "URL" : "Archivo local"}
-                    </button>
-                  ))}
-                </div>
-                {d.desarrolloImagenes.length > 1 && <RemBtn onClick={() => remImg("desarrolloImagenes", i)} />}
-              </div>
-              {img.mode === "url" ? (
-                <Inp value={img.url} onChange={v => updImg("desarrolloImagenes", i, "url", v)} placeholder="https://ejemplo.com/esquema.jpg" />
-              ) : (
-                <div>
-                  <label style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"8px",
-                    padding:"10px", border:"2px dashed #e5e7eb", borderRadius:"6px", cursor:"pointer",
-                    fontSize:"13px", color: img.src ? "#16a34a" : "#6b7280", background:"#f9fafb" }}>
-                    {img.src ? `✓ ${img.name}` : "📁 Elegir imagen..."}
-                    <input type="file" accept="image/*" style={{ display:"none" }}
-                      onChange={e => handleImgFile("desarrolloImagenes", i, e.target.files[0])} />
-                  </label>
-                  {img.src && (
-                    <img src={img.src} alt="preview"
-                      style={{ marginTop:"6px", maxHeight:"70px", maxWidth:"100%", borderRadius:"9px", display:"block" }} />
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addImg("desarrolloImagenes")} label="＋ Añadir imagen" />
-      </div>
-
-      <Divider />
-      <div>
-        <Label>Vídeos del desarrollo (URLs)</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.videos.map((vid, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={vid} onChange={v => updArr("videos", i, v)} placeholder="https://youtube.com/..." />
-              </div>
-              {d.videos.length > 1 && <RemBtn onClick={() => remArr("videos", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("videos")} label="＋ Añadir vídeo" />
-      </div>
-
-      <Divider />
-      <div>
-        <Label required>Pasos secuenciales</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.pasos.map((p, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:"8px" }}>
-              <div style={{ marginTop:"8px", flexShrink:"0", width:"28px", height:"28px",
-                borderRadius:"50%", background:"#C0272D", color:"#fff",
-                fontSize:"12px", fontWeight:"bold", display:"flex",
-                alignItems:"center", justifyContent:"center" }}>
-                {i + 1}
-              </div>
-              <div style={{ flex:"1" }}>
-                <Txt value={p} onChange={v => updArr("pasos", i, v)} rows={2} placeholder={`Paso ${i + 1}...`} />
-              </div>
-              {d.pasos.length > 1 && <RemBtn onClick={() => remArr("pasos", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addArr("pasos")} label="＋ Añadir paso" />
-      </div>
-      <Divider />
-      <div><Label required>Precauciones</Label>
-        <Txt value={d.precauciones} onChange={v => upd("precauciones", v)} rows={3}
-          placeholder="ej: Para evitar la cavitación, si la presión baja de 0 bares, reducir la demanda inmediatamente..." /></div>
-      <div><Label>«Recordad» — nota de cierre (opcional)</Label>
-        <Txt value={d.recordad} onChange={v => upd("recordad", v)} rows={2}
-          placeholder="ej: No podemos demandar más prestaciones al sistema de las que puede proporcionar..." /></div>
-    </div>,
-
-    /* 5 · Riesgos */
-    <div style={spY} key="tab5">
-      <SectionTitle>Evaluación de Riesgos</SectionTitle>
-      <Hint>Añade una fila por cada riesgo identificado.</Hint>
-      {d.riesgos.map((r, i) => (
-        <div key={i} style={{ border:"1px solid #e5e7eb", borderRadius:"8px",
-          padding:"16px", background:"#fff" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"12px" }}>
-            <span style={{ fontSize:"11px", fontWeight:"700", color:"#9ca3af",
-              textTransform:"uppercase", letterSpacing:"0.08em" }}>Riesgo {i + 1}</span>
-            {d.riesgos.length > 1 && (
-              <button type="button" onClick={() => remArr("riesgos", i)}
-                style={{ fontSize:"12px", color:"#f87171", background:"none", border:"none",
-                  fontWeight:"600", cursor:"pointer" }}>Eliminar</button>
-            )}
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
-            <div><Label>Tipo de riesgo</Label>
-              <Inp value={r.riesgo} onChange={v => updRisk(i, "riesgo", v)}
-                placeholder="ej: Caída de personas al mismo nivel" /></div>
-            <div><Label>Causa</Label>
-              <Txt value={r.causa} onChange={v => updRisk(i, "causa", v)} rows={2}
-                placeholder="ej: Mangueras en carga que pueden conllevar tropiezos" /></div>
-            <div style={{ display:"flex", alignItems:"flex-end", gap:"12px" }}>
-              <div style={{ flex:"1" }}><Label>Grado de riesgo</Label>
-                <select value={r.grado} onChange={e => updRisk(i, "grado", e.target.value)}
-                  style={{ width:"100%", border:"1.5px solid #e5e7eb", borderRadius:"6px",
-                    background:"#fff", padding:"7px 10px", fontSize:"13px",
-                    fontFamily:"inherit", outline:"none" }}>
-                  <option>Notable</option>
-                  <option>Moderado</option>
-                  <option>Aceptable</option>
-                </select>
-              </div>
-              <div style={{ paddingBottom:"4px" }}>
-                <span style={{
-                  fontSize:"12px", fontWeight:"700", padding:"4px 12px",
-                  borderRadius:"50px",
-                  background: r.grado === "Notable" ? "#ffedd5" : r.grado === "Moderado" ? "#fef9c3" : "#dcfce7",
-                  color:      r.grado === "Notable" ? "#9a3412" : r.grado === "Moderado" ? "#713f12" : "#14532d",
-                }}>
-                  {r.grado}
-                </span>
-              </div>
-            </div>
-            <div><Label>Medida preventiva</Label>
-              <Txt value={r.medida} onChange={v => updRisk(i, "medida", v)} rows={2}
-                placeholder="ej: El JD comunica que la instalación ha entrado en carga." /></div>
-          </div>
-        </div>
-      ))}
-      <AddBtn
-        onClick={() => addArr("riesgos", { riesgo: "", causa: "", grado: "Notable", medida: "" })}
-        label="＋ Añadir riesgo" />
-    </div>,
-
-    /* 6 · Plan SOS */
-    <div style={spY} key="tab6">
-      <SectionTitle>Plan SOS</SectionTitle>
-      <Hint>Edición completa de los parámetros del Plan SOS del anexo.</Hint>
-      <div><Label required>Señal de Emergencia</Label>
-        <Inp value={d.planSOS.senal} onChange={v => updSos("senal", v)} /></div>
-      
-      <div><Label required>Párrafos introductorios</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          <Txt value={d.planSOS.intro1} onChange={v => updSos("intro1", v)} rows={3} />
-          <Txt value={d.planSOS.intro2} onChange={v => updSos("intro2", v)} rows={2} />
-        </div>
-      </div>
-
-      <Divider />
-      <div>
-        <Label>Sección: Accidente Leve (Título)</Label>
-        <Inp value={d.planSOS.leveTitulo} onChange={v => updSos("leveTitulo", v)} />
-        <Label style={{marginTop:"8px"}}>Pasos Accidente Leve</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.planSOS.leveItems.map((item, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={item} onChange={v => updSosArr("leveItems", i, v)} />
-              </div>
-              {d.planSOS.leveItems.length > 1 && <RemBtn onClick={() => remSosArr("leveItems", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addSosArr("leveItems")} label="＋ Añadir paso leve" />
-      </div>
-
-      <Divider />
-      <div>
-        <Label>Sección: Accidente Grave (Título)</Label>
-        <Inp value={d.planSOS.graveTitulo} onChange={v => updSos("graveTitulo", v)} />
-        <Label style={{marginTop:"8px"}}>Pasos Accidente Grave</Label>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {d.planSOS.graveItems.map((item, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center" }}>
-              <div style={{ flex:"1" }}>
-                <Inp value={item} onChange={v => updSosArr("graveItems", i, v)} />
-              </div>
-              {d.planSOS.graveItems.length > 1 && <RemBtn onClick={() => remSosArr("graveItems", i)} />}
-            </div>
-          ))}
-        </div>
-        <AddBtn onClick={() => addSosArr("graveItems")} label="＋ Añadir paso grave" />
-      </div>
-
-      <Divider />
-      <div><Label required>Cierre del Plan SOS</Label>
-        <Txt value={d.planSOS.cierre} onChange={v => updSos("cierre", v)} rows={2} /></div>
-    </div>,
-
-    /* 7 · Evaluación */
-    <div style={spY} key="tab7">
-      <SectionTitle>Criterios de Evaluación</SectionTitle>
-      <Hint>Rúbricas de evaluación divididas por criticidad (opcional).</Hint>
-
-      <div style={{ display:"flex", alignItems:"center", gap:"8px", background:"#fff", padding:"12px", borderRadius:"6px", border:"1.5px solid #e5e7eb" }}>
-        <input 
-          type="checkbox" 
-          id="eval_mostrar" 
-          checked={d.evaluacion.mostrar} 
-          onChange={e => updEval("mostrar", e.target.checked)} 
-          style={{ accentColor: UI.red, width:"16px", height:"16px", cursor:"pointer" }} 
-        />
-        <label htmlFor="eval_mostrar" style={{ fontSize:"13px", fontWeight:"600", color:"#374151", cursor:"pointer", userSelect:"none" }}>
-          Incluir bloque de Criterios de Evaluación en el documento
-        </label>
-      </div>
-
-      {d.evaluacion.mostrar && (
-        <div style={{ display:"flex", flexDirection:"column", gap:"20px", marginTop:"8px" }}>
-          
-          {/* BLOQUE 1 - CRÍTICOS */}
-          <div style={{ border:"1px solid #f0c0c0", borderRadius:"6px", padding:"16px", background:"#fff3f3" }}>
-            <Label style={{color:"#8b0000", fontSize:"12px"}}>BLOQUE 1 - CRÍTICOS</Label>
-            <p style={{fontSize:"11px", color:"#666", marginBottom:"12px", marginTop:"0"}}>
-              Es necesario cumplirlos todos para poder dar por apta la maniobra, aseguran el aprobado.
-            </p>
-            <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-              {d.evaluacion.criticos.map((item, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center" }}>
-                  <div style={{ flex:"1" }}>
-                    <Inp value={item} onChange={v => updEvalArr("criticos", i, v)} placeholder="Ítem crítico..." />
-                  </div>
-                  {d.evaluacion.criticos.length > 1 && <RemBtn onClick={() => remEvalArr("criticos", i)} />}
-                </div>
-              ))}
-            </div>
-            <AddBtn onClick={() => addEvalArr("criticos")} label="＋ Añadir ítem crítico" />
-          </div>
-
-          {/* BLOQUE 2 - TÉCNICOS */}
-          <div style={{ border:"1px solid #c8e6c9", borderRadius:"6px", padding:"16px", background:"#e8f5e9" }}>
-            <Label style={{color:"#1b5e20", fontSize:"12px"}}>BLOQUE 2 - TÉCNICOS</Label>
-            <p style={{fontSize:"11px", color:"#666", marginBottom:"12px", marginTop:"0"}}>
-              Estos ítems son los que nos permitirán alcanzar el 10 (los 5 puntos restantes).
-            </p>
-            <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-              {d.evaluacion.tecnicos.map((item, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center" }}>
-                  <div style={{ flex:"1" }}>
-                    <Inp value={item} onChange={v => updEvalArr("tecnicos", i, v)} placeholder="Ítem técnico..." />
-                  </div>
-                  {d.evaluacion.tecnicos.length > 1 && <RemBtn onClick={() => remEvalArr("tecnicos", i)} />}
-                </div>
-              ))}
-            </div>
-            <AddBtn onClick={() => addEvalArr("tecnicos")} label="＋ Añadir ítem técnico" />
-          </div>
-
-          {/* BLOQUE 3 - ACTITUDINALES */}
-          <div style={{ border:"1px solid #ffe082", borderRadius:"6px", padding:"16px", background:"#fff8e1" }}>
-            <Label style={{color:"#f57f17", fontSize:"12px"}}>BLOQUE 3 - ACTITUDINALES</Label>
-            <p style={{fontSize:"11px", color:"#666", marginBottom:"12px", marginTop:"0"}}>
-              Estos ítems no suman, pero sí que restan.
-            </p>
-            <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-              {d.evaluacion.actitudinales.map((item, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center" }}>
-                  <div style={{ flex:"1" }}>
-                    <Inp value={item} onChange={v => updEvalArr("actitudinales", i, v)} placeholder="Ítem actitudinal..." />
-                  </div>
-                  {d.evaluacion.actitudinales.length > 1 && <RemBtn onClick={() => remEvalArr("actitudinales", i)} />}
-                </div>
-              ))}
-            </div>
-            <AddBtn onClick={() => addEvalArr("actitudinales")} label="＋ Añadir ítem actitudinal" />
-          </div>
-
-        </div>
-      )}
-    </div>,
-
-    /* 8 · Pie */
-    <div style={spY} key="tab8">
-      <SectionTitle>Pie de Página</SectionTitle>
-      <Hint>Fecha de revisión y texto legal del pie de página.</Hint>
-      <div>
-        <Label required>Fecha de revisión</Label>
-        <Inp value={d.revision} onChange={v => upd("revision", v)} placeholder="ej: 20260322" />
-        <p style={{ fontSize:"12px", color:"#9ca3af", marginTop:"4px" }}>Formato AAAAMMDD — ej: 20260322 = 22 de marzo de 2026</p>
-      </div>
-      <div>
-        <Label>Texto del Pie de Página</Label>
-        <Txt value={d.pieTexto} onChange={v => upd("pieTexto", v)} rows={3} />
-      </div>
-    </div>,
-
-    /* 9 · Generar (Modificado: Sin visualización de código) */
-    <div style={spY} key="tab9">
-      <SectionTitle>Gestión de la Maniobra</SectionTitle>
-      <Hint>Insértalo en el editor o copia el contenido para usarlo en Moodle.</Hint>
-      {!html ? (
-        <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:"6px",
-          padding:"20px", fontSize:"13px", color:"#92400e", textAlign:"center" }}>
-          <div style={{ fontSize:"24px", marginBottom:"8px" }}>⚡</div>
-          Pulsa el botón <strong>⚡ Generar HTML</strong> de la barra inferior para procesar el documento.
-        </div>
-      ) : (
-        <div style={spY}>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", justifyContent:"center", background:"#fff", padding:"20px", borderRadius:"8px", border:"1.5px solid #e5e7eb" }}>
-            <button type="button" onClick={insertInEditor}
-              style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
-                fontWeight:"700", border:"none", cursor:"pointer",
-                background: inserted ? "#16a34a" : "#C0272D",
-                color:"#fff", transition:"background 0.2s" }}>
-              {inserted ? "✓ ¡Insertado en el editor!" : "⬆️ Insertar en el editor"}
-            </button>
-            <button type="button" onClick={copy}
-              style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
-                fontWeight:"700", border:"none", cursor:"pointer",
-                background: copied ? "#16a34a" : "#374151",
-                color:"#fff", transition:"background 0.2s" }}>
-              {copied ? "✓ ¡Copiado!" : "📋 Copiar contenido"}
-            </button>
-            <button type="button" onClick={() => setPreview(p => !p)}
-              style={{ padding:"12px 24px", borderRadius:"6px", fontSize:"14px",
-                fontWeight:"600", border:"1.5px solid #e5e7eb", cursor:"pointer",
-                background:"#fff", color:"#374151" }}>
-              {preview ? "Ocultar previsualización" : "👁️ Ver previsualización"}
-            </button>
-          </div>
-
-          {preview && (
-            <div style={{ marginTop:"10px" }}>
-              <div style={{ fontSize:"11px", fontWeight:"700", color:"#9ca3af",
-                textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:"8px" }}>
-                Previsualización del documento final
-              </div>
-              <div style={{ border:"1px solid #e5e7eb", borderRadius:"6px", overflow:"hidden", background:"#fff" }}>
-                <iframe
-                  srcDoc={`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="padding:16px;margin:0;">${html}</body></html>`}
-                  style={{ width:"100%", height:"600px", border:"none" }}
-                  title="Previsualización del documento"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>,
-  ];
-
-  return (
-    <div style={{ height:"100%", display:"flex", flexDirection:"column", fontFamily:UI.font, background:"linear-gradient(180deg,#f3f4f6 0%,#eef0f3 100%)", color:UI.text }}>
-      <div style={{ height:"4px", background:"#f1d5d7", flexShrink:"0" }}><div style={{ height:"100%", background:UI.red, width:`${((tab + 1) / TABS.length) * 100}%`, transition:"width 0.25s ease" }} /></div>
-      <div style={{ background:"#fff", borderBottom:"1px solid #dfe3ea", flexShrink:"0", overflowX:"auto", padding:"10px 12px" }}>
-        <div style={{ display:"flex", minWidth:"max-content", gap:"7px" }}>
-          {TABS.map((t, i) => (<button type="button" key={i} onClick={() => setTab(i)} aria-current={tab === i ? "step" : undefined} style={{ padding:"8px 11px", fontSize:"12px", fontWeight:"800", whiteSpace:"nowrap", border:"1.5px solid", borderRadius:"999px", cursor:"pointer", transition:"all 0.15s", fontFamily:"inherit", background: tab === i ? UI.redSoft : "#fff", borderColor: tab === i ? "#efd3d5" : UI.border, color: tab === i ? UI.redDark : UI.muted, boxShadow: tab === i ? "0 2px 8px rgba(192,39,45,.08)" : "none" }}><span>{t.label}</span></button>))}
-        </div>
-      </div>
-      <div style={{ flex:"1", overflowY:"auto", paddingBottom:"78px" }}><div style={{ maxWidth:"980px", margin:"0 auto", padding:"20px 16px" }}><div style={{ background:"#fff", border:"1px solid #d9dee7", borderRadius:"16px", padding:"20px", boxShadow:"0 10px 28px rgba(15,23,42,.07)" }}>{panels[tab]}</div></div></div>
-      <div style={{ position:"sticky", bottom:"0", background:"rgba(255,255,255,.96)", borderTop:"1px solid #dfe3ea", padding:"10px 16px", zIndex:"10", boxShadow:"0 -8px 20px rgba(15,23,42,.06)" }}>
-        <div style={{ maxWidth:"980px", margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px", flexWrap:"wrap" }}>
-          <button type="button" onClick={() => setTab(t => Math.max(0, t - 1))} disabled={tab === 0} style={{ ...uiBtnSecondary, color: tab === 0 ? "#c9cfd8" : UI.muted, cursor: tab === 0 ? "not-allowed" : "pointer", opacity: tab === 0 ? .65 : 1 }}>← Anterior</button>
-          <button type="button" onClick={generate} style={{ ...uiBtnPrimary, flex:"1", maxWidth:"260px" }}>⚡ Generar HTML</button>
-          <button type="button" onClick={() => setTab(t => Math.min(TABS.length - 1, t + 1))} disabled={tab === TABS.length - 1} style={{ ...uiBtnSecondary, color: tab === TABS.length - 1 ? "#c9cfd8" : UI.muted, cursor: tab === TABS.length - 1 ? "not-allowed" : "pointer", opacity: tab === TABS.length - 1 ? .65 : 1 }}>Siguiente →</button>
-          <button type="button" onClick={resetAll} style={{ ...uiBtnSecondary, borderColor:"#efd3d5", color:UI.redDark }}>🗑 Borrar todo</button>
-        </div>
+    </div>`;
+  }).join("\n");
+}
+function normalizeVideoUrl(url) {
+  let src = String(url || "").trim();
+  try {
+    const ytWatch = src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const ytShort = src.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+    const vimeo = src.match(/vimeo\.com\/(\d+)/);
+    if (ytWatch) src = "https://www.youtube.com/embed/" + ytWatch[1];
+    else if (ytShort) src = "https://www.youtube.com/embed/" + ytShort[1];
+    else if (vimeo) src = "https://player.vimeo.com/video/" + vimeo[1];
+  } catch(e) {}
+  return src;
+}
+function renderVideos(videos) {
+  return (videos || []).map(v => {
+    const url = typeof v === "string" ? v : v.url;
+    if (!hasText(url)) return "";
+    const src = normalizeVideoUrl(url);
+    const title = typeof v === "string" ? "Vídeo explicativo" : (v.titulo || "Vídeo explicativo");
+    const desc = typeof v === "string" ? "" : v.descripcion;
+    return `<div class="moodle-media-block" style="width:100%;max-width:${OUT.mediaMax};margin:20px auto;background:#fff;border:1px solid #d1d1d1;box-sizing:border-box;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:${OUT.font};">
+      <div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;"><iframe src="${mEsc(src)}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen></iframe></div>
+      <div style="padding:14px 18px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;"><span style="font-weight:700;color:#333;font-size:1.05em;display:block;">🎬 ${mEsc(title)}</span>${hasText(desc) ? `<div style="${smallStyle};margin-top:6px;">${nl2br(desc)}</div>` : ""}</div>
+    </div>`;
+  }).join("\n");
+}
+function renderStep(step, idx) {
+  if (!hasText(step.titulo) && !hasText(step.texto) && !(step.imagenes || []).some(i => hasText(i.url) || hasText(i.src)) && !(step.videos || []).some(v => hasText(v.url))) return "";
+  return `<div style="${blockStyle};border-left-color:#4338ca;background-color:#eef2ff;color:#1e1b4b;">
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <div style="flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:#4338ca;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;">${idx + 1}</div>
+      <div style="flex:1 1 auto;min-width:0;">
+        ${hasText(step.titulo) ? `<div style="font-weight:800;margin-bottom:6px;">${mEsc(step.titulo)}</div>` : ""}
+        ${paragraph(step.texto, `font-family:${OUT.font};font-size:15px;line-height:1.75;color:#1e1b4b;margin:0 0 10px 0;`)}
       </div>
     </div>
-  );
+  </div>${renderImages(step.imagenes)}${renderVideos(step.videos)}`;
+}
+function renderSubmaniobra(sm, idx) {
+  if (!hasText(sm.titulo) && !hasText(sm.descripcion) && !(sm.pasos || []).length) return "";
+  return `${heading(4, `Submaniobra ${idx + 1}${hasText(sm.titulo) ? " · " + sm.titulo : ""}`)}
+    ${wrapContent(paragraph(sm.descripcion))}
+    ${renderImages(sm.imagenes)}${renderVideos(sm.videos)}
+    ${(sm.pasos || []).map(renderStep).join("\n")}`;
+}
+function renderPractice(pr, idx) {
+  if (!hasText(pr.titulo) && !hasText(pr.descripcion) && !(pr.pasos || []).length && !(pr.submaniobras || []).length) return "";
+  const rolesHtml = (pr.roles || []).filter(r => hasText(r.nombre) || (r.acciones || []).some(hasText)).map(r => {
+    return `<div style="${infoBlockStyle};background-color:#f8fafc;border-left-color:#94a3b8;color:#334155;"><strong>${mEsc(r.nombre || "Rol")}</strong>${listBlock(r.acciones)}</div>`;
+  }).join("\n");
+  return `${heading(3, `PRÁCTICA ${String(idx + 1).padStart(2, "0")}${hasText(pr.titulo) ? ": " + pr.titulo : ""}`)}
+    ${wrapContent(paragraph(pr.descripcion))}
+    ${hasText(pr.organizacion) ? `${heading(4, "Organización de esta práctica")}${wrapContent(paragraph(pr.organizacion))}` : ""}
+    ${rolesHtml}
+    ${renderImages(pr.imagenes)}${renderVideos(pr.videos)}
+    ${heading(4, "Secuencia operativa")}
+    ${(pr.pasos || []).map(renderStep).join("\n")}
+    ${(pr.submaniobras || []).map(renderSubmaniobra).join("\n")}
+    ${hasText(pr.precauciones) ? `<div style="${noteBlockStyle}">⚠️ ${nl2br(pr.precauciones)}</div>` : ""}
+    ${hasText(pr.recordatorio) ? `<div style="${infoBlockStyle}">💡 <strong>Recordad:</strong> ${nl2br(pr.recordatorio)}</div>` : ""}`;
+}
+function renderRiskTable(riesgos, titulo) {
+  const rows = (riesgos || []).filter(r => hasText(r.riesgo) || hasText(r.causa) || hasText(r.medida));
+  if (!rows.length) return "";
+  const body = rows.map(r => `<tr>
+    <td style="${tdStyle}">${nl2br(r.riesgo)}</td>
+    <td style="${tdStyle}">${nl2br(r.causa)}</td>
+    <td style="${tdStyle};text-align:center;"><span style="display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;background:${r.grado === "Notable" ? "#fff7ed" : r.grado === "Moderado" ? "#fffbeb" : "#f0fdf4"};color:${r.grado === "Notable" ? "#9a3412" : r.grado === "Moderado" ? "#92400e" : "#166534"};border:1px solid ${r.grado === "Notable" ? "#fed7aa" : r.grado === "Moderado" ? "#fde68a" : "#bbf7d0"};">${mEsc(r.grado || "")}</span></td>
+    <td style="${tdStyle};border-right:none;">${nl2br(r.medida)}</td>
+  </tr>`).join("");
+  return `<div class="moodle-media-block" style="overflow-x:auto;margin:18px auto;width:100%;max-width:${OUT.mediaMax};box-sizing:border-box;">
+    <table style="${tableStyle}">
+      <tr><th colspan="4" style="${thStyle};border-right:none;text-align:center;font-size:14px;">${mEsc(titulo || "Evaluación de riesgos de la maniobra")}</th></tr>
+      <tr><th style="${thStyle}">RIESGO</th><th style="${thStyle}">CAUSA</th><th style="${thStyle};text-align:center;">GRADO</th><th style="${thStyle};border-right:none;">MEDIDA PREVENTIVA</th></tr>
+      ${body}
+    </table>
+  </div>`;
+}
+function renderPlanSOS(plan) {
+  const priorities = listBlock(plan.prioridades || []);
+  return `${heading(3, "ANEXO · PLAN SOS")}
+    <div style="${noteBlockStyle}">${nl2br(plan.senal || "SEÑAL DE EMERGENCIA: 3 REPETICIONES DE LA PALABRA «EMERGENCIA»")}</div>
+    ${wrapContent(paragraph(plan.intro1) + paragraph(plan.intro2))}
+    ${priorities ? `${heading(4, "Prioridades del plan")}${wrapContent(priorities)}` : ""}
+    ${fieldListBlock(plan.leveTitulo || "En caso de accidente leve", plan.leveItems)}
+    ${fieldListBlock(plan.graveTitulo || "En caso de accidente grave o muy grave", plan.graveItems)}
+    ${wrapContent(paragraph(plan.cierre))}`;
+}
+function renderChecklist(checklist) {
+  if (!checklist.mostrar) return "";
+  const rows = (checklist.items || []).filter(it => hasText(it.campo) || hasText(it.descripcion));
+  if (!rows.length && !hasText(checklist.intro)) return "";
+  const rowHtml = rows.map(it => `<tr><td style="${tdStyle};font-weight:800;width:32%;">${nl2br(it.campo)}</td><td style="${tdStyle};border-right:none;">${nl2br(it.descripcion)}</td></tr>`).join("");
+  return `${heading(3, checklist.titulo || "Checklist operativo")}${wrapContent(paragraph(checklist.intro))}
+    ${rows.length ? `<div class="moodle-media-block" style="overflow-x:auto;margin:18px auto;width:100%;max-width:${OUT.mediaMax};box-sizing:border-box;"><table style="${tableStyle}"><tr><th style="${thStyle}">COMPROBACIÓN</th><th style="${thStyle};border-right:none;">DETALLE / CRITERIO</th></tr>${rowHtml}</table></div>` : ""}`;
+}
+function renderEvaluacion(ev) {
+  if (!ev.mostrar) return "";
+  return `${heading(3, "ANEXO · Criterios de evaluación")}
+    ${fieldListBlock("Bloque 1 — Críticos", ev.criticos)}
+    ${fieldListBlock("Bloque 2 — Técnicos", ev.tecnicos)}
+    ${fieldListBlock("Bloque 3 — Actitudinales", ev.actitudinales)}`;
+}
+function renderHeader(d) {
+  const codes = cleanArr([d.codigoIT, ...(d.itCodes || [])]).map(c => `<span style="display:inline-block;color:#17365D;font-weight:800;margin-right:8px;">${mEsc(c)}</span>`).join("");
+  return `<div style="${contentBox};margin-top:4px;margin-bottom:20px;border:1.5px solid ${OUT.border};border-left:6px solid ${OUT.red};border-radius:12px;background:#ffffff;padding:18px 22px;box-sizing:border-box;box-shadow:0 3px 12px rgba(15,23,42,.05);">
+    <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+      <div style="min-width:0;flex:1 1 360px;">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:${OUT.red};font-weight:800;margin-bottom:6px;">${mEsc(d.tipoDocumento || "PRACTICA")}</div>
+        <div style="font-size:22px;line-height:1.25;color:${OUT.redDark};font-weight:900;text-transform:uppercase;overflow-wrap:anywhere;">${mEsc(d.titulo || "Maniobra de parque")}</div>
+        ${hasText(d.subtitulo) ? `<div style="font-size:14px;color:${OUT.muted};font-weight:600;margin-top:6px;">${nl2br(d.subtitulo)}</div>` : ""}
+        ${hasText(d.campania) ? `<div style="font-size:13px;color:#0e7490;font-weight:800;margin-top:8px;">${mEsc(d.campania)}</div>` : ""}
+      </div>
+      <div style="flex:0 1 220px;text-align:right;">
+        <div style="font-size:12px;font-weight:800;color:#111827;">INSTRUCCIÓN TÉCNICA</div>
+        <div style="margin-top:4px;">${codes || `<span style="color:${OUT.muted};font-size:12px;">Sin código IT</span>`}</div>
+        <div style="margin-top:10px;color:#00B0F0;font-weight:900;font-size:13px;">${mEsc(d.ident || "< IDENT >")}</div>
+      </div>
+    </div>
+  </div>`;
+}
+function generateHTML(d) {
+  const recursosHtml = [
+    fieldListBlock("EPI", d.recursos.epis),
+    fieldListBlock("Materiales y herramientas", d.recursos.materiales),
+    fieldListBlock("Material sanitario", d.recursos.sanitario),
+    fieldListBlock("Vehículos", d.recursos.vehiculos),
+    fieldListBlock("Escenario", d.recursos.escenario),
+    fieldListBlock("Recursos didácticos", d.recursos.didacticos),
+    renderImages(d.recursos.imagenes),
+    renderVideos(d.recursos.videos)
+  ].join("\n");
+  const orgHtml = [
+    paragraph(d.organizacion.general),
+    paragraph(d.organizacion.grupos),
+    paragraph(d.organizacion.rotacion),
+    fieldListBlock("Funciones del responsable", d.organizacion.funciones),
+    fieldListBlock("Roles de participantes", d.organizacion.roles),
+    hasText(d.organizacion.seguridad) ? `<div style="${noteBlockStyle}">⚠️ ${nl2br(d.organizacion.seguridad)}</div>` : ""
+  ].join("\n");
+  return `<div style="${pageStyle}">
+    ${renderHeader(d)}
+    ${heading(2, "1.- DESCRIPCIÓN")}${wrapContent(paragraph(d.descripcion))}${renderImages(d.descripcionImagenes)}
+    ${heading(2, "2.- OBJETIVO PEDAGÓGICO")}${wrapContent(paragraph(d.objetivo))}${renderImages(d.objetivoImagenes)}
+    ${heading(2, "3.- DESTINATARIOS")}${wrapContent(paragraph(d.destinatarios))}
+    ${heading(2, "4.- ESCENARIO")}${wrapContent(paragraph(d.escenario))}${renderImages(d.escenarioImagenes)}${renderVideos(d.escenarioVideos)}
+    ${heading(2, "5.- RECURSOS")}${recursosHtml}
+    ${heading(2, "6.- ORGANIZACIÓN DEL GRUPO")}${wrapContent(orgHtml)}
+    ${heading(2, "7.- DESARROLLO EXPLICATIVO DE LA PRÁCTICA")}
+    ${hasText(d.refDoc) ? `${heading(4, "Documentación de referencia")}${wrapContent(paragraph(d.refDoc, smallStyle))}` : ""}
+    ${(d.practicas || []).map(renderPractice).join("\n")}
+    ${renderPlanSOS(d.planSOS)}
+    ${renderChecklist(d.checklist)}
+    ${heading(2, "8.- EVALUACIÓN DE RIESGOS DE LA MANIOBRA")}${renderRiskTable(d.riesgos, d.riesgosTitulo)}
+    ${renderEvaluacion(d.evaluacion)}
+    <div style="${contentBox};margin-top:26px;margin-bottom:8px;border-top:2px solid ${OUT.border};padding-top:10px;color:${OUT.muted};font-size:12px;line-height:1.5;">
+      <strong>Revisión ${mEsc(d.revision)}</strong><br>${nl2br(d.pieTexto)}
+    </div>
+  </div>`;
 }
 
-/* ─── MOUNT ─────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Estado inicial y plantillas
+   ───────────────────────────────────────────────────────────── */
+function baseData() {
+  return {
+    plantilla: "estandar",
+    tipoDocumento: "PRACTICA",
+    titulo: "",
+    subtitulo: "",
+    campania: "",
+    codigoIT: "IT.JUT1.102",
+    itCodes: [],
+    ident: "< IDENT >",
+    revision: todayRevision(),
+    descripcion: "",
+    descripcionImagenes: [],
+    objetivo: "",
+    objetivoImagenes: [],
+    destinatarios: "Personal operativo de guardia.",
+    escenario: "",
+    escenarioImagenes: [],
+    escenarioVideos: [],
+    recursos: {
+      epis: ["U2 completo"],
+      materiales: [""],
+      sanitario: [""],
+      vehiculos: [""],
+      escenario: [""],
+      didacticos: [""],
+      imagenes: [],
+      videos: []
+    },
+    organizacion: {
+      general: "Práctica para realizar por los componentes del turno operativo de guardia.",
+      grupos: "",
+      rotacion: "",
+      funciones: [
+        "Explicará el desarrollo de la práctica, identificando objetivos, riesgos, secuencia de acciones y Plan SOS.",
+        "Supervisará que la ejecución se ajuste a la Ficha de Prácticas y a la Evaluación de Riesgos, controlando las condiciones de seguridad."
+      ],
+      roles: [""],
+      seguridad: "En caso de incidente o accidente, se activará el Plan SOS."
+    },
+    refDoc: "",
+    practicas: [newPractica()],
+    planSOS: {
+      senal: "SEÑAL DE EMERGENCIA: 3 REPETICIONES DE LA PALABRA «EMERGENCIA»",
+      intro1: "En caso de accidente durante el desarrollo de la práctica, cualquier integrante podrá alertar con la señal indicada. A partir de ese momento, todo el personal paraliza su actuación con seguridad y sigue las instrucciones de los instructores / organizadores.",
+      intro2: "Cuando haya personal disperso en el terreno, se dispondrá necesariamente de emisoras.",
+      prioridades: [
+        "Rescate del accidentado cuando fuera necesario.",
+        "Primera atención sanitaria in situ con los medios disponibles.",
+        "Gestión posterior del accidente conforme a los procedimientos establecidos."
+      ],
+      leveTitulo: "EN CASO DE ACCIDENTE LEVE",
+      leveItems: [
+        "Primera atención básica con medios disponibles en el lugar de la práctica.",
+        "Avisar al médico de alerta si afecta a personal del CBCM.",
+        "Si son necesarios recursos de guardia, aviso inmediato a CECOP (918 354 918)."
+      ],
+      graveTitulo: "EN CASO DE ACCIDENTE GRAVE O MUY GRAVE",
+      graveItems: ["Además de lo previsto para el accidente leve, se trasladará aviso al 112."],
+      cierre: "En ambos casos, el parte de accidente/suceso se realizará conforme a la normativa interna del CBCM."
+    },
+    checklist: { mostrar: false, titulo: "Checklist operativo", intro: "", items: [newChecklistItem()] },
+    riesgosTitulo: "EVALUACIÓN DE RIESGOS DE LA MANIOBRA",
+    riesgos: [newRisk()],
+    evaluacion: { mostrar: false, criticos: [""], tecnicos: [""], actitudinales: [""] },
+    pieTexto: "Este documento es propiedad del Cuerpo de Bomberos de la Comunidad de Madrid, y está protegido bajo licencia Creative Commons CC BY-NC-SA 4.0. Se permite la copia, distribución y comunicación siempre que se acredite tanto propiedad como autor/es, no haya fines comerciales y la obra se comparta bajo el mismo tipo de licencia."
+  };
+}
+function templateMayday() {
+  const d = baseData();
+  d.plantilla = "mayday";
+  d.titulo = "MAYDAY RECICLAJE";
+  d.campania = "RECICLAJE 2025-2026";
+  d.descripcion = "Práctica orientada a reforzar las técnicas de localización, rescate y atención inicial de un bombero en situación de emergencia comprometida.";
+  d.objetivo = "Garantizar la seguridad del equipo, reduciendo lesiones, atrapamiento o pérdida de bomberos en intervenciones de incendio estructural.";
+  d.recursos.epis = ["U2 completo", "ERA con botella vacía", "Verdugo y guantes de fuego"];
+  d.recursos.materiales = ["Lona grande", "Espaldera", "Cinta de rescate Rhinoevac V2"];
+  d.recursos.sanitario = ["Botella de O2 con funda", "Mochila sanitaria completa", "Botiquín", "DESA"];
+  d.organizacion.grupos = "Para la primera práctica se dividirá a los participantes en grupos de 4. Para la segunda práctica se trabajará por tríos.";
+  d.practicas = [
+    { ...newPractica(), titulo: "RCP a BX y desvestido rápido", descripcion: "Maniobra en la que un BX sufre una parada cardiorrespiratoria y debe ser extraído a zona segura para iniciar asistencia y retirada de equipo.", roles: [{ nombre:"BX 1", acciones:["Coloca al BX en decúbito supino.","Bloquea el pulmoautomático y retira máscara/casco."] }, { nombre:"BX 2", acciones:["Realiza compresiones torácicas sin interrupciones."] }, { nombre:"BX 3", acciones:["Libera correas y ayuda a retirar chaquetón y ERA."] }], pasos:[newStep()] },
+    { ...newPractica(), titulo: "Técnicas de arrastre y rescate con cinta Rhinoevac V2", descripcion: "Práctica de técnicas de arrastre en zonas críticas, pasos estrechos, escaleras y evacuaciones con cinta de rescate.", pasos:[newStep()] }
+  ];
+  d.checklist = { mostrar:true, titulo:"Checklist · Evaluación y comunicación de emergencia", intro:"Chequeo rápido en zona segura y comunicación de emergencia al exterior.", items:[{campo:"Estado de consciencia", descripcion:"Comprobar respuesta del BX."},{campo:"Máscara", descripcion:"Revisar patillas, visor y fugas de aire."},{campo:"Pulmoautomático", descripcion:"Pulsar y confirmar respiración."},{campo:"Bodyguard", descripcion:"Comprobar presión y tiempo de aire restante."}] };
+  d.riesgos = [{riesgo:"Caída de personas al mismo nivel", causa:"Obstáculos, visibilidad reducida o desplazamientos con ERA.", grado:"Notable", medida:"Verificar entorno, coordinar movimientos y extremar precauciones."}];
+  return d;
+}
+function templateSanitaria() {
+  const d = baseData();
+  d.plantilla = "sanitaria";
+  d.titulo = "MANIOBRA DE RAUTEK, COLOCACIÓN DE COLLARÍN CERVICAL Y EVALUACIÓN PRIMARIA";
+  d.descripcion = "Extracción de una víctima siguiendo la maniobra de Rautek, colocación de collarín cervical y evaluación primaria de la víctima.";
+  d.objetivo = "Realizar movilizaciones adecuadas a las lesiones y posicionamiento de la persona afectada, evitando agravar sus lesiones.";
+  d.recursos.epis = ["U2 completo", "Botas", "Casco F1 o F2", "Guantes de intervención y nitrilo"];
+  d.recursos.materiales = ["Vehículo ligero", "Collarín cervical"];
+  d.recursos.vehiculos = ["Vehículo estabilizado sobre sus cuatro ruedas"];
+  d.practicas = [
+    { ...newPractica(), titulo:"Maniobra de Rautek", descripcion:"Extracción de víctima desde asiento de piloto o copiloto.", pasos:[newStep()] },
+    { ...newPractica(), titulo:"Colocación de collarín cervical", descripcion:"Presentación al paciente, control cervical y ajuste del collarín.", pasos:[newStep()] },
+    { ...newPractica(), titulo:"Evaluación primaria de la víctima", descripcion:"Secuencia de valoración inicial siguiendo instrucciones del vídeo de referencia.", pasos:[newStep()] }
+  ];
+  d.riesgos = [{riesgo:"Sobreesfuerzos", causa:"Movilización de víctimas", grado:"Moderado", medida:"Trabajar con piernas flexionadas y solicitar ayuda para el transporte."}];
+  return d;
+}
+function applyTemplate(name) {
+  if (name === "mayday") return templateMayday();
+  if (name === "sanitaria") return templateSanitaria();
+  const d = baseData();
+  d.plantilla = name;
+  return d;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   UI helpers
+   ───────────────────────────────────────────────────────────── */
+const UI = {
+  red: "#C0272D", redDark: "#9b1e23", redSoft: "rgba(192,39,45,.08)",
+  border: "#d9dee7", panel: "#f7f8fa", text: "#111827", muted: "#6b7280",
+  font: "Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif"
+};
+const inputStyle = { width:"100%", border:"1.5px solid #d9dee7", borderRadius:"10px", background:"#fff", padding:"9px 12px", fontSize:"13px", color:UI.text, outline:"none", fontFamily:"inherit", boxSizing:"border-box" };
+const btnStyle = { padding:"8px 12px", fontSize:"12px", fontWeight:"750", border:"1.5px solid #d9dee7", borderRadius:"10px", background:"#fff", color:UI.muted, cursor:"pointer", fontFamily:"inherit" };
+const primaryBtn = { ...btnStyle, background:UI.red, color:"#fff", border:"none", boxShadow:"0 3px 10px rgba(192,39,45,.22)" };
+function Panel({children}) { return <div style={{display:"flex", flexDirection:"column", gap:"16px"}}>{children}</div>; }
+function Box({title, children, hint}) { return <div style={{border:"1px solid #e5e7eb", borderRadius:"14px", padding:"14px", background:"#fff"}}><div style={{fontWeight:900, color:UI.redDark, marginBottom:hint?4:10}}>{title}</div>{hint && <div style={{fontSize:12,color:UI.muted,lineHeight:1.45,marginBottom:10}}>{hint}</div>}{children}</div>; }
+function Label({children}) { return <label style={{fontSize:11,fontWeight:800,color:UI.muted,textTransform:"uppercase",letterSpacing:".08em",marginBottom:5,display:"block"}}>{children}</label>; }
+function Inp({value,onChange,placeholder}) { return <input style={inputStyle} value={value || ""} placeholder={placeholder || ""} onChange={e=>onChange(e.target.value)} />; }
+function Txt({value,onChange,placeholder,rows=3}) { return <textarea style={{...inputStyle, minHeight: rows*24+24, resize:"vertical", lineHeight:1.45}} rows={rows} value={value || ""} placeholder={placeholder || ""} onChange={e=>onChange(e.target.value)} />; }
+function AddBtn({onClick,label}) { return <button type="button" style={btnStyle} onClick={onClick}>{label || "＋ Añadir"}</button>; }
+function DelBtn({onClick}) { return <button type="button" style={{...btnStyle,color:"#b91c1c",padding:"6px 10px"}} onClick={onClick}>Eliminar</button>; }
+function Row({children}) { return <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>{children}</div>; }
+function SimpleListEditor({items,onChange,placeholder}) {
+  const arr = items || [];
+  const setAt = (i,v)=>onChange(arr.map((x,idx)=>idx===i?v:x));
+  const add = ()=>onChange([...arr,""]);
+  const rem = (i)=>onChange(arr.filter((_,idx)=>idx!==i));
+  return <div style={{display:"flex",flexDirection:"column",gap:8}}>{arr.map((x,i)=><div key={i} style={{display:"flex",gap:8,alignItems:"flex-start"}}><div style={{flex:1}}><Inp value={x} onChange={v=>setAt(i,v)} placeholder={placeholder}/></div>{arr.length>1&&<DelBtn onClick={()=>rem(i)}/>}</div>)}<AddBtn onClick={add} label="＋ Añadir elemento"/></div>;
+}
+function ImageEditor({items,onChange}) {
+  const arr = items || [];
+  const setAt = (i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
+  const add = ()=>onChange([...arr,newImage()]);
+  const rem = i=>onChange(arr.filter((_,idx)=>idx!==i));
+  const handleFile = (i,file)=>{
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => setAt(i,{...arr[i],mode:"file",src:e.target.result,name:file.name});
+    reader.readAsDataURL(file);
+  };
+  return <div style={{display:"flex",flexDirection:"column",gap:10}}>{arr.map((img,i)=><div key={i} style={{border:"1px solid #edf0f4",borderRadius:12,padding:10,background:"#fafafa"}}>
+    <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8,flexWrap:"wrap"}}>
+      <button type="button" style={{...btnStyle,borderColor:img.mode==="url"?UI.red:UI.border,color:img.mode==="url"?UI.redDark:UI.muted}} onClick={()=>setAt(i,{...img,mode:"url"})}>URL</button>
+      <button type="button" style={{...btnStyle,borderColor:img.mode==="file"?UI.red:UI.border,color:img.mode==="file"?UI.redDark:UI.muted}} onClick={()=>setAt(i,{...img,mode:"file"})}>Archivo</button>
+      <div style={{marginLeft:"auto"}}><DelBtn onClick={()=>rem(i)}/></div>
+    </div>
+    {img.mode==="url" ? <><Label>URL de imagen</Label><Inp value={img.url} onChange={v=>setAt(i,{...img,url:v})} placeholder="https://..."/></> : <><Label>Archivo local</Label><input type="file" accept="image/*" onChange={e=>handleFile(i,e.target.files[0])}/>{img.src&&<div style={{fontSize:12,color:UI.muted,marginTop:4}}>✓ {img.name}</div>}</>}
+    <Row><div><Label>Pie de foto</Label><Inp value={img.caption} onChange={v=>setAt(i,{...img,caption:v})}/></div><div><Label>Ancho</Label><select style={inputStyle} value={img.width||"100%"} onChange={e=>setAt(i,{...img,width:e.target.value})}><option value="100%">100%</option><option value="75%">75%</option><option value="50%">50%</option><option value="auto">Auto</option></select></div></Row>
+  </div>)}<AddBtn onClick={add} label="＋ Añadir imagen"/></div>;
+}
+function VideoEditor({items,onChange}) {
+  const arr = items || [];
+  const setAt = (i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
+  const add = ()=>onChange([...arr,newVideo()]);
+  const rem = i=>onChange(arr.filter((_,idx)=>idx!==i));
+  return <div style={{display:"flex",flexDirection:"column",gap:10}}>{arr.map((v,i)=><div key={i} style={{border:"1px solid #edf0f4",borderRadius:12,padding:10,background:"#fafafa"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><strong style={{fontSize:13}}>Vídeo {i+1}</strong>{arr.length>0&&<DelBtn onClick={()=>rem(i)}/>}</div>
+    <Label>URL</Label><Inp value={v.url} onChange={x=>setAt(i,{...v,url:x})} placeholder="YouTube, Mediateca, Vimeo o embed"/>
+    <Row><div><Label>Título</Label><Inp value={v.titulo} onChange={x=>setAt(i,{...v,titulo:x})}/></div><div><Label>Descripción breve</Label><Inp value={v.descripcion} onChange={x=>setAt(i,{...v,descripcion:x})}/></div></Row>
+  </div>)}<AddBtn onClick={add} label="＋ Añadir vídeo"/></div>;
+}
+function StepEditor({steps,onChange}) {
+  const arr = steps || [];
+  const setAt = (i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
+  const add = ()=>onChange([...arr,newStep()]);
+  const rem = i=>onChange(arr.filter((_,idx)=>idx!==i));
+  return <div style={{display:"flex",flexDirection:"column",gap:12}}>{arr.map((st,i)=><Box key={i} title={`Paso ${i+1}`}>
+    <div style={{display:"flex",justifyContent:"flex-end"}}>{arr.length>1&&<DelBtn onClick={()=>rem(i)}/>}</div>
+    <Label>Título del paso</Label><Inp value={st.titulo} onChange={v=>setAt(i,{...st,titulo:v})}/>
+    <Label>Explicación</Label><Txt rows={4} value={st.texto} onChange={v=>setAt(i,{...st,texto:v})}/>
+    <Box title="Imágenes del paso" hint="Puedes añadir tantas imágenes como necesites para explicar este paso."><ImageEditor items={st.imagenes} onChange={v=>setAt(i,{...st,imagenes:v})}/></Box>
+    <Box title="Vídeos del paso" hint="Puedes asociar tantos vídeos como necesites a este paso."><VideoEditor items={st.videos} onChange={v=>setAt(i,{...st,videos:v})}/></Box>
+  </Box>)}<AddBtn onClick={add} label="＋ Añadir paso"/></div>;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Componente principal
+   ───────────────────────────────────────────────────────────── */
+function GeneradorManiobras() {
+  const [d,setD] = useState(baseData());
+  const [tab,setTab] = useState(0);
+  const [html,setHtml] = useState("");
+  const [preview,setPreview] = useState(false);
+  const [copied,setCopied] = useState(false);
+  const [inserted,setInserted] = useState(false);
+  const upd = (k,v)=>setD(p=>({...p,[k]:v}));
+  const setNested = (section,k,v)=>setD(p=>({...p,[section]:{...p[section],[k]:v}}));
+  const setRec = (k,v)=>setD(p=>({...p,recursos:{...p.recursos,[k]:v}}));
+  const setOrg = (k,v)=>setD(p=>({...p,organizacion:{...p.organizacion,[k]:v}}));
+  const setSos = (k,v)=>setD(p=>({...p,planSOS:{...p.planSOS,[k]:v}}));
+  const setChecklist = (k,v)=>setD(p=>({...p,checklist:{...p.checklist,[k]:v}}));
+  const setEval = (k,v)=>setD(p=>({...p,evaluacion:{...p.evaluacion,[k]:v}}));
+  const changeTemplate = (name)=>{ if(window.confirm("¿Cargar plantilla y sustituir los datos actuales?")) { setD(applyTemplate(name)); setHtml(""); setInserted(false); } };
+  const gen = ()=>{ setHtml(generateHTML(d)); setTab(10); setPreview(false); setInserted(false); };
+  const insert = ()=>{ if(html && typeof window.insertHTMLAtCursor === "function") { window.insertHTMLAtCursor(html); setInserted(true); setTimeout(()=>{ if(typeof window.closeManiobrasModal === "function") window.closeManiobrasModal(); }, 800); } };
+  const copy = ()=>{ if(!html) return; navigator.clipboard.writeText(html).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2200); }); };
+  const reset = ()=>{ if(window.confirm("¿Borrar todo y empezar de nuevo?")) { setD(baseData()); setHtml(""); setTab(0); } };
+
+  const setPracticas = v=>upd("practicas",v);
+  const updatePractice = (i,obj)=>setPracticas(d.practicas.map((p,idx)=>idx===i?obj:p));
+  const addPractice = ()=>setPracticas([...d.practicas,newPractica()]);
+  const remPractice = i=>setPracticas(d.practicas.filter((_,idx)=>idx!==i));
+  const updateRisk = (i,obj)=>upd("riesgos",d.riesgos.map((r,idx)=>idx===i?obj:r));
+
+  const tabs = ["1 · Identificación","2 · Descripción","3 · Escenario","4 · Recursos","5 · Organización","6 · Desarrollo","7 · Plan SOS","8 · Riesgos","9 · Checklist/Eval.","10 · Pie","⚡ Generar"];
+  const panel = [
+    <Panel>
+      <Box title="Plantilla base" hint="Puedes partir de una plantilla y después añadir o quitar lo que necesites."><Label>Tipo de plantilla</Label><select style={inputStyle} value={d.plantilla} onChange={e=>changeTemplate(e.target.value)}><option value="estandar">Maniobra estándar</option><option value="sanitaria">Sanitaria / rescate de víctima</option><option value="mayday">MAYDAY / RIT / rescate de BX</option></select></Box>
+      <Box title="Identificación documental"><Row><div><Label>Tipo de documento</Label><Inp value={d.tipoDocumento} onChange={v=>upd("tipoDocumento",v)}/></div><div><Label>Identificador</Label><Inp value={d.ident} onChange={v=>upd("ident",v)} placeholder="< IDENT >"/></div></Row><Label>Título</Label><Inp value={d.titulo} onChange={v=>upd("titulo",v)} placeholder="Título de la maniobra"/><Label>Subtítulo</Label><Inp value={d.subtitulo} onChange={v=>upd("subtitulo",v)}/><Row><div><Label>Código IT principal</Label><Inp value={d.codigoIT} onChange={v=>upd("codigoIT",v)}/></div><div><Label>Campaña / reciclaje</Label><Inp value={d.campania} onChange={v=>upd("campania",v)} placeholder="RECICLAJE 2025-2026"/></div></Row><Label>Códigos adicionales</Label><SimpleListEditor items={d.itCodes} onChange={v=>upd("itCodes",v)} placeholder="IT..."/></Box>
+    </Panel>,
+    <Panel><Box title="1.- Descripción"><Txt rows={7} value={d.descripcion} onChange={v=>upd("descripcion",v)}/><Box title="Imágenes de la descripción"><ImageEditor items={d.descripcionImagenes} onChange={v=>upd("descripcionImagenes",v)}/></Box></Box><Box title="2.- Objetivo pedagógico"><Txt rows={7} value={d.objetivo} onChange={v=>upd("objetivo",v)}/><Box title="Imágenes de objetivos"><ImageEditor items={d.objetivoImagenes} onChange={v=>upd("objetivoImagenes",v)}/></Box></Box><Box title="3.- Destinatarios"><Txt rows={3} value={d.destinatarios} onChange={v=>upd("destinatarios",v)}/></Box></Panel>,
+    <Panel><Box title="4.- Escenario"><Txt rows={7} value={d.escenario} onChange={v=>upd("escenario",v)}/><Box title="Imágenes del escenario"><ImageEditor items={d.escenarioImagenes} onChange={v=>upd("escenarioImagenes",v)}/></Box><Box title="Vídeos del escenario"><VideoEditor items={d.escenarioVideos} onChange={v=>upd("escenarioVideos",v)}/></Box></Box></Panel>,
+    <Panel><Box title="5.- Recursos" hint="Todos los bloques permiten añadir tantos elementos como necesites."><Row><Box title="EPI"><SimpleListEditor items={d.recursos.epis} onChange={v=>setRec("epis",v)} placeholder="EPI..."/></Box><Box title="Materiales y herramientas"><SimpleListEditor items={d.recursos.materiales} onChange={v=>setRec("materiales",v)} placeholder="Material..."/></Box><Box title="Material sanitario"><SimpleListEditor items={d.recursos.sanitario} onChange={v=>setRec("sanitario",v)} placeholder="Material sanitario..."/></Box><Box title="Vehículos"><SimpleListEditor items={d.recursos.vehiculos} onChange={v=>setRec("vehiculos",v)} placeholder="Vehículo..."/></Box><Box title="Escenario"><SimpleListEditor items={d.recursos.escenario} onChange={v=>setRec("escenario",v)} placeholder="Elemento del escenario..."/></Box><Box title="Recursos didácticos"><SimpleListEditor items={d.recursos.didacticos} onChange={v=>setRec("didacticos",v)} placeholder="Ficha, manual, vídeo..."/></Box></Row><Box title="Imágenes de recursos"><ImageEditor items={d.recursos.imagenes} onChange={v=>setRec("imagenes",v)}/></Box><Box title="Vídeos de recursos"><VideoEditor items={d.recursos.videos} onChange={v=>setRec("videos",v)}/></Box></Box></Panel>,
+    <Panel><Box title="6.- Organización del grupo"><Label>Descripción general</Label><Txt rows={4} value={d.organizacion.general} onChange={v=>setOrg("general",v)}/><Row><div><Label>Grupos</Label><Txt rows={3} value={d.organizacion.grupos} onChange={v=>setOrg("grupos",v)}/></div><div><Label>Rotación de roles</Label><Txt rows={3} value={d.organizacion.rotacion} onChange={v=>setOrg("rotacion",v)}/></div></Row><Label>Funciones del responsable</Label><SimpleListEditor items={d.organizacion.funciones} onChange={v=>setOrg("funciones",v)} placeholder="Función..."/><Label>Roles de participantes</Label><SimpleListEditor items={d.organizacion.roles} onChange={v=>setOrg("roles",v)} placeholder="Rol..."/><Label>Condiciones de seguridad</Label><Txt rows={3} value={d.organizacion.seguridad} onChange={v=>setOrg("seguridad",v)}/></Box></Panel>,
+    <Panel><Box title="7.- Desarrollo explicativo"><Label>Documentación de referencia</Label><Inp value={d.refDoc} onChange={v=>upd("refDoc",v)}/>{d.practicas.map((pr,i)=><Box key={i} title={`Práctica interna ${i+1}`} hint="Cada práctica puede contener roles, pasos, imágenes, vídeos y submaniobras."><div style={{display:"flex",justifyContent:"flex-end"}}>{d.practicas.length>1&&<DelBtn onClick={()=>remPractice(i)}/>}</div><Label>Título</Label><Inp value={pr.titulo} onChange={v=>updatePractice(i,{...pr,titulo:v})}/><Label>Descripción</Label><Txt rows={4} value={pr.descripcion} onChange={v=>updatePractice(i,{...pr,descripcion:v})}/><Label>Organización específica</Label><Txt rows={3} value={pr.organizacion} onChange={v=>updatePractice(i,{...pr,organizacion:v})}/><Box title="Roles de esta práctica"><RoleEditor roles={pr.roles} onChange={v=>updatePractice(i,{...pr,roles:v})}/></Box><Box title="Imágenes generales de esta práctica"><ImageEditor items={pr.imagenes} onChange={v=>updatePractice(i,{...pr,imagenes:v})}/></Box><Box title="Vídeos generales de esta práctica"><VideoEditor items={pr.videos} onChange={v=>updatePractice(i,{...pr,videos:v})}/></Box><Box title="Pasos de la práctica"><StepEditor steps={pr.pasos} onChange={v=>updatePractice(i,{...pr,pasos:v})}/></Box><Box title="Submaniobras"><SubmaniobraEditor items={pr.submaniobras} onChange={v=>updatePractice(i,{...pr,submaniobras:v})}/></Box><Row><div><Label>Precauciones</Label><Txt rows={3} value={pr.precauciones} onChange={v=>updatePractice(i,{...pr,precauciones:v})}/></div><div><Label>Recordatorio final</Label><Txt rows={3} value={pr.recordatorio} onChange={v=>updatePractice(i,{...pr,recordatorio:v})}/></div></Row></Box>)}<AddBtn onClick={addPractice} label="＋ Añadir práctica interna"/></Box></Panel>,
+    <Panel><Box title="Plan SOS institucional"><Label>Señal de emergencia</Label><Inp value={d.planSOS.senal} onChange={v=>setSos("senal",v)}/><Label>Introducción 1</Label><Txt rows={3} value={d.planSOS.intro1} onChange={v=>setSos("intro1",v)}/><Label>Introducción 2</Label><Txt rows={2} value={d.planSOS.intro2} onChange={v=>setSos("intro2",v)}/><Label>Prioridades</Label><SimpleListEditor items={d.planSOS.prioridades} onChange={v=>setSos("prioridades",v)} placeholder="Prioridad..."/><Row><div><Label>Título accidente leve</Label><Inp value={d.planSOS.leveTitulo} onChange={v=>setSos("leveTitulo",v)}/><SimpleListEditor items={d.planSOS.leveItems} onChange={v=>setSos("leveItems",v)} placeholder="Paso..."/></div><div><Label>Título accidente grave</Label><Inp value={d.planSOS.graveTitulo} onChange={v=>setSos("graveTitulo",v)}/><SimpleListEditor items={d.planSOS.graveItems} onChange={v=>setSos("graveItems",v)} placeholder="Paso..."/></div></Row><Label>Cierre</Label><Txt rows={2} value={d.planSOS.cierre} onChange={v=>setSos("cierre",v)}/></Box></Panel>,
+    <Panel><Box title="8.- Evaluación de riesgos"><Label>Título de la tabla</Label><Inp value={d.riesgosTitulo} onChange={v=>upd("riesgosTitulo",v)}/>{d.riesgos.map((r,i)=><Box key={i} title={`Riesgo ${i+1}`}><div style={{display:"flex",justifyContent:"flex-end"}}>{d.riesgos.length>1&&<DelBtn onClick={()=>upd("riesgos",d.riesgos.filter((_,idx)=>idx!==i))}/>}</div><Row><div><Label>Riesgo</Label><Inp value={r.riesgo} onChange={v=>updateRisk(i,{...r,riesgo:v})}/></div><div><Label>Grado</Label><select style={inputStyle} value={r.grado} onChange={e=>updateRisk(i,{...r,grado:e.target.value})}><option>Notable</option><option>Moderado</option><option>Aceptable</option></select></div></Row><Label>Causa</Label><Txt rows={2} value={r.causa} onChange={v=>updateRisk(i,{...r,causa:v})}/><Label>Medida preventiva</Label><Txt rows={2} value={r.medida} onChange={v=>updateRisk(i,{...r,medida:v})}/></Box>)}<AddBtn onClick={()=>upd("riesgos",[...d.riesgos,newRisk()])} label="＋ Añadir riesgo"/></Box></Panel>,
+    <Panel><Box title="Checklist operativo flexible"><label style={{display:"flex",gap:8,alignItems:"center",fontWeight:800}}><input type="checkbox" checked={d.checklist.mostrar} onChange={e=>setChecklist("mostrar",e.target.checked)} /> Incluir checklist</label>{d.checklist.mostrar&&<><Label>Título</Label><Inp value={d.checklist.titulo} onChange={v=>setChecklist("titulo",v)}/><Label>Introducción</Label><Txt rows={3} value={d.checklist.intro} onChange={v=>setChecklist("intro",v)}/><ChecklistEditor items={d.checklist.items} onChange={v=>setChecklist("items",v)}/></>}</Box><Box title="Criterios de evaluación"><label style={{display:"flex",gap:8,alignItems:"center",fontWeight:800}}><input type="checkbox" checked={d.evaluacion.mostrar} onChange={e=>setEval("mostrar",e.target.checked)} /> Incluir criterios de evaluación</label>{d.evaluacion.mostrar&&<Row><Box title="Críticos"><SimpleListEditor items={d.evaluacion.criticos} onChange={v=>setEval("criticos",v)}/></Box><Box title="Técnicos"><SimpleListEditor items={d.evaluacion.tecnicos} onChange={v=>setEval("tecnicos",v)}/></Box><Box title="Actitudinales"><SimpleListEditor items={d.evaluacion.actitudinales} onChange={v=>setEval("actitudinales",v)}/></Box></Row>}</Box></Panel>,
+    <Panel><Box title="Pie y revisión"><Row><div><Label>Revisión</Label><Inp value={d.revision} onChange={v=>upd("revision",v)} placeholder="AAAAMMDD"/></div></Row><Label>Texto legal</Label><Txt rows={5} value={d.pieTexto} onChange={v=>upd("pieTexto",v)}/></Box></Panel>,
+    <Panel><Box title="Generar e insertar"><div style={{display:"flex",gap:10,flexWrap:"wrap"}}><button type="button" style={primaryBtn} onClick={gen}>⚡ Generar HTML</button>{html&&<button type="button" style={primaryBtn} onClick={insert}>{inserted?"✓ Insertado":"⬆️ Insertar en el editor"}</button>}{html&&<button type="button" style={btnStyle} onClick={copy}>{copied?"✓ Copiado":"📋 Copiar HTML"}</button>}{html&&<button type="button" style={btnStyle} onClick={()=>setPreview(!preview)}>{preview?"Ocultar vista previa":"👁️ Ver vista previa"}</button>}<button type="button" style={{...btnStyle,color:"#b91c1c"}} onClick={reset}>🗑 Borrar todo</button></div>{!html&&<div style={{fontSize:13,color:UI.muted,marginTop:12}}>Pulsa “Generar HTML” para procesar el documento.</div>}{preview&&html&&<div style={{marginTop:16,border:"1px solid #e5e7eb",borderRadius:12,padding:14,maxHeight:"50vh",overflow:"auto",background:"#fff"}} dangerouslySetInnerHTML={{__html:html}}/>}</Box></Panel>
+  ];
+  return <div style={{height:"100%",display:"flex",flexDirection:"column",fontFamily:UI.font,color:UI.text,background:"#f8fafc"}}>
+    <div style={{padding:"12px 14px",borderBottom:"1px solid #e5e7eb",background:"#fff",display:"flex",gap:8,flexWrap:"wrap"}}>{tabs.map((t,i)=><button key={t} type="button" onClick={()=>setTab(i)} style={{padding:"8px 11px",fontSize:12,fontWeight:900,border:"1.5px solid",borderRadius:999,cursor:"pointer",fontFamily:"inherit",background:tab===i?UI.redSoft:"#fff",borderColor:tab===i?"#efd3d5":UI.border,color:tab===i?UI.redDark:UI.muted}}>{t}</button>)}</div>
+    <div style={{flex:1,overflow:"auto",padding:18}}>{panel[tab]}</div>
+    <div style={{padding:"10px 14px",borderTop:"1px solid #e5e7eb",background:"#fff",display:"flex",gap:8,alignItems:"center"}}><button type="button" style={btnStyle} disabled={tab===0} onClick={()=>setTab(Math.max(0,tab-1))}>← Anterior</button><button type="button" style={primaryBtn} onClick={gen}>⚡ Generar HTML</button><button type="button" style={btnStyle} disabled={tab===tabs.length-1} onClick={()=>setTab(Math.min(tabs.length-1,tab+1))}>Siguiente →</button></div>
+  </div>;
+}
+function RoleEditor({roles,onChange}) {
+  const arr = roles || [];
+  const setAt=(i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
+  return <div style={{display:"flex",flexDirection:"column",gap:10}}>{arr.map((r,i)=><div key={i} style={{border:"1px solid #edf0f4",borderRadius:12,padding:10}}><div style={{display:"flex",justifyContent:"flex-end"}}>{arr.length>1&&<DelBtn onClick={()=>onChange(arr.filter((_,idx)=>idx!==i))}/>}</div><Label>Nombre del rol</Label><Inp value={r.nombre} onChange={v=>setAt(i,{...r,nombre:v})}/><Label>Acciones</Label><SimpleListEditor items={r.acciones} onChange={v=>setAt(i,{...r,acciones:v})} placeholder="Acción..."/></div>)}<AddBtn onClick={()=>onChange([...arr,newRole()])} label="＋ Añadir rol"/></div>;
+}
+function SubmaniobraEditor({items,onChange}) {
+  const arr = items || [];
+  const setAt=(i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
+  return <div style={{display:"flex",flexDirection:"column",gap:10}}>{arr.map((sm,i)=><Box key={i} title={`Submaniobra ${i+1}`}><div style={{display:"flex",justifyContent:"flex-end"}}><DelBtn onClick={()=>onChange(arr.filter((_,idx)=>idx!==i))}/></div><Label>Título</Label><Inp value={sm.titulo} onChange={v=>setAt(i,{...sm,titulo:v})}/><Label>Descripción</Label><Txt rows={3} value={sm.descripcion} onChange={v=>setAt(i,{...sm,descripcion:v})}/><Box title="Imágenes"><ImageEditor items={sm.imagenes} onChange={v=>setAt(i,{...sm,imagenes:v})}/></Box><Box title="Vídeos"><VideoEditor items={sm.videos} onChange={v=>setAt(i,{...sm,videos:v})}/></Box><Box title="Pasos"><StepEditor steps={sm.pasos} onChange={v=>setAt(i,{...sm,pasos:v})}/></Box></Box>)}<AddBtn onClick={()=>onChange([...arr,newSubmaniobra()])} label="＋ Añadir submaniobra"/></div>;
+}
+function ChecklistEditor({items,onChange}) {
+  const arr = items || [];
+  const setAt=(i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
+  return <div style={{display:"flex",flexDirection:"column",gap:10}}>{arr.map((it,i)=><div key={i} style={{border:"1px solid #edf0f4",borderRadius:12,padding:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><strong style={{fontSize:13}}>Campo {i+1}</strong>{arr.length>1&&<DelBtn onClick={()=>onChange(arr.filter((_,idx)=>idx!==i))}/>}</div><Row><div><Label>Campo / comprobación</Label><Inp value={it.campo} onChange={v=>setAt(i,{...it,campo:v})}/></div><div><Label>Detalle / criterio</Label><Inp value={it.descripcion} onChange={v=>setAt(i,{...it,descripcion:v})}/></div></Row></div>)}<AddBtn onClick={()=>onChange([...arr,newChecklistItem()])} label="＋ Añadir campo de checklist"/></div>;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Montaje
+   ───────────────────────────────────────────────────────────── */
 (function mountGenerador() {
   function init() {
     const el = document.getElementById('maniobras-root');
@@ -1030,10 +559,6 @@ function GeneradorManiobras() {
     const root = ReactDOM.createRoot(el);
     root.render(<GeneradorManiobras />);
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
