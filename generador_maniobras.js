@@ -40,9 +40,7 @@ function newStep() {
 function newRole() {
   return { nombre: "", acciones: [""] };
 }
-function newSubmaniobra() {
-  return { titulo: "", descripcion: "", pasos: [newStep()], imagenes: [], videos: [] };
-}
+
 function newPractica() {
   return {
     titulo: "",
@@ -50,7 +48,6 @@ function newPractica() {
     organizacion: "",
     roles: [newRole()],
     pasos: [newStep()],
-    submaniobras: [],
     imagenes: [],
     videos: [],
     precauciones: "",
@@ -62,6 +59,38 @@ function newRisk() {
 }
 function newChecklistItem() {
   return { campo: "", descripcion: "" };
+}
+
+const TEMPLATE_OPTIONS = [
+  { value: "hidraulica-y-tendidos", label: "hidráulica y tendidos" },
+  { value: "extincion-incendios-urbanos-industriales", label: "extinción de incendios urbanos e industriales" },
+  { value: "extincion-incendios-forestales", label: "extinción de incendios forestales" },
+  { value: "sustancias-peligrosas", label: "intervención con sustancias peligrosas" },
+  { value: "poligono-de-fuego", label: "polígono de fuego" },
+  { value: "conduccion-todo-terreno", label: "conducción todo terreno" },
+  { value: "conduccion-urbana", label: "conducción urbana" },
+  { value: "salvamento-altura-espacios-confinados", label: "salvamento en altura y espacios confinados" },
+  { value: "rescates-accidentes-trafico", label: "rescates en accidentes de tráfico" },
+  { value: "rescates-medio-acuatico", label: "rescates en medio acuático" },
+  { value: "phtls-soporte-vital-basico", label: "PHTLS y soporte vital básico" },
+  { value: "fenomenos-naturales", label: "actuación en fenómenos naturales" },
+  { value: "apeos-apuntalamientos-saneamientos", label: "apeos, apuntalamientos y saneamientos I" },
+  { value: "riesgo-electrico", label: "riesgo eléctrico" },
+  { value: "instalaciones-gas", label: "instalaciones de gas" },
+  { value: "sistemas-comunicaciones-prl-igualdad-ef", label: "sistemas, comunicaciones, PRL, igualdad y educación física" },
+  { value: "tentativa-suicida", label: "intervenciones por tentativa suicida" },
+  { value: "autoescala-camion-grua", label: "autoescala y camión-grúa" },
+  { value: "practicas-conduccion-i", label: "prácticas de conducción I" },
+  { value: "practicas-conduccion-ii", label: "prácticas de conducción II" },
+  { value: "practicas-parque", label: "prácticas de parque" },
+  { value: "eras-y-tendidos", label: "eras y tendidos" },
+  { value: "rescate-ascensores", label: "rescate en ascensores" },
+  { value: "accesos-forzosos", label: "accesos forzosos" },
+  { value: "rescate-animales", label: "rescate de animales" }
+];
+function templateLabel(value) {
+  const item = TEMPLATE_OPTIONS.find(t => t.value === value);
+  return item ? item.label : "maniobra estándar";
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -179,7 +208,7 @@ function renderSubmaniobra(sm, idx) {
     ${(sm.pasos || []).map(renderStep).join("\n")}`;
 }
 function renderPractice(pr, idx) {
-  if (!hasText(pr.titulo) && !hasText(pr.descripcion) && !(pr.pasos || []).length && !(pr.submaniobras || []).length) return "";
+  if (!hasText(pr.titulo) && !hasText(pr.descripcion) && !(pr.pasos || []).length ) return "";
   const rolesHtml = (pr.roles || []).filter(r => hasText(r.nombre) || (r.acciones || []).some(hasText)).map(r => {
     return `<div style="${infoBlockStyle};background-color:#f8fafc;border-left-color:#94a3b8;color:#334155;"><strong>${mEsc(r.nombre || "Rol")}</strong>${listBlock(r.acciones)}</div>`;
   }).join("\n");
@@ -190,7 +219,6 @@ function renderPractice(pr, idx) {
     ${renderImages(pr.imagenes)}${renderVideos(pr.videos)}
     ${heading(4, "Secuencia operativa")}
     ${(pr.pasos || []).map(renderStep).join("\n")}
-    ${(pr.submaniobras || []).map(renderSubmaniobra).join("\n")}
     ${hasText(pr.precauciones) ? `<div style="${noteBlockStyle}">⚠️ ${nl2br(pr.precauciones)}</div>` : ""}
     ${hasText(pr.recordatorio) ? `<div style="${infoBlockStyle}">💡 <strong>Recordad:</strong> ${nl2br(pr.recordatorio)}</div>` : ""}`;
 }
@@ -227,7 +255,8 @@ function renderChecklist(checklist) {
   if (!rows.length && !hasText(checklist.intro)) return "";
   const rowHtml = rows.map(it => `<tr><td style="${tdStyle};font-weight:800;width:32%;">${nl2br(it.campo)}</td><td style="${tdStyle};border-right:none;">${nl2br(it.descripcion)}</td></tr>`).join("");
   return `${heading(3, checklist.titulo || "Checklist operativo")}${wrapContent(paragraph(checklist.intro))}
-    ${rows.length ? `<div class="moodle-media-block" style="overflow-x:auto;margin:18px auto;width:100%;max-width:${OUT.mediaMax};box-sizing:border-box;"><table style="${tableStyle}"><tr><th style="${thStyle}">COMPROBACIÓN</th><th style="${thStyle};border-right:none;">DETALLE / CRITERIO</th></tr>${rowHtml}</table></div>` : ""}`;
+    ${rows.length ? `<div class="moodle-media-block" style="overflow-x:auto;margin:18px auto;width:100%;max-width:${OUT.mediaMax};box-sizing:border-box;"><table style="${tableStyle}"><tr><th style="${thStyle}">COMPROBACIÓN</th><th style="${thStyle};border-right:none;">DETALLE / CRITERIO</th></tr>${rowHtml}</table></div>` : ""}
+    ${renderImages(checklist.imagenes || [])}${renderVideos(checklist.videos || [])}`;
 }
 function renderEvaluacion(ev) {
   if (!ev.mostrar) return "";
@@ -299,7 +328,7 @@ function generateHTML(d) {
    ───────────────────────────────────────────────────────────── */
 function baseData() {
   return {
-    plantilla: "estandar",
+    plantilla: "hidraulica-y-tendidos",
     tipoDocumento: "PRACTICA",
     titulo: "",
     subtitulo: "",
@@ -358,7 +387,7 @@ function baseData() {
       graveItems: ["Además de lo previsto para el accidente leve, se trasladará aviso al 112."],
       cierre: "En ambos casos, el parte de accidente/suceso se realizará conforme a la normativa interna del CBCM."
     },
-    checklist: { mostrar: false, titulo: "Checklist operativo", intro: "", items: [newChecklistItem()] },
+    checklist: { mostrar: false, titulo: "Checklist operativo", intro: "", items: [newChecklistItem()], imagenes: [], videos: [] },
     riesgosTitulo: "EVALUACIÓN DE RIESGOS DE LA MANIOBRA",
     riesgos: [newRisk()],
     evaluacion: { mostrar: false, criticos: [""], tecnicos: [""], actitudinales: [""] },
@@ -380,7 +409,7 @@ function templateMayday() {
     { ...newPractica(), titulo: "RCP a BX y desvestido rápido", descripcion: "Maniobra en la que un BX sufre una parada cardiorrespiratoria y debe ser extraído a zona segura para iniciar asistencia y retirada de equipo.", roles: [{ nombre:"BX 1", acciones:["Coloca al BX en decúbito supino.","Bloquea el pulmoautomático y retira máscara/casco."] }, { nombre:"BX 2", acciones:["Realiza compresiones torácicas sin interrupciones."] }, { nombre:"BX 3", acciones:["Libera correas y ayuda a retirar chaquetón y ERA."] }], pasos:[newStep()] },
     { ...newPractica(), titulo: "Técnicas de arrastre y rescate con cinta Rhinoevac V2", descripcion: "Práctica de técnicas de arrastre en zonas críticas, pasos estrechos, escaleras y evacuaciones con cinta de rescate.", pasos:[newStep()] }
   ];
-  d.checklist = { mostrar:true, titulo:"Checklist · Evaluación y comunicación de emergencia", intro:"Chequeo rápido en zona segura y comunicación de emergencia al exterior.", items:[{campo:"Estado de consciencia", descripcion:"Comprobar respuesta del BX."},{campo:"Máscara", descripcion:"Revisar patillas, visor y fugas de aire."},{campo:"Pulmoautomático", descripcion:"Pulsar y confirmar respiración."},{campo:"Bodyguard", descripcion:"Comprobar presión y tiempo de aire restante."}] };
+  d.checklist = { mostrar:true, titulo:"Checklist · Evaluación y comunicación de emergencia", intro:"Chequeo rápido en zona segura y comunicación de emergencia al exterior.", items:[{campo:"Estado de consciencia", descripcion:"Comprobar respuesta del BX."},{campo:"Máscara", descripcion:"Revisar patillas, visor y fugas de aire."},{campo:"Pulmoautomático", descripcion:"Pulsar y confirmar respiración."},{campo:"Bodyguard", descripcion:"Comprobar presión y tiempo de aire restante."}], imagenes: [], videos: [] };
   d.riesgos = [{riesgo:"Caída de personas al mismo nivel", causa:"Obstáculos, visibilidad reducida o desplazamientos con ERA.", grado:"Notable", medida:"Verificar entorno, coordinar movimientos y extremar precauciones."}];
   return d;
 }
@@ -402,10 +431,23 @@ function templateSanitaria() {
   return d;
 }
 function applyTemplate(name) {
-  if (name === "mayday") return templateMayday();
-  if (name === "sanitaria") return templateSanitaria();
+  // Plantillas basadas en las áreas formativas del selector de módulo.
+  // No se muestran números de módulo; solo la temática.
+  if (name === "rescates-accidentes-trafico" || name === "phtls-soporte-vital-basico") {
+    const d = templateSanitaria();
+    d.plantilla = name;
+    d.titulo = templateLabel(name).toUpperCase();
+    return d;
+  }
+  if (name === "practicas-parque" || name === "extincion-incendios-urbanos-industriales") {
+    const d = templateMayday();
+    d.plantilla = name;
+    d.titulo = templateLabel(name).toUpperCase();
+    return d;
+  }
   const d = baseData();
   d.plantilla = name;
+  d.titulo = templateLabel(name).toUpperCase();
   return d;
 }
 
@@ -513,17 +555,17 @@ function GeneradorManiobras() {
   const tabs = ["1 · Identificación","2 · Descripción","3 · Escenario","4 · Recursos","5 · Organización","6 · Desarrollo","7 · Plan SOS","8 · Riesgos","9 · Checklist/Eval.","10 · Pie","⚡ Generar"];
   const panel = [
     <Panel>
-      <Box title="Plantilla base" hint="Puedes partir de una plantilla y después añadir o quitar lo que necesites."><Label>Tipo de plantilla</Label><select style={inputStyle} value={d.plantilla} onChange={e=>changeTemplate(e.target.value)}><option value="estandar">Maniobra estándar</option><option value="sanitaria">Sanitaria / rescate de víctima</option><option value="mayday">MAYDAY / RIT / rescate de BX</option></select></Box>
+      <Box title="Plantilla base" hint="Puedes partir de una plantilla y después añadir o quitar lo que necesites."><Label>Tipo de plantilla</Label><select style={inputStyle} value={d.plantilla} onChange={e=>changeTemplate(e.target.value)}>{TEMPLATE_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}</select></Box>
       <Box title="Identificación documental"><Row><div><Label>Tipo de documento</Label><Inp value={d.tipoDocumento} onChange={v=>upd("tipoDocumento",v)}/></div><div><Label>Identificador</Label><Inp value={d.ident} onChange={v=>upd("ident",v)} placeholder="< IDENT >"/></div></Row><Label>Título</Label><Inp value={d.titulo} onChange={v=>upd("titulo",v)} placeholder="Título de la maniobra"/><Label>Subtítulo</Label><Inp value={d.subtitulo} onChange={v=>upd("subtitulo",v)}/><Row><div><Label>Código IT principal</Label><Inp value={d.codigoIT} onChange={v=>upd("codigoIT",v)}/></div><div><Label>Campaña / reciclaje</Label><Inp value={d.campania} onChange={v=>upd("campania",v)} placeholder="RECICLAJE 2025-2026"/></div></Row><Label>Códigos adicionales</Label><SimpleListEditor items={d.itCodes} onChange={v=>upd("itCodes",v)} placeholder="IT..."/></Box>
     </Panel>,
     <Panel><Box title="1.- Descripción"><Txt rows={7} value={d.descripcion} onChange={v=>upd("descripcion",v)}/><Box title="Imágenes de la descripción"><ImageEditor items={d.descripcionImagenes} onChange={v=>upd("descripcionImagenes",v)}/></Box></Box><Box title="2.- Objetivo pedagógico"><Txt rows={7} value={d.objetivo} onChange={v=>upd("objetivo",v)}/><Box title="Imágenes de objetivos"><ImageEditor items={d.objetivoImagenes} onChange={v=>upd("objetivoImagenes",v)}/></Box></Box><Box title="3.- Destinatarios"><Txt rows={3} value={d.destinatarios} onChange={v=>upd("destinatarios",v)}/></Box></Panel>,
     <Panel><Box title="4.- Escenario"><Txt rows={7} value={d.escenario} onChange={v=>upd("escenario",v)}/><Box title="Imágenes del escenario"><ImageEditor items={d.escenarioImagenes} onChange={v=>upd("escenarioImagenes",v)}/></Box><Box title="Vídeos del escenario"><VideoEditor items={d.escenarioVideos} onChange={v=>upd("escenarioVideos",v)}/></Box></Box></Panel>,
     <Panel><Box title="5.- Recursos" hint="Todos los bloques permiten añadir tantos elementos como necesites."><Row><Box title="EPI"><SimpleListEditor items={d.recursos.epis} onChange={v=>setRec("epis",v)} placeholder="EPI..."/></Box><Box title="Materiales y herramientas"><SimpleListEditor items={d.recursos.materiales} onChange={v=>setRec("materiales",v)} placeholder="Material..."/></Box><Box title="Material sanitario"><SimpleListEditor items={d.recursos.sanitario} onChange={v=>setRec("sanitario",v)} placeholder="Material sanitario..."/></Box><Box title="Vehículos"><SimpleListEditor items={d.recursos.vehiculos} onChange={v=>setRec("vehiculos",v)} placeholder="Vehículo..."/></Box><Box title="Escenario"><SimpleListEditor items={d.recursos.escenario} onChange={v=>setRec("escenario",v)} placeholder="Elemento del escenario..."/></Box><Box title="Recursos didácticos"><SimpleListEditor items={d.recursos.didacticos} onChange={v=>setRec("didacticos",v)} placeholder="Ficha, manual, vídeo..."/></Box></Row><Box title="Imágenes de recursos"><ImageEditor items={d.recursos.imagenes} onChange={v=>setRec("imagenes",v)}/></Box><Box title="Vídeos de recursos"><VideoEditor items={d.recursos.videos} onChange={v=>setRec("videos",v)}/></Box></Box></Panel>,
     <Panel><Box title="6.- Organización del grupo"><Label>Descripción general</Label><Txt rows={4} value={d.organizacion.general} onChange={v=>setOrg("general",v)}/><Row><div><Label>Grupos</Label><Txt rows={3} value={d.organizacion.grupos} onChange={v=>setOrg("grupos",v)}/></div><div><Label>Rotación de roles</Label><Txt rows={3} value={d.organizacion.rotacion} onChange={v=>setOrg("rotacion",v)}/></div></Row><Label>Funciones del responsable</Label><SimpleListEditor items={d.organizacion.funciones} onChange={v=>setOrg("funciones",v)} placeholder="Función..."/><Label>Roles de participantes</Label><SimpleListEditor items={d.organizacion.roles} onChange={v=>setOrg("roles",v)} placeholder="Rol..."/><Label>Condiciones de seguridad</Label><Txt rows={3} value={d.organizacion.seguridad} onChange={v=>setOrg("seguridad",v)}/></Box></Panel>,
-    <Panel><Box title="7.- Desarrollo explicativo"><Label>Documentación de referencia</Label><Inp value={d.refDoc} onChange={v=>upd("refDoc",v)}/>{d.practicas.map((pr,i)=><Box key={i} title={`Práctica interna ${i+1}`} hint="Cada práctica puede contener roles, pasos, imágenes, vídeos y submaniobras."><div style={{display:"flex",justifyContent:"flex-end"}}>{d.practicas.length>1&&<DelBtn onClick={()=>remPractice(i)}/>}</div><Label>Título</Label><Inp value={pr.titulo} onChange={v=>updatePractice(i,{...pr,titulo:v})}/><Label>Descripción</Label><Txt rows={4} value={pr.descripcion} onChange={v=>updatePractice(i,{...pr,descripcion:v})}/><Label>Organización específica</Label><Txt rows={3} value={pr.organizacion} onChange={v=>updatePractice(i,{...pr,organizacion:v})}/><Box title="Roles de esta práctica"><RoleEditor roles={pr.roles} onChange={v=>updatePractice(i,{...pr,roles:v})}/></Box><Box title="Imágenes generales de esta práctica"><ImageEditor items={pr.imagenes} onChange={v=>updatePractice(i,{...pr,imagenes:v})}/></Box><Box title="Vídeos generales de esta práctica"><VideoEditor items={pr.videos} onChange={v=>updatePractice(i,{...pr,videos:v})}/></Box><Box title="Pasos de la práctica"><StepEditor steps={pr.pasos} onChange={v=>updatePractice(i,{...pr,pasos:v})}/></Box><Box title="Submaniobras"><SubmaniobraEditor items={pr.submaniobras} onChange={v=>updatePractice(i,{...pr,submaniobras:v})}/></Box><Row><div><Label>Precauciones</Label><Txt rows={3} value={pr.precauciones} onChange={v=>updatePractice(i,{...pr,precauciones:v})}/></div><div><Label>Recordatorio final</Label><Txt rows={3} value={pr.recordatorio} onChange={v=>updatePractice(i,{...pr,recordatorio:v})}/></div></Row></Box>)}<AddBtn onClick={addPractice} label="＋ Añadir práctica interna"/></Box></Panel>,
+    <Panel><Box title="7.- Desarrollo explicativo"><Label>Documentación de referencia</Label><Inp value={d.refDoc} onChange={v=>upd("refDoc",v)}/>{d.practicas.map((pr,i)=><Box key={i} title={`Práctica interna ${i+1}`} hint="Cada práctica puede contener roles, pasos, imágenes, vídeos y submaniobras."><div style={{display:"flex",justifyContent:"flex-end"}}>{d.practicas.length>1&&<DelBtn onClick={()=>remPractice(i)}/>}</div><Label>Título</Label><Inp value={pr.titulo} onChange={v=>updatePractice(i,{...pr,titulo:v})}/><Label>Descripción</Label><Txt rows={4} value={pr.descripcion} onChange={v=>updatePractice(i,{...pr,descripcion:v})}/><Label>Organización específica</Label><Txt rows={3} value={pr.organizacion} onChange={v=>updatePractice(i,{...pr,organizacion:v})}/><Box title="Roles de esta práctica"><RoleEditor roles={pr.roles} onChange={v=>updatePractice(i,{...pr,roles:v})}/></Box><Box title="Imágenes generales de esta práctica"><ImageEditor items={pr.imagenes} onChange={v=>updatePractice(i,{...pr,imagenes:v})}/></Box><Box title="Vídeos generales de esta práctica"><VideoEditor items={pr.videos} onChange={v=>updatePractice(i,{...pr,videos:v})}/></Box><Box title="Pasos de la práctica"><StepEditor steps={pr.pasos} onChange={v=>updatePractice(i,{...pr,pasos:v})}/></Box><Row><div><Label>Precauciones</Label><Txt rows={3} value={pr.precauciones} onChange={v=>updatePractice(i,{...pr,precauciones:v})}/></div><div><Label>Recordatorio final</Label><Txt rows={3} value={pr.recordatorio} onChange={v=>updatePractice(i,{...pr,recordatorio:v})}/></div></Row></Box>)}<AddBtn onClick={addPractice} label="＋ Añadir práctica interna"/></Box></Panel>,
     <Panel><Box title="Plan SOS institucional"><Label>Señal de emergencia</Label><Inp value={d.planSOS.senal} onChange={v=>setSos("senal",v)}/><Label>Introducción 1</Label><Txt rows={3} value={d.planSOS.intro1} onChange={v=>setSos("intro1",v)}/><Label>Introducción 2</Label><Txt rows={2} value={d.planSOS.intro2} onChange={v=>setSos("intro2",v)}/><Label>Prioridades</Label><SimpleListEditor items={d.planSOS.prioridades} onChange={v=>setSos("prioridades",v)} placeholder="Prioridad..."/><Row><div><Label>Título accidente leve</Label><Inp value={d.planSOS.leveTitulo} onChange={v=>setSos("leveTitulo",v)}/><SimpleListEditor items={d.planSOS.leveItems} onChange={v=>setSos("leveItems",v)} placeholder="Paso..."/></div><div><Label>Título accidente grave</Label><Inp value={d.planSOS.graveTitulo} onChange={v=>setSos("graveTitulo",v)}/><SimpleListEditor items={d.planSOS.graveItems} onChange={v=>setSos("graveItems",v)} placeholder="Paso..."/></div></Row><Label>Cierre</Label><Txt rows={2} value={d.planSOS.cierre} onChange={v=>setSos("cierre",v)}/></Box></Panel>,
     <Panel><Box title="8.- Evaluación de riesgos"><Label>Título de la tabla</Label><Inp value={d.riesgosTitulo} onChange={v=>upd("riesgosTitulo",v)}/>{d.riesgos.map((r,i)=><Box key={i} title={`Riesgo ${i+1}`}><div style={{display:"flex",justifyContent:"flex-end"}}>{d.riesgos.length>1&&<DelBtn onClick={()=>upd("riesgos",d.riesgos.filter((_,idx)=>idx!==i))}/>}</div><Row><div><Label>Riesgo</Label><Inp value={r.riesgo} onChange={v=>updateRisk(i,{...r,riesgo:v})}/></div><div><Label>Grado</Label><select style={inputStyle} value={r.grado} onChange={e=>updateRisk(i,{...r,grado:e.target.value})}><option>Notable</option><option>Moderado</option><option>Aceptable</option></select></div></Row><Label>Causa</Label><Txt rows={2} value={r.causa} onChange={v=>updateRisk(i,{...r,causa:v})}/><Label>Medida preventiva</Label><Txt rows={2} value={r.medida} onChange={v=>updateRisk(i,{...r,medida:v})}/></Box>)}<AddBtn onClick={()=>upd("riesgos",[...d.riesgos,newRisk()])} label="＋ Añadir riesgo"/></Box></Panel>,
-    <Panel><Box title="Checklist operativo flexible"><label style={{display:"flex",gap:8,alignItems:"center",fontWeight:800}}><input type="checkbox" checked={d.checklist.mostrar} onChange={e=>setChecklist("mostrar",e.target.checked)} /> Incluir checklist</label>{d.checklist.mostrar&&<><Label>Título</Label><Inp value={d.checklist.titulo} onChange={v=>setChecklist("titulo",v)}/><Label>Introducción</Label><Txt rows={3} value={d.checklist.intro} onChange={v=>setChecklist("intro",v)}/><ChecklistEditor items={d.checklist.items} onChange={v=>setChecklist("items",v)}/></>}</Box><Box title="Criterios de evaluación"><label style={{display:"flex",gap:8,alignItems:"center",fontWeight:800}}><input type="checkbox" checked={d.evaluacion.mostrar} onChange={e=>setEval("mostrar",e.target.checked)} /> Incluir criterios de evaluación</label>{d.evaluacion.mostrar&&<Row><Box title="Críticos"><SimpleListEditor items={d.evaluacion.criticos} onChange={v=>setEval("criticos",v)}/></Box><Box title="Técnicos"><SimpleListEditor items={d.evaluacion.tecnicos} onChange={v=>setEval("tecnicos",v)}/></Box><Box title="Actitudinales"><SimpleListEditor items={d.evaluacion.actitudinales} onChange={v=>setEval("actitudinales",v)}/></Box></Row>}</Box></Panel>,
+    <Panel><Box title="Checklist operativo flexible"><label style={{display:"flex",gap:8,alignItems:"center",fontWeight:800}}><input type="checkbox" checked={d.checklist.mostrar} onChange={e=>setChecklist("mostrar",e.target.checked)} /> Incluir checklist</label>{d.checklist.mostrar&&<><Label>Título</Label><Inp value={d.checklist.titulo} onChange={v=>setChecklist("titulo",v)}/><Label>Introducción</Label><Txt rows={3} value={d.checklist.intro} onChange={v=>setChecklist("intro",v)}/><ChecklistEditor items={d.checklist.items} onChange={v=>setChecklist("items",v)}/><Box title="Imágenes del checklist"><ImageEditor items={d.checklist.imagenes || []} onChange={v=>setChecklist("imagenes",v)}/></Box><Box title="Vídeos del checklist"><VideoEditor items={d.checklist.videos || []} onChange={v=>setChecklist("videos",v)}/></>}</Box><Box title="Criterios de evaluación"><label style={{display:"flex",gap:8,alignItems:"center",fontWeight:800}}><input type="checkbox" checked={d.evaluacion.mostrar} onChange={e=>setEval("mostrar",e.target.checked)} /> Incluir criterios de evaluación</label>{d.evaluacion.mostrar&&<Row><Box title="Críticos"><SimpleListEditor items={d.evaluacion.criticos} onChange={v=>setEval("criticos",v)}/></Box><Box title="Técnicos"><SimpleListEditor items={d.evaluacion.tecnicos} onChange={v=>setEval("tecnicos",v)}/></Box><Box title="Actitudinales"><SimpleListEditor items={d.evaluacion.actitudinales} onChange={v=>setEval("actitudinales",v)}/></Box></Row>}</Box></Panel>,
     <Panel><Box title="Pie y revisión"><Row><div><Label>Revisión</Label><Inp value={d.revision} onChange={v=>upd("revision",v)} placeholder="AAAAMMDD"/></div></Row><Label>Texto legal</Label><Txt rows={5} value={d.pieTexto} onChange={v=>upd("pieTexto",v)}/></Box></Panel>,
     <Panel><Box title="Generar e insertar"><div style={{display:"flex",gap:10,flexWrap:"wrap"}}><button type="button" style={primaryBtn} onClick={gen}>⚡ Generar HTML</button>{html&&<button type="button" style={primaryBtn} onClick={insert}>{inserted?"✓ Insertado":"⬆️ Insertar en el editor"}</button>}{html&&<button type="button" style={btnStyle} onClick={copy}>{copied?"✓ Copiado":"📋 Copiar HTML"}</button>}{html&&<button type="button" style={btnStyle} onClick={()=>setPreview(!preview)}>{preview?"Ocultar vista previa":"👁️ Ver vista previa"}</button>}<button type="button" style={{...btnStyle,color:"#b91c1c"}} onClick={reset}>🗑 Borrar todo</button></div>{!html&&<div style={{fontSize:13,color:UI.muted,marginTop:12}}>Pulsa “Generar HTML” para procesar el documento.</div>}{preview&&html&&<div style={{marginTop:16,border:"1px solid #e5e7eb",borderRadius:12,padding:14,maxHeight:"50vh",overflow:"auto",background:"#fff"}} dangerouslySetInnerHTML={{__html:html}}/>}</Box></Panel>
   ];
@@ -537,11 +579,6 @@ function RoleEditor({roles,onChange}) {
   const arr = roles || [];
   const setAt=(i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
   return <div style={{display:"flex",flexDirection:"column",gap:10}}>{arr.map((r,i)=><div key={i} style={{border:"1px solid #edf0f4",borderRadius:12,padding:10}}><div style={{display:"flex",justifyContent:"flex-end"}}>{arr.length>1&&<DelBtn onClick={()=>onChange(arr.filter((_,idx)=>idx!==i))}/>}</div><Label>Nombre del rol</Label><Inp value={r.nombre} onChange={v=>setAt(i,{...r,nombre:v})}/><Label>Acciones</Label><SimpleListEditor items={r.acciones} onChange={v=>setAt(i,{...r,acciones:v})} placeholder="Acción..."/></div>)}<AddBtn onClick={()=>onChange([...arr,newRole()])} label="＋ Añadir rol"/></div>;
-}
-function SubmaniobraEditor({items,onChange}) {
-  const arr = items || [];
-  const setAt=(i,obj)=>onChange(arr.map((x,idx)=>idx===i?obj:x));
-  return <div style={{display:"flex",flexDirection:"column",gap:10}}>{arr.map((sm,i)=><Box key={i} title={`Submaniobra ${i+1}`}><div style={{display:"flex",justifyContent:"flex-end"}}><DelBtn onClick={()=>onChange(arr.filter((_,idx)=>idx!==i))}/></div><Label>Título</Label><Inp value={sm.titulo} onChange={v=>setAt(i,{...sm,titulo:v})}/><Label>Descripción</Label><Txt rows={3} value={sm.descripcion} onChange={v=>setAt(i,{...sm,descripcion:v})}/><Box title="Imágenes"><ImageEditor items={sm.imagenes} onChange={v=>setAt(i,{...sm,imagenes:v})}/></Box><Box title="Vídeos"><VideoEditor items={sm.videos} onChange={v=>setAt(i,{...sm,videos:v})}/></Box><Box title="Pasos"><StepEditor steps={sm.pasos} onChange={v=>setAt(i,{...sm,pasos:v})}/></Box></Box>)}<AddBtn onClick={()=>onChange([...arr,newSubmaniobra()])} label="＋ Añadir submaniobra"/></div>;
 }
 function ChecklistEditor({items,onChange}) {
   const arr = items || [];
