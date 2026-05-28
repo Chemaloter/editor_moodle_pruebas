@@ -15,13 +15,38 @@ const UI = {
   font:'Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif', contentMax:'800px', mediaMax:'1000px'
 };
 
+const PARQUES_CBCM = [
+  'P-11: Alcobendas',
+  'P-12: Tres Cantos',
+  'P-13: Lozoyuela',
+  'P-21: Coslada',
+  'P-22: Alcalá de Henares',
+  'P-23: Arganda del Rey',
+  'P-26: Torrejón de Ardoz',
+  'P-30: Fuenlabrada',
+  'P-31: Parla',
+  'P-32: Villaviciosa de Odón',
+  'P-33: Aranjuez',
+  'P-34: Aldea del Fresno',
+  'P-35: San Martín de Valdeiglesias',
+  'P-36: Getafe',
+  'P-37: Valdemoro',
+  'P-38: Móstoles',
+  'P-39: Leganés',
+  'P-41: Las Rozas',
+  'P-42: Collado Villalba',
+  'P-43: El Escorial',
+  'P-46: Navacerrada',
+  'P-47: Pozuelo de Alarcón'
+];
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function br(s){return esc(s).replace(/\r?\n/g,'<br>');}
 function hasText(s){return String(s||'').trim().length>0;}
 function newImage(){return {mode:'url', url:'', src:'', name:'', caption:'', texto:'', observaciones:'', width:'75%'};}
 function newText(){return {texto:''};}
 function newCompartimento(){return {nombre:'', descripcion:'', materiales:[''], textos:[newText()], imagenes:[]};}
-function emptyData(){return {parque:'', vehiculo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], observaciones:''};}
+function emptyData(){return {parque:'', tipoVehiculo:'', identificativo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], observaciones:''};}
 
 const inputStyle = {width:'100%', border:'1.5px solid #d9dee7', borderRadius:'10px', background:'#fff', padding:'9px 12px', fontSize:'13px', color:UI.text, outline:'none', fontFamily:'inherit', boxSizing:'border-box'};
 const btnStyle = {padding:'8px 12px', fontSize:'12px', fontWeight:'750', border:'1.5px solid #d9dee7', borderRadius:'10px', background:'#fff', color:UI.muted, cursor:'pointer', fontFamily:'inherit'};
@@ -190,8 +215,8 @@ function wrap(html){return '<div style="max-width:'+UI.contentMax+';width:100%;m
 function renderVehicleHTML(d){
   const idBlock = '<div style="max-width:'+UI.contentMax+';width:100%;margin:4px auto 20px auto;border:1.5px solid '+UI.border+';border-left:6px solid '+UI.red+';border-radius:12px;background:#ffffff;padding:18px 22px;box-sizing:border-box;box-shadow:0 3px 12px rgba(15,23,42,.05);font-family:'+UI.font+';">'
     + '<div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:'+UI.red+';font-weight:800;margin-bottom:6px;">Inventario de vehículo</div>'
-    + '<div style="font-size:22px;line-height:1.25;color:'+UI.redDark+';font-weight:900;text-transform:uppercase;overflow-wrap:anywhere;">🚒 '+esc(d.vehiculo || 'Vehículo')+'</div>'
-    + '<div style="margin-top:10px;font-size:13px;color:#374151;line-height:1.65;"><strong>Parque:</strong> '+esc(d.parque || '—')+'<br><strong>Matrícula:</strong> '+esc(d.matricula || '—')+'</div>'
+    + '<div style="font-size:22px;line-height:1.25;color:'+UI.redDark+';font-weight:900;text-transform:uppercase;overflow-wrap:anywhere;">🚒 '+esc((d.tipoVehiculo || 'Vehículo') + (hasText(d.identificativo) ? ' · ' + d.identificativo : ''))+'</div>'
+    + '<div style="margin-top:10px;font-size:13px;color:#374151;line-height:1.65;"><strong>Parque:</strong> '+esc(d.parque || '—')+'<br><strong>Tipo de vehículo:</strong> '+esc(d.tipoVehiculo || '—')+'<br><strong>Identificativo:</strong> '+esc(d.identificativo || '—')+'<br><strong>Matrícula:</strong> '+esc(d.matricula || '—')+'</div>'
     + '</div>';
 
   const generalImages = renderImages(d.imagenes);
@@ -240,8 +265,15 @@ function GeneradorVehiculos(){
     h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
       h(Box,{title:'Identificación del vehículo'},
         h(Row,null,
-          h('div',null,h(Label,null,'Parque'),h(Inp,{value:d.parque,onChange:v=>update('parque',v),placeholder:'Ej: Parque de Las Rozas'})),
-          h('div',null,h(Label,null,'Vehículo'),h(Inp,{value:d.vehiculo,onChange:v=>update('vehiculo',v),placeholder:'Ej: BUP, BUL, FSV...'})),
+          h('div',null,
+            h(Label,null,'Parque'),
+            h('select',{style:inputStyle,value:d.parque,onChange:e=>update('parque',e.target.value)},
+              h('option',{value:''},'— Selecciona parque —'),
+              PARQUES_CBCM.map(p=>h('option',{key:p,value:p},p))
+            )
+          ),
+          h('div',null,h(Label,null,'Tipo de vehículo'),h(Inp,{value:d.tipoVehiculo,onChange:v=>update('tipoVehiculo',v),placeholder:'Ej: BUP, BUL, FSV, AEA...'})),
+          h('div',null,h(Label,null,'Identificativo'),h(Inp,{value:d.identificativo,onChange:v=>update('identificativo',v),placeholder:'Ej: BUP-41, BUL-12...'})),
           h('div',null,h(Label,null,'Matrícula'),h(Inp,{value:d.matricula,onChange:v=>update('matricula',v),placeholder:'Ej: 0000 XXX'}))
         )
       )
