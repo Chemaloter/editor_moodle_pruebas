@@ -18,7 +18,7 @@ const UI = {
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function br(s){return esc(s).replace(/\r?\n/g,'<br>');}
 function hasText(s){return String(s||'').trim().length>0;}
-function newImage(){return {mode:'url', url:'', src:'', name:'', caption:'', width:'100%'};}
+function newImage(){return {mode:'url', url:'', src:'', name:'', caption:'', width:'75%'};}
 function newText(){return {texto:''};}
 function newCompartimento(){return {nombre:'', descripcion:'', materiales:[''], textos:[newText()], imagenes:[]};}
 function emptyData(){return {parque:'', vehiculo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], observaciones:''};}
@@ -74,6 +74,15 @@ function ImageEditor({items,onChange}){
   const arr = items || [];
   const setAt = (i,obj)=>onChange(arr.map((x,j)=>j===i?obj:x));
   const rem = i=>onChange(arr.filter((_,j)=>j!==i));
+  const pill = (active)=>({
+    padding:'4px 11px', fontSize:'11px', fontWeight:'800', border:'1.5px solid', borderRadius:'999px', cursor:'pointer',
+    borderColor:active?UI.red:'#e5e7eb', background:active?'#fff0f0':'#ffffff', color:active?UI.redDark:UI.muted,
+    fontFamily:'inherit', lineHeight:1.2
+  });
+  const fileLabel = {
+    display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px',border:'2px dashed #d9dee7',
+    borderRadius:'10px',cursor:'pointer',fontSize:'13px',color:UI.muted,background:'#fff',fontWeight:700
+  };
   function handleFile(i,file){
     if(!file) return;
     const reader = new FileReader();
@@ -81,20 +90,40 @@ function ImageEditor({items,onChange}){
     reader.readAsDataURL(file);
   }
   return h('div',{style:{display:'flex',flexDirection:'column',gap:10}},
-    arr.map((img,i)=>h('div',{key:i,style:{border:'1px solid #edf0f4',borderRadius:12,padding:10,background:'#fafafa'}},
-      h('div',{style:{display:'flex',gap:8,alignItems:'center',marginBottom:8,flexWrap:'wrap'}},
-        h('button',{type:'button',style:{...btnStyle,borderColor:img.mode==='url'?UI.red:UI.border,color:img.mode==='url'?UI.redDark:UI.muted},onClick:()=>setAt(i,{...img,mode:'url'})},'URL'),
-        h('button',{type:'button',style:{...btnStyle,borderColor:img.mode==='file'?UI.red:UI.border,color:img.mode==='file'?UI.redDark:UI.muted},onClick:()=>setAt(i,{...img,mode:'file'})},'Archivo'),
+    arr.map((img,i)=>h('div',{key:i,style:{border:'1px solid #edf0f4',borderRadius:14,padding:12,background:'#ffffff',boxShadow:'0 1px 3px rgba(15,23,42,.04)'}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:10,flexWrap:'wrap'}},
+        h('strong',{style:{fontSize:13,color:UI.text,marginRight:4}},'Imagen ',i+1),
+        h('button',{type:'button',style:pill(img.mode==='url'),onClick:()=>setAt(i,{...img,mode:'url'})},'URL'),
+        h('button',{type:'button',style:pill(img.mode==='file'),onClick:()=>setAt(i,{...img,mode:'file'})},'Archivo local'),
         h('div',{style:{marginLeft:'auto'}},h(DelBtn,{onClick:()=>rem(i)}))
       ),
       img.mode==='url'
-        ? h(React.Fragment,null,h(Label,null,'URL de imagen'),h(Inp,{value:img.url,onChange:v=>setAt(i,{...img,url:v}),placeholder:'https://...'}))
-        : h(React.Fragment,null,h(Label,null,'Archivo local'),h('input',{type:'file',accept:'image/*',onChange:e=>handleFile(i,e.target.files[0])}),img.src?h('div',{style:{fontSize:12,color:UI.muted,marginTop:4}},'✓ ',img.name):null),
+        ? h(React.Fragment,null,
+            h(Label,null,'URL de imagen'),
+            h(Inp,{value:img.url,onChange:v=>setAt(i,{...img,url:v}),placeholder:'https://ejemplo.com/imagen.jpg'})
+          )
+        : h(React.Fragment,null,
+            h(Label,null,'Archivo local'),
+            h('label',{style:fileLabel},'📁 ',img.name || 'Elegir imagen...',h('input',{type:'file',accept:'image/*',style:{display:'none'},onChange:e=>handleFile(i,e.target.files[0])})),
+            img.src ? h('div',{style:{marginTop:8,textAlign:'center'}},
+              h('img',{src:img.src,alt:'Vista previa',style:{maxHeight:120,maxWidth:'100%',borderRadius:8,border:'1px solid #e5e7eb'}}),
+              h('div',{style:{fontSize:11,color:UI.muted,marginTop:4}},'✓ ',img.name || 'Imagen cargada')
+            ) : null
+          ),
       h(Row,null,
-        h('div',null,h(Label,null,'Pie de foto'),h(Inp,{value:img.caption,onChange:v=>setAt(i,{...img,caption:v}),placeholder:'Ej: Persiana lateral derecha'})),
-        h('div',null,h(Label,null,'Ancho'),h('select',{style:inputStyle,value:img.width||'100%',onChange:e=>setAt(i,{...img,width:e.target.value})},
-          h('option',{value:'100%'},'100%'),h('option',{value:'75%'},'75%'),h('option',{value:'50%'},'50%'),h('option',{value:'auto'},'Auto')
-        ))
+        h('div',null,
+          h(Label,null,'Título / pie de foto'),
+          h(Inp,{value:img.caption,onChange:v=>setAt(i,{...img,caption:v}),placeholder:'Ej: Persiana lateral derecha · Material de excarcelación'})
+        ),
+        h('div',null,
+          h(Label,null,'Ancho máximo'),
+          h('select',{style:inputStyle,value:img.width||'75%',onChange:e=>setAt(i,{...img,width:e.target.value})},
+            h('option',{value:'100%'},'100% — ocupa todo el ancho'),
+            h('option',{value:'75%'},'75% — recomendado'),
+            h('option',{value:'50%'},'50%'),
+            h('option',{value:'auto'},'Auto — tamaño original')
+          )
+        )
       )
     )),
     h(AddBtn,{onClick:()=>onChange([...arr,newImage()]),label:'＋ Añadir imagen'})
@@ -124,7 +153,7 @@ function renderImages(images){
   return (images||[]).map(img=>{
     const src = img.mode==='file' ? img.src : img.url;
     if(!hasText(src)) return '';
-    const width = img.width || '100%';
+    const width = img.width || '75%';
     const isAuto = width==='auto';
     const containerW = isAuto ? 'max-width:100%;' : 'width:'+width+';max-width:100%;';
     const imgStyle = isAuto ? 'max-width:100%;width:auto;height:auto;border-radius:6px;display:block;margin:0 auto;box-sizing:border-box;' : 'width:100%;max-width:100%;height:auto;border-radius:6px;display:block;box-sizing:border-box;';
