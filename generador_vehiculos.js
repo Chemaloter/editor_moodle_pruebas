@@ -18,7 +18,7 @@ const UI = {
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function br(s){return esc(s).replace(/\r?\n/g,'<br>');}
 function hasText(s){return String(s||'').trim().length>0;}
-function newImage(){return {mode:'url', url:'', src:'', name:'', caption:'', width:'75%'};}
+function newImage(){return {mode:'url', url:'', src:'', name:'', caption:'', texto:'', observaciones:'', width:'75%'};}
 function newText(){return {texto:''};}
 function newCompartimento(){return {nombre:'', descripcion:'', materiales:[''], textos:[newText()], imagenes:[]};}
 function emptyData(){return {parque:'', vehiculo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], observaciones:''};}
@@ -124,6 +124,16 @@ function ImageEditor({items,onChange}){
             h('option',{value:'auto'},'Auto — tamaño original')
           )
         )
+      ),
+      h(Row,null,
+        h('div',null,
+          h(Label,null,'Texto explicativo de la imagen'),
+          h(Txt,{rows:3,value:img.texto,onChange:v=>setAt(i,{...img,texto:v}),placeholder:'Describe qué material se ve, dónde está colocado o cómo se identifica...'})
+        ),
+        h('div',null,
+          h(Label,null,'Observaciones de la imagen'),
+          h(Txt,{rows:3,value:img.observaciones,onChange:v=>setAt(i,{...img,observaciones:v}),placeholder:'Observaciones específicas de esta imagen o del material mostrado...'})
+        )
       )
     )),
     h(AddBtn,{onClick:()=>onChange([...arr,newImage()]),label:'＋ Añadir imagen'})
@@ -158,10 +168,13 @@ function renderImages(images){
     const containerW = isAuto ? 'max-width:100%;' : 'width:'+width+';max-width:100%;';
     const imgStyle = isAuto ? 'max-width:100%;width:auto;height:auto;border-radius:6px;display:block;margin:0 auto;box-sizing:border-box;' : 'width:100%;max-width:100%;height:auto;border-radius:6px;display:block;box-sizing:border-box;';
     const caption = img.caption || img.name || 'Imagen del vehículo';
+    const textoImg = hasText(img.texto) ? '<div style="padding:12px 16px;background:#ffffff;border-top:1px solid #edf0f4;text-align:left;box-sizing:border-box;color:#2d2d2d;font-size:14px;line-height:1.65;">'+br(img.texto)+'</div>' : '';
+    const obsImg = hasText(img.observaciones) ? '<div style="padding:12px 16px;background:#eff6ff;border-top:1px solid #dbeafe;text-align:left;box-sizing:border-box;color:#1e3a8a;font-size:14px;line-height:1.65;font-weight:600;"><strong>ℹ️ Observaciones:</strong><br>'+br(img.observaciones)+'</div>' : '';
     return '<div class="moodle-media-block" style="text-align:center;margin:20px auto;width:100%;max-width:'+UI.mediaMax+';box-sizing:border-box;">'
       + '<div style="display:inline-block;'+containerW+'background:#fff;border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:'+UI.font+';box-sizing:border-box;">'
       + '<div style="text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;"><img src="'+src+'" alt="'+esc(caption)+'" style="'+imgStyle+'"></div>'
       + '<div style="padding:12px 16px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;box-sizing:border-box;"><span style="font-weight:700;color:#333;font-size:16px;line-height:1.5;display:block;overflow-wrap:anywhere;">🖼️ '+esc(caption)+'</span></div>'
+      + textoImg + obsImg
       + '</div></div>';
   }).join('\n');
 }
@@ -187,7 +200,7 @@ function renderVehicleHTML(d){
     const texts = (c.textos||[]).filter(t=>hasText(t.texto));
     const matsHtml = mats.length ? '<ul style="font-family:'+UI.font+';font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;padding-left:28px;">'+mats.map(m=>'<li style="margin:5px 0;">'+br(m)+'</li>').join('')+'</ul>' : '';
     const textsHtml = texts.map(t=>'<div style="display:block;width:100%;max-width:'+UI.contentMax+';margin:12px auto;box-sizing:border-box;font-family:'+UI.font+';font-size:15px;background-color:#eff6ff;border-left:5px solid #1d4ed8;color:#1e3a8a;padding:12px 20px;border-radius:0 6px 6px 0;font-weight:600;line-height:1.6;">'+br(t.texto)+'</div>').join('');
-    return heading('Persiana / compartimento '+(idx+1)+(hasText(c.nombre)?' · '+c.nombre:''),3)
+    return heading(hasText(c.nombre) ? c.nombre : 'Persiana / compartimento '+(idx+1),3)
       + wrap(paragraph(c.descripcion)+matsHtml)
       + textsHtml
       + renderImages(c.imagenes);
@@ -197,8 +210,8 @@ function renderVehicleHTML(d){
     : '';
   return '<div style="font-family:'+UI.font+';font-size:16px;line-height:1.8;color:#2d2d2d;background:transparent;width:100%;max-width:none;margin:0 auto;box-sizing:border-box;">'
     + idBlock
-    + (generalImages ? heading('Imágenes generales del vehículo',2)+generalImages : '')
-    + heading('Inventario por persianas / compartimentos',2)
+    + (generalImages ? heading('VEHÍCULO',2)+generalImages : '')
+    + heading('MATERIAL',2)
     + comps
     + obs
     + '</div>';
@@ -234,12 +247,12 @@ function GeneradorVehiculos(){
       )
     ),
     h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
-      h(Box,{title:'Imágenes generales del vehículo',hint:'Añade tantas imágenes generales como necesites: exterior, laterales, frontal, trasera, cabina, etc.'},
+      h(Box,{title:'VEHÍCULO',hint:'Añade tantas imágenes generales como necesites: exterior, laterales, frontal, trasera, cabina, etc.'},
         h(ImageEditor,{items:d.imagenes,onChange:v=>update('imagenes',v)})
       )
     ),
     h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
-      h(Box,{title:'Persianas / compartimentos',hint:'Cada persiana o compartimento puede contener materiales, textos explicativos e imágenes.'},
+      h(Box,{title:'MATERIAL',hint:'Cada persiana o compartimento puede contener materiales, textos explicativos e imágenes.'},
         h(CompartimentosEditor,{items:d.compartimentos,onChange:v=>update('compartimentos',v)})
       )
     ),
