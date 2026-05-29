@@ -45,8 +45,11 @@ function br(s){return esc(s).replace(/\r?\n/g,'<br>');}
 function hasText(s){return String(s||'').trim().length>0;}
 function newImage(){return {mode:'url', url:'', src:'', name:'', caption:'', texto:'', observaciones:'', width:'75%'};}
 function newText(){return {texto:''};}
+function newManual(){return {titulo:'', tipo:'Manual del fabricante', url:'', descripcion:''};}
+function newEnlace(){return {titulo:'', url:'', descripcion:''};}
+const TIPOS_MANUAL = ['Manual del fabricante','Manual de bomba','Manual de autoescala','Manual eléctrico','Manual hidráulico','Ficha técnica','Procedimiento interno','Manual de mantenimiento','Manual de revisión diaria','Manual de conducción / operación','Catálogo de repuestos','Esquemas / planos','Otro'];
 function newCompartimento(){return {nombre:'', descripcion:'', materiales:[''], textos:[newText()], imagenes:[]};}
-function emptyData(){return {parque:'', tipoVehiculo:'', identificativo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], observaciones:''};}
+function emptyData(){return {parque:'', tipoVehiculo:'', identificativo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], manuales:[newManual()], enlaces:[newEnlace()], observaciones:''};}
 
 const inputStyle = {width:'100%', border:'1.5px solid #d9dee7', borderRadius:'10px', background:'#fff', padding:'9px 12px', fontSize:'13px', color:UI.text, outline:'none', fontFamily:'inherit', boxSizing:'border-box'};
 const btnStyle = {padding:'8px 12px', fontSize:'12px', fontWeight:'750', border:'1.5px solid #d9dee7', borderRadius:'10px', background:'#fff', color:UI.muted, cursor:'pointer', fontFamily:'inherit'};
@@ -165,6 +168,43 @@ function ImageEditor({items,onChange}){
   );
 }
 
+
+function ManualesEditor({items,onChange}){
+  const arr = items || [];
+  const setAt = (i,obj)=>onChange(arr.map((x,j)=>j===i?obj:x));
+  const rem = i=>onChange(arr.filter((_,j)=>j!==i));
+  return h('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+    arr.map((m,i)=>h(Box,{key:i,title:'Manual '+(i+1),hint:'Añade solo la URL del documento. Evitamos incrustar PDFs o archivos pesados dentro del HTML.'},
+      h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:8}},arr.length>1?h(DelBtn,{onClick:()=>rem(i)}):null),
+      h(Row,null,
+        h('div',null,h(Label,null,'Título del manual'),h(Inp,{value:m.titulo,onChange:v=>setAt(i,{...m,titulo:v}),placeholder:'Ej: Manual de bomba del vehículo'})),
+        h('div',null,h(Label,null,'Tipo de manual'),h('select',{style:inputStyle,value:m.tipo||'Manual del fabricante',onChange:e=>setAt(i,{...m,tipo:e.target.value})},TIPOS_MANUAL.map(t=>h('option',{key:t,value:t},t))))
+      ),
+      h(Label,null,'URL del documento'),
+      h(Inp,{value:m.url,onChange:v=>setAt(i,{...m,url:v}),placeholder:'https://...'}),
+      h(Label,null,'Descripción breve'),
+      h(Txt,{rows:3,value:m.descripcion,onChange:v=>setAt(i,{...m,descripcion:v}),placeholder:'Describe brevemente para qué sirve este manual o cuándo consultarlo.'})
+    )),
+    h(AddBtn,{onClick:()=>onChange([...arr,newManual()]),label:'＋ Añadir manual'})
+  );
+}
+function EnlacesEditor({items,onChange}){
+  const arr = items || [];
+  const setAt = (i,obj)=>onChange(arr.map((x,j)=>j===i?obj:x));
+  const rem = i=>onChange(arr.filter((_,j)=>j!==i));
+  return h('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+    arr.map((e,i)=>h(Box,{key:i,title:'Enlace '+(i+1),hint:'Añade enlaces útiles: vídeos, fichas internas, procedimientos, repositorios o recursos de consulta.'},
+      h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:8}},arr.length>1?h(DelBtn,{onClick:()=>rem(i)}):null),
+      h(Label,null,'Título del enlace'),
+      h(Inp,{value:e.titulo,onChange:v=>setAt(i,{...e,titulo:v}),placeholder:'Ej: Vídeo de revisión diaria'}),
+      h(Label,null,'URL'),
+      h(Inp,{value:e.url,onChange:v=>setAt(i,{...e,url:v}),placeholder:'https://...'}),
+      h(Label,null,'Descripción'),
+      h(Txt,{rows:3,value:e.descripcion,onChange:v=>setAt(i,{...e,descripcion:v}),placeholder:'Explica qué aporta este enlace o cuándo conviene consultarlo.'})
+    )),
+    h(AddBtn,{onClick:()=>onChange([...arr,newEnlace()]),label:'＋ Añadir enlace'})
+  );
+}
 function CompartimentosEditor({items,onChange}){
   const arr = items || [];
   const setAt = (i,obj)=>onChange(arr.map((x,j)=>j===i?obj:x));
@@ -212,6 +252,24 @@ function heading(text,level){
   return '<div style="max-width:'+UI.contentMax+';width:100%;margin:18px auto 10px auto;box-sizing:border-box;"><div style="'+style+'">'+esc(text)+'</div></div>';
 }
 function wrap(html){return '<div style="max-width:'+UI.contentMax+';width:100%;margin-left:auto;margin-right:auto;box-sizing:border-box;">'+(html||'')+'</div>';}
+
+function renderDocumentacion(d){
+  const manuales = (d.manuales || []).filter(m=>hasText(m.titulo) || hasText(m.url) || hasText(m.descripcion));
+  const enlaces = (d.enlaces || []).filter(e=>hasText(e.titulo) || hasText(e.url) || hasText(e.descripcion));
+  if(!manuales.length && !enlaces.length) return '';
+  const linkStyle = 'display:inline-block;margin-top:10px;background:'+UI.red+';color:#ffffff;text-decoration:none;padding:8px 13px;border-radius:8px;font-family:'+UI.font+';font-size:13px;font-weight:800;line-height:1.2;';
+  const cardStyle = 'display:block;width:100%;max-width:'+UI.contentMax+';margin:14px auto;box-sizing:border-box;font-family:'+UI.font+';font-size:15px;background-color:#ffffff;border:1px solid '+UI.border+';border-left:5px solid '+UI.red+';color:#2d2d2d;padding:14px 20px;border-radius:0 8px 8px 0;line-height:1.7;';
+  const manualHtml = manuales.map((m,idx)=>{
+    const title = m.titulo || ('Manual '+(idx+1));
+    const tipo = m.tipo || 'Manual';
+    return '<div style="'+cardStyle+'"><div style="font-weight:900;color:'+UI.redDark+';font-size:16px;line-height:1.4;">📘 '+esc(title)+'</div><div style="margin-top:4px;color:'+UI.muted+';font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">'+esc(tipo)+'</div>'+(hasText(m.descripcion)?'<div style="margin-top:8px;">'+br(m.descripcion)+'</div>':'')+(hasText(m.url)?'<a href="'+esc(m.url)+'" target="_blank" rel="noopener noreferrer" style="'+linkStyle+'">Abrir documento</a>':'')+'</div>';
+  }).join('');
+  const enlaceHtml = enlaces.map((e,idx)=>{
+    const title = e.titulo || ('Enlace '+(idx+1));
+    return '<div style="'+cardStyle+'border-left-color:#0f766e;"><div style="font-weight:900;color:#0f766e;font-size:16px;line-height:1.4;">🔗 '+esc(title)+'</div>'+(hasText(e.descripcion)?'<div style="margin-top:8px;">'+br(e.descripcion)+'</div>':'')+(hasText(e.url)?'<a href="'+esc(e.url)+'" target="_blank" rel="noopener noreferrer" style="'+linkStyle+'background:#0f766e;">Abrir enlace</a>':'')+'</div>';
+  }).join('');
+  return heading('MANUALES Y DOCUMENTACIÓN',2) + manualHtml + enlaceHtml;
+}
 function renderVehicleHTML(d){
   const idBlock = '<div style="max-width:'+UI.contentMax+';width:100%;margin:4px auto 20px auto;border:1.5px solid '+UI.border+';border-left:6px solid '+UI.red+';border-radius:12px;background:#ffffff;padding:18px 22px;box-sizing:border-box;box-shadow:0 3px 12px rgba(15,23,42,.05);font-family:'+UI.font+';">'
     + '<div style="font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:'+UI.red+';font-weight:800;margin-bottom:6px;">Inventario de vehículo</div>'
@@ -238,6 +296,7 @@ function renderVehicleHTML(d){
     + (generalImages ? heading('VEHÍCULO',2)+generalImages : '')
     + heading('MATERIAL',2)
     + comps
+    + renderDocumentacion(d)
     + obs
     + '</div>';
 }
@@ -249,8 +308,8 @@ function GeneradorVehiculos(){
   const [preview,setPreview] = useState(false);
   const [inserted,setInserted] = useState(false);
   const update = (k,v)=>setD(p=>({...p,[k]:v}));
-  const tabs = ['1 · Identificación','2 · Imágenes','3 · Compartimentos','4 · Observaciones','⚡ Generar'];
-  const generate = ()=>{setHtml(renderVehicleHTML(d));setTab(4);setPreview(false);setInserted(false);};
+  const tabs = ['1 · Identificación','2 · Imágenes','3 · Compartimentos','4 · Manuales y enlaces','5 · Observaciones','⚡ Generar'];
+  const generate = ()=>{setHtml(renderVehicleHTML(d));setTab(5);setPreview(false);setInserted(false);};
   const insert = ()=>{
     if(!html) return;
     if(typeof window.insertHTMLAtCursor === 'function'){
@@ -286,6 +345,14 @@ function GeneradorVehiculos(){
     h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
       h(Box,{title:'MATERIAL',hint:'Cada persiana o compartimento puede contener materiales, textos explicativos e imágenes.'},
         h(CompartimentosEditor,{items:d.compartimentos,onChange:v=>update('compartimentos',v)})
+      )
+    ),
+    h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+      h(Box,{title:'Manuales del vehículo',hint:'Añade manuales y documentación técnica mediante URL. No se incrustan archivos para evitar que Moodle se vuelva pesado.'},
+        h(ManualesEditor,{items:d.manuales,onChange:v=>update('manuales',v)})
+      ),
+      h(Box,{title:'Enlaces e información interesante',hint:'Añade enlaces a vídeos, fichas internas, procedimientos, repositorios o cualquier recurso útil.'},
+        h(EnlacesEditor,{items:d.enlaces,onChange:v=>update('enlaces',v)})
       )
     ),
     h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
