@@ -47,9 +47,24 @@ function newImage(){return {mode:'url', url:'', src:'', name:'', caption:'', tex
 function newText(){return {texto:''};}
 function newManual(){return {titulo:'', tipo:'Manual del fabricante', url:'', descripcion:''};}
 function newEnlace(){return {titulo:'', url:'', descripcion:''};}
-const TIPOS_MANUAL = ['Manual del fabricante','Manual de bomba','Manual de autoescala','Manual eléctrico','Manual hidráulico','Ficha técnica','Procedimiento interno','Manual de mantenimiento','Manual de revisión diaria','Manual de conducción / operación','Catálogo de repuestos','Esquemas / planos','Otro'];
+function newVideoDoc(){return {titulo:'', url:'', descripcion:''};}
+const TIPOS_MANUAL = [
+  'Manual del fabricante',
+  'Manual de bomba',
+  'Manual de autoescala',
+  'Manual eléctrico',
+  'Manual hidráulico',
+  'Ficha técnica',
+  'Procedimiento interno',
+  'Manual de mantenimiento',
+  'Manual de revisión diaria',
+  'Manual de conducción / operación',
+  'Catálogo de repuestos',
+  'Esquemas / planos',
+  'Otro'
+];
 function newCompartimento(){return {nombre:'', descripcion:'', materiales:[''], textos:[newText()], imagenes:[]};}
-function emptyData(){return {parque:'', tipoVehiculo:'', identificativo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], manuales:[newManual()], enlaces:[newEnlace()], observaciones:''};}
+function emptyData(){return {parque:'', tipoVehiculo:'', identificativo:'', matricula:'', imagenes:[], compartimentos:[newCompartimento()], manuales:[newManual()], enlaces:[newEnlace()], videosDocumentacion:[], imagenesDocumentacion:[], observaciones:''};}
 
 const inputStyle = {width:'100%', border:'1.5px solid #d9dee7', borderRadius:'10px', background:'#fff', padding:'9px 12px', fontSize:'13px', color:UI.text, outline:'none', fontFamily:'inherit', boxSizing:'border-box'};
 const btnStyle = {padding:'8px 12px', fontSize:'12px', fontWeight:'750', border:'1.5px solid #d9dee7', borderRadius:'10px', background:'#fff', color:UI.muted, cursor:'pointer', fontFamily:'inherit'};
@@ -188,6 +203,7 @@ function ManualesEditor({items,onChange}){
     h(AddBtn,{onClick:()=>onChange([...arr,newManual()]),label:'＋ Añadir manual'})
   );
 }
+
 function EnlacesEditor({items,onChange}){
   const arr = items || [];
   const setAt = (i,obj)=>onChange(arr.map((x,j)=>j===i?obj:x));
@@ -196,7 +212,7 @@ function EnlacesEditor({items,onChange}){
     arr.map((e,i)=>h(Box,{key:i,title:'Enlace '+(i+1),hint:'Añade enlaces útiles: vídeos, fichas internas, procedimientos, repositorios o recursos de consulta.'},
       h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:8}},arr.length>1?h(DelBtn,{onClick:()=>rem(i)}):null),
       h(Label,null,'Título del enlace'),
-      h(Inp,{value:e.titulo,onChange:v=>setAt(i,{...e,titulo:v}),placeholder:'Ej: Vídeo de revisión diaria'}),
+      h(Inp,{value:e.titulo,onChange:v=>setAt(i,{...e,titulo:v}),placeholder:'Ej: Ficha interna de revisión'}),
       h(Label,null,'URL'),
       h(Inp,{value:e.url,onChange:v=>setAt(i,{...e,url:v}),placeholder:'https://...'}),
       h(Label,null,'Descripción'),
@@ -205,6 +221,25 @@ function EnlacesEditor({items,onChange}){
     h(AddBtn,{onClick:()=>onChange([...arr,newEnlace()]),label:'＋ Añadir enlace'})
   );
 }
+
+function VideosDocumentacionEditor({items,onChange}){
+  const arr = items || [];
+  const setAt = (i,obj)=>onChange(arr.map((x,j)=>j===i?obj:x));
+  const rem = i=>onChange(arr.filter((_,j)=>j!==i));
+  return h('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+    arr.map((v,i)=>h(Box,{key:i,title:'Vídeo '+(i+1),hint:'Pega la URL del vídeo. YouTube y Vimeo se convierten automáticamente a reproductor embebido.'},
+      h('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:8}},arr.length>1?h(DelBtn,{onClick:()=>rem(i)}):null),
+      h(Label,null,'Título del vídeo'),
+      h(Inp,{value:v.titulo,onChange:x=>setAt(i,{...v,titulo:x}),placeholder:'Ej: Revisión del panel de bomba'}),
+      h(Label,null,'URL del vídeo'),
+      h(Inp,{value:v.url,onChange:x=>setAt(i,{...v,url:x}),placeholder:'YouTube, Vimeo o URL embed'}),
+      h(Label,null,'Descripción'),
+      h(Txt,{rows:3,value:v.descripcion,onChange:x=>setAt(i,{...v,descripcion:x}),placeholder:'Describe qué muestra el vídeo o cuándo consultarlo.'})
+    )),
+    h(AddBtn,{onClick:()=>onChange([...arr,newVideoDoc()]),label:'＋ Añadir vídeo'})
+  );
+}
+
 function CompartimentosEditor({items,onChange}){
   const arr = items || [];
   const setAt = (i,obj)=>onChange(arr.map((x,j)=>j===i?obj:x));
@@ -244,6 +279,34 @@ function renderImages(images){
   }).join('\n');
 }
 
+
+function normalizeVideoUrl(url){
+  let src = String(url || '').trim();
+  try {
+    const ytWatch = src.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const ytShort = src.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+    const vimeo = src.match(/vimeo\.com\/(\d+)/);
+    if (ytWatch) src = 'https://www.youtube.com/embed/' + ytWatch[1];
+    else if (ytShort) src = 'https://www.youtube.com/embed/' + ytShort[1];
+    else if (vimeo) src = 'https://player.vimeo.com/video/' + vimeo[1];
+  } catch(e) {}
+  return src;
+}
+function renderVideos(videos){
+  return (videos || []).map(v=>{
+    const url = typeof v === 'string' ? v : v.url;
+    if(!hasText(url)) return '';
+    const src = normalizeVideoUrl(url);
+    const title = typeof v === 'string' ? 'Vídeo explicativo' : (v.titulo || 'Vídeo explicativo');
+    const desc = typeof v === 'string' ? '' : v.descripcion;
+    return '<div class="moodle-media-block" style="width:100%;max-width:'+UI.mediaMax+';margin:20px auto;background:#fff;border:1px solid #d1d1d1;box-sizing:border-box;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:'+UI.font+';">'
+      + '<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;"><iframe src="'+esc(src)+'" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allowfullscreen></iframe></div>'
+      + '<div style="padding:14px 18px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;"><span style="font-weight:700;color:#333;font-size:1.05em;display:block;">🎬 '+esc(title)+'</span>'
+      + (hasText(desc) ? '<div style="font-size:14px;color:'+UI.muted+';line-height:1.65;margin-top:6px;">'+br(desc)+'</div>' : '')
+      + '</div></div>';
+  }).join('
+');
+}
 function paragraph(text){return hasText(text)?'<p style="font-family:'+UI.font+';font-size:15px;line-height:1.8;color:#2d2d2d;margin:10px 0;">'+br(text)+'</p>':'';}
 function heading(text,level){
   const style = level===2
@@ -256,7 +319,9 @@ function wrap(html){return '<div style="max-width:'+UI.contentMax+';width:100%;m
 function renderDocumentacion(d){
   const manuales = (d.manuales || []).filter(m=>hasText(m.titulo) || hasText(m.url) || hasText(m.descripcion));
   const enlaces = (d.enlaces || []).filter(e=>hasText(e.titulo) || hasText(e.url) || hasText(e.descripcion));
-  if(!manuales.length && !enlaces.length) return '';
+  const videos = (d.videosDocumentacion || []).filter(v=>hasText(v.url) || hasText(v.titulo) || hasText(v.descripcion));
+  const imagenes = (d.imagenesDocumentacion || []).filter(img=>hasText(img.url) || hasText(img.src));
+  if(!manuales.length && !enlaces.length && !videos.length && !imagenes.length) return '';
   const linkStyle = 'display:inline-block;margin-top:10px;background:'+UI.red+';color:#ffffff;text-decoration:none;padding:8px 13px;border-radius:8px;font-family:'+UI.font+';font-size:13px;font-weight:800;line-height:1.2;';
   const cardStyle = 'display:block;width:100%;max-width:'+UI.contentMax+';margin:14px auto;box-sizing:border-box;font-family:'+UI.font+';font-size:15px;background-color:#ffffff;border:1px solid '+UI.border+';border-left:5px solid '+UI.red+';color:#2d2d2d;padding:14px 20px;border-radius:0 8px 8px 0;line-height:1.7;';
   const manualHtml = manuales.map((m,idx)=>{
@@ -268,7 +333,9 @@ function renderDocumentacion(d){
     const title = e.titulo || ('Enlace '+(idx+1));
     return '<div style="'+cardStyle+'border-left-color:#0f766e;"><div style="font-weight:900;color:#0f766e;font-size:16px;line-height:1.4;">🔗 '+esc(title)+'</div>'+(hasText(e.descripcion)?'<div style="margin-top:8px;">'+br(e.descripcion)+'</div>':'')+(hasText(e.url)?'<a href="'+esc(e.url)+'" target="_blank" rel="noopener noreferrer" style="'+linkStyle+'background:#0f766e;">Abrir enlace</a>':'')+'</div>';
   }).join('');
-  return heading('MANUALES Y DOCUMENTACIÓN',2) + manualHtml + enlaceHtml;
+  const videosHtml = videos.length ? heading('VÍDEOS',3) + renderVideos(videos) : '';
+  const imagenesHtml = imagenes.length ? heading('IMÁGENES',3) + renderImages(imagenes) : '';
+  return heading('MANUALES Y DOCUMENTACIÓN',2) + manualHtml + enlaceHtml + videosHtml + imagenesHtml;
 }
 function renderVehicleHTML(d){
   const idBlock = '<div style="max-width:'+UI.contentMax+';width:100%;margin:4px auto 20px auto;border:1.5px solid '+UI.border+';border-left:6px solid '+UI.red+';border-radius:12px;background:#ffffff;padding:18px 22px;box-sizing:border-box;box-shadow:0 3px 12px rgba(15,23,42,.05);font-family:'+UI.font+';">'
@@ -351,8 +418,14 @@ function GeneradorVehiculos(){
       h(Box,{title:'Manuales del vehículo',hint:'Añade manuales y documentación técnica mediante URL. No se incrustan archivos para evitar que Moodle se vuelva pesado.'},
         h(ManualesEditor,{items:d.manuales,onChange:v=>update('manuales',v)})
       ),
-      h(Box,{title:'Enlaces e información interesante',hint:'Añade enlaces a vídeos, fichas internas, procedimientos, repositorios o cualquier recurso útil.'},
+      h(Box,{title:'Enlaces e información interesante',hint:'Añade enlaces a fichas internas, procedimientos, repositorios o cualquier recurso útil.'},
         h(EnlacesEditor,{items:d.enlaces,onChange:v=>update('enlaces',v)})
+      ),
+      h(Box,{title:'Vídeos',hint:'Añade vídeos mediante URL. YouTube y Vimeo se mostrarán embebidos con máximo 1000px.'},
+        h(VideosDocumentacionEditor,{items:d.videosDocumentacion,onChange:v=>update('videosDocumentacion',v)})
+      ),
+      h(Box,{title:'Imágenes de documentación',hint:'Añade imágenes complementarias siguiendo el mismo estilo visual del resto del editor.'},
+        h(ImageEditor,{items:d.imagenesDocumentacion,onChange:v=>update('imagenesDocumentacion',v)})
       )
     ),
     h('div',{style:{display:'flex',flexDirection:'column',gap:16}},
