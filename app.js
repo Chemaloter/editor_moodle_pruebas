@@ -1956,22 +1956,121 @@ setTimeout(syncPreviewExportClasses, 0);
 //  INPUT FILE
 // ══════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════
-//  IMAGE SIZE TOOLBAR
+//  IMAGE SIZE TOOLBAR · v7.0
+//  Corrige imágenes recuperadas desde Moodle que no tienen marco interno
+//  redimensionable. El ancho se aplica siempre al marco interno, no al
+//  contenedor exterior .moodle-media-block de 1000px.
 // ══════════════════════════════════════════════════════════════
 (function() {
   let _target = null;
   const toolbar = document.getElementById('img-size-toolbar');
+  if (!toolbar || !editor) return;
 
-  function getImgContainer(el) {
-    let node = el;
-    while (node && node !== editor) {
+  function cssText(el) {
+    return String((el && el.getAttribute && el.getAttribute('style')) || '').toLowerCase().replace(/\s+/g, '');
+  }
+
+  function closestImage(el) {
+    if (!el) return null;
+    if (el.tagName && el.tagName.toLowerCase() === 'img') return el;
+    return el.closest ? el.closest('img') : null;
+  }
+
+  function isGeneratedCaption(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (el.getAttribute('contenteditable') === 'true') return true;
+    const s = cssText(el);
+    return s.includes('border-top:1pxsolid#d1d1d1') && !el.querySelector('img');
+  }
+
+  function findMediaBlock(img) {
+    const existing = img.closest('.moodle-media-block');
+    if (existing && editor.contains(existing)) return existing;
+
+    // Si Moodle devuelve una imagen suelta o dentro de un contenedor simple,
+    // buscamos el bloque superior dentro del editor. Si no hay bloque claro,
+    // creamos uno compatible con el resto del editor.
+    let node = img;
+    while (node && node.parentElement && node.parentElement !== editor) node = node.parentElement;
+    if (node && node !== img && editor.contains(node) && node.querySelector('img')) return node;
+
+    const block = document.createElement('div');
+    block.className = 'moodle-media-block';
+    block.setAttribute('style', 'text-align:center;margin:20px auto;width:100%;max-width:' + EXPORT_MEDIA_MAX + ';box-sizing:border-box;');
+    img.parentNode.insertBefore(block, img);
+    block.appendChild(img);
+    return block;
+  }
+
+  function ensureMediaBlockStyle(block) {
+    if (!block || !block.style) return;
+    if (!block.classList.contains('moodle-media-block')) block.classList.add('moodle-media-block');
+    block.style.textAlign = 'center';
+    block.style.marginLeft = 'auto';
+    block.style.marginRight = 'auto';
+    if (!block.style.marginTop) block.style.marginTop = '20px';
+    if (!block.style.marginBottom) block.style.marginBottom = '20px';
+    block.style.width = '100%';
+    block.style.maxWidth = EXPORT_MEDIA_MAX;
+    block.style.boxSizing = 'border-box';
+  }
+
+  function findExistingResizableFrame(img, block) {
+    let node = img.parentElement;
+    while (node && node !== editor && node !== block) {
       if (node.nodeType === 1 && node.tagName === 'DIV') {
-        const s = node.getAttribute('style') || '';
-        if ((s.includes('inline-block') || s.includes('width:')) && node.querySelector('img')) return node;
+        const s = cssText(node);
+        // El marco correcto de imágenes creadas por el editor es el div inline-block.
+        // No debe ser el .moodle-media-block exterior.
+        if (s.includes('display:inline-block') && node.querySelector('img')) return node;
       }
       node = node.parentElement;
     }
     return null;
+  }
+
+  function ensureResizableFrame(img) {
+    const block = findMediaBlock(img);
+    ensureMediaBlockStyle(block);
+
+    const existing = findExistingResizableFrame(img, block);
+    if (existing) return existing;
+
+    // Imagen importada desde Moodle sin estructura interna del editor:
+    // creamos el mismo marco que usa buildImageHTML(), pero sin alterar el src.
+    const frame = document.createElement('div');
+    frame.setAttribute('style',
+      'display:inline-block;width:100%;max-width:100%;background:#fff;' +
+      'border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;' +
+      'box-shadow:0 4px 12px rgba(0,0,0,.12);' +
+      'font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;'
+    );
+
+    const imagePanel = document.createElement('div');
+    imagePanel.setAttribute('style', 'text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;');
+
+    const parent = img.parentNode;
+    parent.insertBefore(frame, img);
+    frame.appendChild(imagePanel);
+    imagePanel.appendChild(img);
+
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.borderRadius = img.style.borderRadius || '6px';
+    img.style.display = 'block';
+    img.style.marginLeft = 'auto';
+    img.style.marginRight = 'auto';
+    img.style.boxSizing = 'border-box';
+
+    return frame;
+  }
+
+  function getImgContainer(el) {
+    if (!el || (el.getAttribute && el.getAttribute('contenteditable') === 'true')) return null;
+    if (isGeneratedCaption(el)) return null;
+    const img = closestImage(el) || (el.querySelector ? el.querySelector('img') : null);
+    if (!img || !editor.contains(img)) return null;
+    return ensureResizableFrame(img);
   }
 
   function positionToolbar(container) {
@@ -1997,7 +2096,6 @@ setTimeout(syncPreviewExportClasses, 0);
   }
 
   editor.addEventListener('click', function(e) {
-    if (e.target.getAttribute('contenteditable') === 'true') { hide(); return; }
     const c = getImgContainer(e.target);
     if (c) { _target = c; positionToolbar(c); }
     else hide();
@@ -2006,27 +2104,50 @@ setTimeout(syncPreviewExportClasses, 0);
   toolbar.addEventListener('click', function(e) {
     const btn = e.target.closest('.img-size-btn');
     if (!btn || !_target) return;
+    e.preventDefault();
+    e.stopPropagation();
+
     saveBlockUndo();
     const size = btn.dataset.size;
     const img = _target.querySelector('img');
+
+    _target.style.display = 'inline-block';
+    _target.style.boxSizing = 'border-box';
+
     if (size === 'auto') {
       _target.style.width = '';
       _target.style.maxWidth = '100%';
-      if (img) { img.style.width = 'auto'; img.style.maxWidth = '100%'; }
+      if (img) {
+        img.style.width = 'auto';
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        img.style.marginLeft = 'auto';
+        img.style.marginRight = 'auto';
+      }
     } else {
       _target.style.width = size;
-      _target.style.maxWidth = '';
-      if (img) { img.style.width = '100%'; img.style.maxWidth = ''; }
+      _target.style.maxWidth = '100%';
+      if (img) {
+        img.style.width = '100%';
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        img.style.marginLeft = 'auto';
+        img.style.marginRight = 'auto';
+      }
     }
+
     toolbar.querySelectorAll('.img-size-btn').forEach(b => b.classList.toggle('active', b === btn));
+    if (typeof syncPreviewExportClasses === 'function') syncPreviewExportClasses();
+    editor.dispatchEvent(new Event('input', { bubbles:true }));
     refreshOutput();
+    positionToolbar(_target);
   });
 
   document.addEventListener('click', function(e) {
     if (!e.target.closest('#img-size-toolbar') && !e.target.closest('.editor-area')) hide();
   });
-
-  document.querySelector('.editor-wrap').addEventListener('scroll', hide);
+  const wrap = document.querySelector('.editor-wrap');
+  if (wrap) wrap.addEventListener('scroll', hide);
 })();
 
 document.getElementById('file-input').addEventListener('change', function() {
