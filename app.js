@@ -1956,10 +1956,12 @@ setTimeout(syncPreviewExportClasses, 0);
 //  INPUT FILE
 // ══════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════
-//  IMAGE SIZE TOOLBAR · v7.0
-//  Corrige imágenes recuperadas desde Moodle que no tienen marco interno
-//  redimensionable. El ancho se aplica siempre al marco interno, no al
-//  contenedor exterior .moodle-media-block de 1000px.
+//  IMAGE SIZE TOOLBAR · v7.1
+//  Corrige imágenes recuperadas desde Moodle:
+//  - el ancho se aplica al marco interno redimensionable;
+//  - si Moodle devuelve una imagen dentro de un panel gris grande, el panel
+//    se mete dentro del marco, en vez de crear un marco dentro del panel;
+//  - el contenedor exterior .moodle-media-block queda neutro a 1000px.
 // ══════════════════════════════════════════════════════════════
 (function() {
   let _target = null;
@@ -1976,20 +1978,28 @@ setTimeout(syncPreviewExportClasses, 0);
     return el.closest ? el.closest('img') : null;
   }
 
-  function isGeneratedCaption(el) {
+  function isCaptionLike(el) {
     if (!el || el.nodeType !== 1) return false;
     if (el.getAttribute('contenteditable') === 'true') return true;
     const s = cssText(el);
     return s.includes('border-top:1pxsolid#d1d1d1') && !el.querySelector('img');
   }
 
+  function isImagePanel(el) {
+    if (!el || el.nodeType !== 1 || el.tagName !== 'DIV') return false;
+    const s = cssText(el);
+    return el.querySelector('img') && (
+      s.includes('background:#f0f0f0') ||
+      s.includes('background-color:#f0f0f0') ||
+      s.includes('padding:16px') ||
+      s.includes('text-align:center')
+    );
+  }
+
   function findMediaBlock(img) {
     const existing = img.closest('.moodle-media-block');
     if (existing && editor.contains(existing)) return existing;
 
-    // Si Moodle devuelve una imagen suelta o dentro de un contenedor simple,
-    // buscamos el bloque superior dentro del editor. Si no hay bloque claro,
-    // creamos uno compatible con el resto del editor.
     let node = img;
     while (node && node.parentElement && node.parentElement !== editor) node = node.parentElement;
     if (node && node !== img && editor.contains(node) && node.querySelector('img')) return node;
@@ -2005,6 +2015,10 @@ setTimeout(syncPreviewExportClasses, 0);
   function ensureMediaBlockStyle(block) {
     if (!block || !block.style) return;
     if (!block.classList.contains('moodle-media-block')) block.classList.add('moodle-media-block');
+
+    // El bloque exterior solo debe actuar como límite institucional de 1000px.
+    // No debe pintar borde, fondo, sombra ni relleno; si Moodle nos lo devuelve
+    // con esos estilos, se ve como un rectángulo enorme alrededor de la imagen.
     block.style.textAlign = 'center';
     block.style.marginLeft = 'auto';
     block.style.marginRight = 'auto';
@@ -2013,6 +2027,13 @@ setTimeout(syncPreviewExportClasses, 0);
     block.style.width = '100%';
     block.style.maxWidth = EXPORT_MEDIA_MAX;
     block.style.boxSizing = 'border-box';
+    block.style.border = 'none';
+    block.style.background = 'transparent';
+    block.style.backgroundColor = 'transparent';
+    block.style.boxShadow = 'none';
+    block.style.borderRadius = '0';
+    block.style.padding = '0';
+    block.style.overflow = 'visible';
   }
 
   function findExistingResizableFrame(img, block) {
@@ -2020,8 +2041,6 @@ setTimeout(syncPreviewExportClasses, 0);
     while (node && node !== editor && node !== block) {
       if (node.nodeType === 1 && node.tagName === 'DIV') {
         const s = cssText(node);
-        // El marco correcto de imágenes creadas por el editor es el div inline-block.
-        // No debe ser el .moodle-media-block exterior.
         if (s.includes('display:inline-block') && node.querySelector('img')) return node;
       }
       node = node.parentElement;
@@ -2029,31 +2048,29 @@ setTimeout(syncPreviewExportClasses, 0);
     return null;
   }
 
-  function ensureResizableFrame(img) {
-    const block = findMediaBlock(img);
-    ensureMediaBlockStyle(block);
+  function styleResizableFrame(frame) {
+    frame.style.display = 'inline-block';
+    if (!frame.style.width) frame.style.width = '100%';
+    frame.style.maxWidth = '100%';
+    frame.style.background = '#fff';
+    frame.style.border = '1px solid #d1d1d1';
+    frame.style.borderRadius = '10px';
+    frame.style.overflow = 'hidden';
+    frame.style.boxShadow = '0 4px 12px rgba(0,0,0,.12)';
+    frame.style.fontFamily = 'Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
+    frame.style.boxSizing = 'border-box';
+  }
 
-    const existing = findExistingResizableFrame(img, block);
-    if (existing) return existing;
+  function styleImagePanel(panel) {
+    if (!panel || !panel.style) return;
+    panel.style.textAlign = 'center';
+    panel.style.background = '#f0f0f0';
+    panel.style.padding = '16px';
+    panel.style.boxSizing = 'border-box';
+  }
 
-    // Imagen importada desde Moodle sin estructura interna del editor:
-    // creamos el mismo marco que usa buildImageHTML(), pero sin alterar el src.
-    const frame = document.createElement('div');
-    frame.setAttribute('style',
-      'display:inline-block;width:100%;max-width:100%;background:#fff;' +
-      'border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;' +
-      'box-shadow:0 4px 12px rgba(0,0,0,.12);' +
-      'font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;'
-    );
-
-    const imagePanel = document.createElement('div');
-    imagePanel.setAttribute('style', 'text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;');
-
-    const parent = img.parentNode;
-    parent.insertBefore(frame, img);
-    frame.appendChild(imagePanel);
-    imagePanel.appendChild(img);
-
+  function styleImage(img, mode) {
+    if (!img || !img.style) return;
     img.style.maxWidth = '100%';
     img.style.height = 'auto';
     img.style.borderRadius = img.style.borderRadius || '6px';
@@ -2061,13 +2078,52 @@ setTimeout(syncPreviewExportClasses, 0);
     img.style.marginLeft = 'auto';
     img.style.marginRight = 'auto';
     img.style.boxSizing = 'border-box';
+    if (mode === 'auto') {
+      img.style.width = 'auto';
+    } else {
+      img.style.width = '100%';
+    }
+  }
 
+  function ensureResizableFrame(img) {
+    const block = findMediaBlock(img);
+    ensureMediaBlockStyle(block);
+
+    const existing = findExistingResizableFrame(img, block);
+    if (existing) {
+      styleResizableFrame(existing);
+      const panel = img.parentElement;
+      if (isImagePanel(panel)) styleImagePanel(panel);
+      return existing;
+    }
+
+    const parent = img.parentNode;
+    const panelCandidate = isImagePanel(parent) ? parent : null;
+    const frame = document.createElement('div');
+    styleResizableFrame(frame);
+
+    if (panelCandidate && panelCandidate.parentNode) {
+      // Caso problemático de Moodle: .moodle-media-block > panel gris 100% > img.
+      // Movemos el panel gris completo dentro del marco redimensionable.
+      panelCandidate.parentNode.insertBefore(frame, panelCandidate);
+      frame.appendChild(panelCandidate);
+      styleImagePanel(panelCandidate);
+    } else {
+      // Imagen suelta: creamos panel gris normal dentro del marco.
+      const imagePanel = document.createElement('div');
+      styleImagePanel(imagePanel);
+      parent.insertBefore(frame, img);
+      frame.appendChild(imagePanel);
+      imagePanel.appendChild(img);
+    }
+
+    styleImage(img, frame.style.width ? 'scaled' : 'auto');
     return frame;
   }
 
   function getImgContainer(el) {
     if (!el || (el.getAttribute && el.getAttribute('contenteditable') === 'true')) return null;
-    if (isGeneratedCaption(el)) return null;
+    if (isCaptionLike(el)) return null;
     const img = closestImage(el) || (el.querySelector ? el.querySelector('img') : null);
     if (!img || !editor.contains(img)) return null;
     return ensureResizableFrame(img);
@@ -2111,29 +2167,16 @@ setTimeout(syncPreviewExportClasses, 0);
     const size = btn.dataset.size;
     const img = _target.querySelector('img');
 
-    _target.style.display = 'inline-block';
-    _target.style.boxSizing = 'border-box';
+    styleResizableFrame(_target);
 
     if (size === 'auto') {
       _target.style.width = '';
       _target.style.maxWidth = '100%';
-      if (img) {
-        img.style.width = 'auto';
-        img.style.maxWidth = '100%';
-        img.style.height = 'auto';
-        img.style.marginLeft = 'auto';
-        img.style.marginRight = 'auto';
-      }
+      styleImage(img, 'auto');
     } else {
       _target.style.width = size;
       _target.style.maxWidth = '100%';
-      if (img) {
-        img.style.width = '100%';
-        img.style.maxWidth = '100%';
-        img.style.height = 'auto';
-        img.style.marginLeft = 'auto';
-        img.style.marginRight = 'auto';
-      }
+      styleImage(img, 'scaled');
     }
 
     toolbar.querySelectorAll('.img-size-btn').forEach(b => b.classList.toggle('active', b === btn));
