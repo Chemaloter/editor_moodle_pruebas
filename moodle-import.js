@@ -319,14 +319,71 @@
   }
 
   function normalizeImportedMedia(root) {
-    root.querySelectorAll('img,iframe,video,audio').forEach(function (media) {
+    function cssText(el) {
+      return String((el && el.getAttribute && el.getAttribute('style')) || '').toLowerCase().replace(/\s+/g, '');
+    }
+
+    function hasResizableImageFrame(img) {
+      const block = img.closest('.moodle-media-block');
+      if (!block) return false;
+      let node = img.parentElement;
+      while (node && node !== block) {
+        if (node.tagName === 'DIV' && cssText(node).includes('display:inline-block')) return true;
+        node = node.parentElement;
+      }
+      return false;
+    }
+
+    function normalizeImage(img) {
+      if (!img.getAttribute('alt')) img.setAttribute('alt', 'Imagen');
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.boxSizing = 'border-box';
+      img.style.display = 'block';
+      img.style.marginLeft = 'auto';
+      img.style.marginRight = 'auto';
+
+      if (hasResizableImageFrame(img)) return;
+
+      let block = img.closest('.moodle-media-block');
+      if (!block) {
+        block = document.createElement('div');
+        block.className = 'moodle-media-block';
+        img.parentNode.insertBefore(block, img);
+        block.appendChild(img);
+      }
+      block.setAttribute('style', 'text-align:center;margin:20px auto;width:100%;max-width:1000px;box-sizing:border-box;border:none;background:transparent;box-shadow:none;border-radius:0;padding:0;overflow:visible;');
+
+      const parent = img.parentNode;
+      const parentStyle = cssText(parent);
+      const parentLooksLikePanel = parent && parent !== block && parent.tagName === 'DIV' && (
+        parentStyle.includes('background:#f0f0f0') ||
+        parentStyle.includes('background-color:#f0f0f0') ||
+        parentStyle.includes('padding:16px') ||
+        parentStyle.includes('text-align:center')
+      );
+
+      const frame = document.createElement('div');
+      frame.setAttribute('style', 'display:inline-block;width:100%;max-width:100%;background:#fff;border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;');
+
+      if (parentLooksLikePanel) {
+        parent.parentNode.insertBefore(frame, parent);
+        frame.appendChild(parent);
+        parent.setAttribute('style', 'text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;');
+      } else {
+        const panel = document.createElement('div');
+        panel.setAttribute('style', 'text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;');
+        img.parentNode.insertBefore(frame, img);
+        frame.appendChild(panel);
+        panel.appendChild(img);
+      }
+    }
+
+    root.querySelectorAll('img').forEach(normalizeImage);
+
+    root.querySelectorAll('iframe,video,audio').forEach(function (media) {
       media.style.maxWidth = '100%';
       media.style.boxSizing = 'border-box';
-
-      if (media.tagName.toLowerCase() === 'img' && !media.getAttribute('alt')) {
-        media.setAttribute('alt', 'Imagen');
-      }
-
       if (!media.closest('.moodle-media-block')) {
         const wrapper = document.createElement('div');
         wrapper.className = 'moodle-media-block';
