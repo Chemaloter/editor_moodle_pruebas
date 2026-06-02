@@ -1937,17 +1937,21 @@ function syncPreviewExportClasses() {
   if (!editor) return;
   Array.from(editor.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
+
     el.classList.remove('moodle-content-block', 'moodle-media-block-preview');
+
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
     const hasMedia = !!(el.querySelector && el.querySelector('img,iframe,video,audio,table'));
-    const isImageMediaBlock = el.classList.contains('moodle-media-block')
-      && !!el.querySelector('img')
-      && !el.querySelector('iframe,video,audio,table');
 
-    if (isImageMediaBlock) {
-      // Las imágenes ya tienen una tarjeta interna redimensionable.
-      // No añadimos moodle-media-block-preview porque esa clase pinta
-      // un marco grande de 1000px alrededor de la imagen en la vista editor.
+    const isPureImageMediaBlock =
+      el.classList.contains('moodle-media-block') &&
+      !!el.querySelector('img') &&
+      !el.querySelector('iframe,video,audio,table');
+
+    if (isPureImageMediaBlock) {
+      // Las imágenes ya tienen su propia tarjeta interna redimensionable.
+      // No añadimos moodle-media-block-preview porque esa clase pinta un
+      // marco grande de 1000px alrededor de la imagen en la vista del editor.
       el.style.textAlign = 'center';
       el.style.width = '100%';
       el.style.maxWidth = EXPORT_MEDIA_MAX;
@@ -1980,12 +1984,12 @@ setTimeout(syncPreviewExportClasses, 0);
 //  INPUT FILE
 // ══════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════
-//  IMAGE SIZE TOOLBAR · v7.2
+//  IMAGE SIZE TOOLBAR · v7.3
 //  Corrige imágenes recuperadas desde Moodle:
 //  - el ancho se aplica al marco interno redimensionable;
 //  - si Moodle devuelve una imagen dentro de un panel gris grande, el panel
 //    se mete dentro del marco, en vez de crear un marco dentro del panel;
-//  - el contenedor exterior .moodle-media-block queda neutro a 1000px y sin clase de marco grande.
+//  - el contenedor exterior .moodle-media-block queda neutro a 1000px.
 // ══════════════════════════════════════════════════════════════
 (function() {
   let _target = null;
