@@ -227,18 +227,21 @@
   }
 
   function removeEditorGeneratedBanners(root) {
-    Array.from(root.querySelectorAll('div')).forEach(function (el) {
+    Array.from(root.querySelectorAll('div,p,section,article')).forEach(function (el) {
       if (!el.parentNode) return;
       const text = compactText(el.textContent || '');
       const style = String(el.getAttribute('style') || '').toLowerCase().replace(/\s+/g, '');
-
-      const isBanner =
-        style.includes('border:2pxsolid#c0272d') &&
+      const hasInstitutionalText =
         text.includes('cuerpo de bomberos') &&
         text.includes('comunidad de madrid') &&
         text.includes('área de formación');
-
-      if (isBanner) el.remove();
+      const hasBannerLook =
+        style.includes('border:2pxsolid#c0272d') ||
+        style.includes('border:2pxsolidrgb(192,39,45)') ||
+        style.includes('background:#f9f9f9') ||
+        style.includes('background:rgb(249,249,249)') ||
+        !!el.querySelector('img[alt*="Escudo"], img[alt*="Bomberos"]');
+      if (hasInstitutionalText && hasBannerLook) el.remove();
     });
   }
 
@@ -325,40 +328,87 @@
         .toLowerCase()
         .replace(/\s+/g, '');
     }
-
-    function isPanel(el) {
-      if (!el || el.nodeType !== 1 || el.tagName !== 'DIV') return false;
+    function compact(txt) {
+      return String(txt || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+    function isEscudoOrBannerImage(img) {
+      const alt = compact(img.getAttribute('alt') || '');
+      if (alt.includes('escudo') || alt.includes('bomberos')) return true;
+      const box = img.closest('div,p,section,article');
+      const text = compact(box ? box.textContent : '');
+      return text.includes('cuerpo de bomberos') && text.includes('comunidad de madrid') && text.includes('área de formación');
+    }
+    function looksLikeImagePanel(el) {
+      if (!el || el.nodeType !== 1 || !el.querySelector || !el.querySelector('img')) return false;
       const s = cssText(el);
-      return el.querySelector('img') && (
+      const tag = el.tagName;
+      return (tag === 'DIV' || tag === 'P' || tag === 'FIGURE') && (
+        el.classList.contains('moodle-media-block') ||
         s.includes('background:#f0f0f0') ||
         s.includes('background-color:#f0f0f0') ||
+        s.includes('background:rgb(240,240,240)') ||
         s.includes('padding:16px') ||
-        s.includes('text-align:center')
+        s.includes('display:inline-block') ||
+        s.includes('border:1pxsolid#d1d1d1') ||
+        s.includes('border:1pxsolidrgb(209,209,209)') ||
+        s.includes('box-shadow') ||
+        s.includes('max-width:1000px') ||
+        s.includes('text-align:center') ||
+        s.includes('margin:20px') ||
+        s.includes('margin:24px')
       );
     }
-
-    function isCard(el) {
-      if (!el || el.nodeType !== 1 || el.tagName !== 'DIV') return false;
-      const s = cssText(el);
-      return el.querySelector('img') &&
-        s.includes('display:inline-block') &&
-        (s.includes('border:1pxsolid#d1d1d1') || s.includes('box-shadow'));
+    function hasMeaningfulTextOutsideImages(el) {
+      if (!el) return false;
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('img,iframe,video,audio,table').forEach(function(n){ n.remove(); });
+      // El pie de foto no debe impedir la normalización.
+      clone.querySelectorAll('div,span,p').forEach(function(n){
+        const st = cssText(n);
+        if (st.includes('border-top:1pxsolid#d1d1d1') || st.includes('hazclicparaescribireltítulo')) n.remove();
+      });
+      return compact(clone.textContent).length > 120;
     }
-
-    function isOuter(el) {
-      if (!el || el.nodeType !== 1 || el.tagName !== 'DIV') return false;
-      const s = cssText(el);
-      return el.querySelector('img') &&
-        (s.includes('max-width:1000px') || s.includes('margin:24pxauto') || s.includes('text-align:center'));
+    function findVisualRoot(img) {
+      let node = img.parentElement;
+      let candidate = null;
+      while (node && node !== root && node !== document.body) {
+        if (node.nodeType === 1 && looksLikeImagePanel(node) && !hasMeaningfulTextOutsideImages(node)) {
+          candidate = node;
+          node = node.parentElement;
+          continue;
+        }
+        break;
+      }
+      return candidate;
     }
-
-    function readWidth(el) {
-      const raw = String((el && el.getAttribute && el.getAttribute('style')) || '');
-      const m = raw.match(/width\s*:\s*(100%|75%|50%|auto|[0-9.]+%)/i);
-      return m ? m[1] : '100%';
+    function readWidth(img, visualRoot) {
+      let node = img.parentElement;
+      while (node && node !== visualRoot.parentElement) {
+        if (node.nodeType === 1) {
+          const raw = String(node.getAttribute('style') || '');
+          const m = raw.match(/width\s*:\s*(100%|75%|50%|auto|[0-9.]+%)/i);
+          if (m && m[1] !== '1000px') return m[1];
+        }
+        node = node.parentElement;
+      }
+      return '100%';
     }
-
-    function styleImportedImage(img, widthMode) {
+    function collectCaptionNodes(visualRoot) {
+      const captions = [];
+      if (!visualRoot) return captions;
+      visualRoot.querySelectorAll('div,figcaption,p').forEach(function(el){
+        if (el.querySelector('img,iframe,video,audio,table')) return;
+        const st = cssText(el);
+        const txt = compact(el.textContent);
+        if (!txt) return;
+        if (st.includes('border-top:1pxsolid#d1d1d1') || st.includes('background:#f9f9f9') || st.includes('background:rgb(249,249,249)') || el.tagName === 'FIGCAPTION') {
+          captions.push(el);
+        }
+      });
+      return captions.slice(0, 1);
+    }
+    function styleImportedImage(img, mode) {
       if (!img.getAttribute('alt')) img.setAttribute('alt', 'Imagen');
       img.style.maxWidth = '100%';
       img.style.height = 'auto';
@@ -367,99 +417,44 @@
       img.style.marginLeft = 'auto';
       img.style.marginRight = 'auto';
       img.style.boxSizing = 'border-box';
-      img.style.width = widthMode === 'auto' ? 'auto' : '100%';
+      img.style.width = mode === 'auto' ? 'auto' : '100%';
     }
-
     function buildCanonicalImageBlock(img, width, captionNodes) {
       const cleanImg = img.cloneNode(true);
       styleImportedImage(cleanImg, width === 'auto' ? 'auto' : 'scaled');
-
       const block = document.createElement('div');
       block.className = 'moodle-media-block';
       block.setAttribute('style', 'text-align:center;margin:20px auto;width:100%;max-width:1000px;box-sizing:border-box;border:none;background:transparent;box-shadow:none;border-radius:0;padding:0;overflow:visible;');
-
       const frame = document.createElement('div');
       frame.setAttribute('style', 'display:inline-block;width:' + width + ';max-width:100%;background:#fff;border:1px solid #d1d1d1;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;');
-
       const panel = document.createElement('div');
       panel.setAttribute('style', 'text-align:center;background:#f0f0f0;padding:16px;box-sizing:border-box;');
-
       panel.appendChild(cleanImg);
       frame.appendChild(panel);
-
-      (captionNodes || []).forEach(function (n) {
+      (captionNodes || []).forEach(function(n){
         const clone = n.cloneNode(true);
-        clone.querySelectorAll('[contenteditable]').forEach(function (el) { el.removeAttribute('contenteditable'); });
+        clone.querySelectorAll('[contenteditable]').forEach(function(el){ el.removeAttribute('contenteditable'); });
+        clone.setAttribute('style', 'padding:12px 16px;background:#f9f9f9;border-top:1px solid #d1d1d1;text-align:center;box-sizing:border-box;');
         frame.appendChild(clone);
       });
-
       block.appendChild(frame);
       return block;
     }
-
-    function alreadyHasResizableFrame(img) {
-      const block = img.closest('.moodle-media-block');
-      if (!block) return false;
-      let node = img.parentElement;
-      while (node && node !== block) {
-        if (node.tagName === 'DIV' && cssText(node).includes('display:inline-block')) return true;
-        node = node.parentElement;
-      }
-      return false;
-    }
-
-    function canonicalizeLegacyEditorCard(img) {
-      if (!root.contains(img)) return false;
-
-      const block = img.closest('.moodle-media-block');
-      if (!block) return false;
-
-      const panel = block.parentElement;
-      const card = panel && panel.parentElement;
-      const outer = card && card.parentElement;
-
-      // Caso exacto detectado en el HTML de Moodle:
-      // outer 1000px > card inline-block > panel gris > moodle-media-block > img
-      if (isPanel(panel) && isCard(card) && isOuter(outer)) {
-        const width = readWidth(card);
-        const captions = Array.from(card.children).filter(function (child) {
-          return child !== panel && child.nodeType === 1 && !child.querySelector('img');
-        });
+    function normalizeOneImage(img) {
+      if (!root.contains(img) || isEscudoOrBannerImage(img)) return;
+      const visualRoot = findVisualRoot(img);
+      if (visualRoot) {
+        const width = readWidth(img, visualRoot);
+        const captions = collectCaptionNodes(visualRoot);
         const canonical = buildCanonicalImageBlock(img, width, captions);
-        outer.replaceWith(canonical);
-        return true;
-      }
-
-      return false;
-    }
-
-    function normalizePlainImage(img) {
-      if (!root.contains(img)) return;
-      if (canonicalizeLegacyEditorCard(img)) return;
-      if (alreadyHasResizableFrame(img)) {
-        styleImportedImage(img, 'scaled');
-        const block = img.closest('.moodle-media-block');
-        if (block) {
-          block.setAttribute('style', 'text-align:center;margin:20px auto;width:100%;max-width:1000px;box-sizing:border-box;border:none;background:transparent;box-shadow:none;border-radius:0;padding:0;overflow:visible;');
-        }
+        visualRoot.replaceWith(canonical);
         return;
       }
-
-      let block = img.closest('.moodle-media-block');
-      if (!block) {
-        block = document.createElement('div');
-        block.className = 'moodle-media-block';
-        img.parentNode.insertBefore(block, img);
-        block.appendChild(img);
-      }
-
       const canonical = buildCanonicalImageBlock(img, '100%', []);
-      block.replaceWith(canonical);
+      img.replaceWith(canonical);
     }
 
-    // Importante: trabajamos sobre una copia estática porque al reemplazar nodos
-    // cambia el árbol DOM durante el recorrido.
-    Array.from(root.querySelectorAll('img')).forEach(normalizePlainImage);
+    Array.from(root.querySelectorAll('img')).forEach(normalizeOneImage);
 
     root.querySelectorAll('iframe,video,audio').forEach(function (media) {
       media.style.maxWidth = '100%';
@@ -476,63 +471,18 @@
 
 
   function normalizeImportedLayout(root) {
-    function normStyle(el) {
-      return String((el && el.getAttribute && el.getAttribute('style')) || '')
-        .toLowerCase()
-        .replace(/\s+/g, '');
-    }
-    function isHeadingInner(el) {
-      const s = normStyle(el);
-      return s.includes('background-color:#c0272d') ||
-             s.includes('background:#c0272d') ||
-             s.includes('background-color:#8e1b1f') ||
-             s.includes('background:#8e1b1f') ||
-             s.includes('background-color:#fff0f0') ||
-             s.includes('background:#fff0f0') ||
-             s.includes('border-bottom:2pxsolid#e8b4b5');
-    }
-    function isHeadingWrapper(el) {
-      return !!(el && el.nodeType === 1 && el.tagName === 'DIV' && el.firstElementChild && isHeadingInner(el.firstElementChild));
-    }
     function setContentBox(el, marginY) {
       if (!el || !el.style || el.closest('td,th')) return;
-      el.style.width = '100%';
-      el.style.maxWidth = '800px';
-      el.style.marginLeft = 'auto';
-      el.style.marginRight = 'auto';
-      el.style.marginTop = marginY || '14px';
-      el.style.marginBottom = marginY || '14px';
+      el.style.width = '100%'; el.style.maxWidth = '800px';
+      el.style.marginLeft = 'auto'; el.style.marginRight = 'auto';
+      el.style.marginTop = marginY || '14px'; el.style.marginBottom = marginY || '14px';
       el.style.boxSizing = 'border-box';
     }
-    function setMediaBox(el, marginY) {
-      if (!el || !el.style || el.closest('td,th')) return;
-      el.style.width = '100%';
-      el.style.maxWidth = '1000px';
-      el.style.marginLeft = 'auto';
-      el.style.marginRight = 'auto';
-      el.style.marginTop = marginY || '20px';
-      el.style.marginBottom = marginY || '20px';
-      el.style.boxSizing = 'border-box';
-    }
-
-    root.querySelectorAll('div').forEach(function (el) {
-      if (isHeadingWrapper(el)) setContentBox(el, '12px');
-    });
-    Array.from(root.children).forEach(function (el) {
+    Array.from(root.children).forEach(function(el){
       if (!el || el.nodeType !== 1) return;
       const tag = el.tagName.toLowerCase();
-      const hasMedia = !!(el.querySelector && el.querySelector('img,iframe,video,audio,table'));
-      if (isHeadingWrapper(el)) { setContentBox(el, '12px'); return; }
-      if (tag === 'p' || tag === 'ul' || tag === 'ol') { setContentBox(el, tag === 'p' ? '14px' : '18px'); return; }
-      if (tag === 'table') { setMediaBox(el, '24px'); return; }
-      if ((tag === 'div' || tag === 'p') && hasMedia) { setMediaBox(el, '24px'); return; }
-      if (tag === 'div') {
-        const first = el.firstElementChild;
-        const style = el.getAttribute('style') || '';
-        const firstStyle = first ? (first.getAttribute('style') || '') : '';
-        const isTextualBlock = style.includes('margin:') || firstStyle.includes('display:inline-block') || firstStyle.includes('display:block') || el.classList.contains('sequence-block');
-        if (isTextualBlock) setContentBox(el, '24px');
-      }
+      if (tag === 'p' || tag === 'ul' || tag === 'ol') setContentBox(el, tag === 'p' ? '14px' : '18px');
+      if (tag === 'div' && !el.querySelector('img,iframe,video,audio,table')) setContentBox(el, '24px');
     });
   }
 
