@@ -2659,3 +2659,205 @@ document.getElementById('maniobrasModal').addEventListener('click', e => {
   editor.addEventListener('click', function(){ window.normalizeImportedImageCardsInEditor(editor); }, true);
   editor.addEventListener('input', function(){ window.normalizeImportedImageCardsInEditor(editor); }, true);
 })();
+
+
+/* ============================================================
+   PARCHE v7.6 · PEGADO NEUTRO DENTRO DE BLOQUES DEL EDITOR
+   Objetivo:
+   - Si se pega texto/HTML dentro de un bloque contenteditable del editor
+     (H1-H6, objetivo, aviso, info, consejo, paso, cita, extra,
+     práctica, definición, pies de recurso, etc.), se pega como texto
+     limpio y hereda SIEMPRE el estilo del bloque contenedor.
+   - También limpia estilos inline residuales que el navegador pueda crear
+     al escribir/pegar dentro de esos bloques.
+   ============================================================ */
+(function(){
+  if (!window.editor) return;
+
+  const BLOCK_INLINE_SELECTOR = [
+    'span','font','strong','b','em','i','u','a','code','mark','small','big',
+    'sub','sup','div','p','section','article','header','footer','h1','h2','h3','h4','h5','h6',
+    'ul','ol','li'
+  ].join(',');
+
+  function closestElement(node) {
+    if (!node) return null;
+    return node.nodeType === 1 ? node : node.parentElement;
+  }
+
+  function getEditableHost(node) {
+    const el = closestElement(node);
+    if (!el || !editor.contains(el)) return null;
+    const host = el.closest('[contenteditable="true"]');
+    if (!host || host === editor || !editor.contains(host)) return null;
+    return host;
+  }
+
+  function isEditorManagedTextBlock(host) {
+    if (!host || host === editor || !editor.contains(host)) return false;
+    // Tablas y listas mantienen comportamiento propio: nuevos <li>, celdas, etc.
+    if (host.closest('td,th,li')) return false;
+    if (host.closest('.sequence-block') && /^(H4|P)$/.test(host.tagName || '')) return true;
+    return host.getAttribute('contenteditable') === 'true';
+  }
+
+  function htmlToPlainText(html) {
+    if (!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.querySelectorAll('script,style,link,meta,title,object,embed,iframe,img,table').forEach(n => n.remove());
+    tmp.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    tmp.querySelectorAll('p,div,section,article,header,footer,h1,h2,h3,h4,h5,h6,li').forEach(el => {
+      if (!el.nextSibling || el.nextSibling.nodeType !== 3 || !/^\n/.test(el.nextSibling.textContent || '')) {
+        el.appendChild(document.createTextNode('\n'));
+      }
+    });
+    return (tmp.textContent || '')
+      .replace(/\u00a0/g, ' ')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function textFromClipboard(e) {
+    const cd = e.clipboardData || window.clipboardData;
+    if (!cd) return '';
+    const plain = cd.getData('text/plain');
+    if (plain && plain.trim()) return plain.replace(/\u00a0/g, ' ');
+    const html = cd.getData('text/html');
+    return htmlToPlainText(html);
+  }
+
+  function insertPlainTextAtSelection(text) {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return false;
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    const frag = document.createDocumentFragment();
+    const normalized = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = normalized.split('\n');
+    lines.forEach((line, idx) => {
+      if (idx > 0) frag.appendChild(document.createElement('br'));
+      if (line) frag.appendChild(document.createTextNode(line));
+    });
+    const marker = document.createTextNode('');
+    frag.appendChild(marker);
+    range.insertNode(frag);
+    const r = document.createRange();
+    r.setStartAfter(marker);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+    marker.remove();
+    return true;
+  }
+
+  function caretOffsetWithin(root) {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return null;
+    const range = sel.getRangeAt(0);
+    if (!root.contains(range.startContainer)) return null;
+    const pre = range.cloneRange();
+    pre.selectNodeContents(root);
+    pre.setEnd(range.startContainer, range.startOffset);
+    return pre.toString().length;
+  }
+
+  function restoreCaretFromOffset(root, offset) {
+    if (offset == null) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    let current = 0;
+    let node;
+    while ((node = walker.nextNode())) {
+      const len = node.textContent.length;
+      if (current + len >= offset) {
+        const r = document.createRange();
+        r.setStart(node, Math.max(0, Math.min(len, offset - current)));
+        r.collapse(true);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+        return;
+      }
+      current += len;
+    }
+    const r = document.createRange();
+    r.selectNodeContents(root);
+    r.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+
+  function plainFragmentFromNode(node, addLeadingBreak) {
+    const frag = document.createDocumentFragment();
+    if (addLeadingBreak) frag.appendChild(document.createElement('br'));
+    Array.from(node.childNodes).forEach(child => {
+      if (child.nodeType === 3) {
+        frag.appendChild(document.createTextNode(child.textContent || ''));
+      } else if (child.nodeType === 1) {
+        const tag = child.tagName.toLowerCase();
+        if (tag === 'br') {
+          frag.appendChild(document.createElement('br'));
+        } else if (child.matches('img,iframe,video,audio,table')) {
+          // No se permiten recursos dentro de bloques de texto: se descartan.
+        } else {
+          frag.appendChild(plainFragmentFromNode(child, false));
+          if (/^(div|p|section|article|header|footer|h1|h2|h3|h4|h5|h6|li)$/i.test(tag)) {
+            frag.appendChild(document.createElement('br'));
+          }
+        }
+      }
+    });
+    return frag;
+  }
+
+  function normalizeManagedBlockContent(host) {
+    if (!isEditorManagedTextBlock(host)) return;
+    if (!host.querySelector(BLOCK_INLINE_SELECTOR + ', img,iframe,video,audio,table')) return;
+    const offset = caretOffsetWithin(host);
+    const frag = document.createDocumentFragment();
+    Array.from(host.childNodes).forEach((child, idx) => {
+      if (child.nodeType === 3) {
+        frag.appendChild(document.createTextNode(child.textContent || ''));
+      } else if (child.nodeType === 1) {
+        const tag = child.tagName.toLowerCase();
+        if (tag === 'br') frag.appendChild(document.createElement('br'));
+        else frag.appendChild(plainFragmentFromNode(child, idx > 0 && /^(div|p|h1|h2|h3|h4|h5|h6|li)$/i.test(tag)));
+      }
+    });
+    host.replaceChildren(frag);
+    // Evita acumulación de <br> al final tras convertir bloques pegados.
+    while (host.lastChild && host.lastChild.nodeType === 1 && host.lastChild.tagName === 'BR' &&
+           host.lastChild.previousSibling && host.lastChild.previousSibling.nodeType === 1 && host.lastChild.previousSibling.tagName === 'BR') {
+      host.lastChild.remove();
+    }
+    restoreCaretFromOffset(host, offset);
+  }
+
+  editor.addEventListener('paste', function(e) {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const host = getEditableHost(sel.getRangeAt(0).startContainer);
+    if (!isEditorManagedTextBlock(host)) return;
+
+    const text = textFromClipboard(e);
+    if (!text) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (typeof saveBlockUndo === 'function') saveBlockUndo();
+    insertPlainTextAtSelection(text);
+    normalizeManagedBlockContent(host);
+    if (typeof captureEditorCursor === 'function') captureEditorCursor();
+    editor.dispatchEvent(new Event('input', { bubbles:true }));
+    if (typeof refreshOutput === 'function') refreshOutput();
+  }, true);
+
+  editor.addEventListener('input', function(e) {
+    const host = getEditableHost(e.target);
+    if (!isEditorManagedTextBlock(host)) return;
+    normalizeManagedBlockContent(host);
+  }, true);
+})();
+
