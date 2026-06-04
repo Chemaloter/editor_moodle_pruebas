@@ -65,6 +65,8 @@ const EXPORT_MEDIA_MAX   = "1000px";
 const EXPORT_TEXT_MAX    = "800px";
 const EXPORT_TEXT_STYLE  = "font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.8;color:#2d2d2d;margin:14px auto;max-width:" + EXPORT_TEXT_MAX + ";width:100%;box-sizing:border-box;";
 const EXPORT_UL_STYLE    = EXPORT_TEXT_STYLE + "padding-left:28px;";
+window.EXPORT_CONTENT_MAX = EXPORT_CONTENT_MAX;
+window.EXPORT_MEDIA_MAX = EXPORT_MEDIA_MAX;
 function setExportBox(el, maxWidth, topBottom) {
   if (!el || !el.style) return;
   el.style.maxWidth = maxWidth || EXPORT_CONTENT_MAX;
@@ -76,56 +78,84 @@ function setExportBox(el, maxWidth, topBottom) {
   el.style.boxSizing = 'border-box';
 }
 function applyOptimizedReadingWidthForExport(clone) {
-  // Criterio único:
-  // - Texto, títulos, listas y bloques institucionales: 800px.
-  // - Recursos visuales: imágenes, vídeos, PDF, presentaciones, audio y tablas: 1000px.
+  const CONTENT_MAX = typeof EXPORT_CONTENT_MAX !== 'undefined' ? EXPORT_CONTENT_MAX : '800px';
+  const MEDIA_MAX = typeof EXPORT_MEDIA_MAX !== 'undefined' ? EXPORT_MEDIA_MAX : '1000px';
+
+  function norm(el) { return String((el && el.getAttribute && el.getAttribute('style')) || '').toLowerCase().replace(/\s+/g, ''); }
+  function hasMedia(el) { return !!(el && el.querySelector && el.querySelector('img,iframe,video,audio,table')); }
+  function isHeadingInner(el) {
+    const s = norm(el);
+    return s.includes('background-color:#c0272d') || s.includes('background:#c0272d') ||
+           s.includes('background-color:#8e1b1f') || s.includes('background:#8e1b1f') ||
+           s.includes('background-color:#fff0f0') || s.includes('background:#fff0f0') ||
+           s.includes('border-bottom:2pxsolid#e8b4b5') ||
+           s.includes('color:#c0272d') && s.includes('font-weight:700');
+  }
+  function isSpecialText(el) {
+    const s = norm(el);
+    return ['#2e7d32','#7b1fa2','#f59e0b','#1d4ed8','#0d9488','#4338ca','#0f766e','#94a3b8','#6b7280','#eeeeee'].some(m => s.includes(m));
+  }
+  function isTextual(el) {
+    if (!el || el.nodeType !== 1 || el.closest('td,th')) return false;
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'p' || tag === 'ul' || tag === 'ol' || tag === 'hr') return true;
+    if (tag === 'div') {
+      const first = el.firstElementChild;
+      if (first && isHeadingInner(first)) return true;
+      if (isSpecialText(el) || el.classList.contains('sequence-block')) return true;
+      if (!hasMedia(el) && (norm(el).includes('margin:') || norm(el).includes('max-width:800px'))) return true;
+    }
+    return false;
+  }
+  function setBox(el, max, my) {
+    if (!el || !el.style || el.closest('td,th')) return;
+    el.style.width = '100%';
+    el.style.maxWidth = max;
+    el.style.marginLeft = 'auto';
+    el.style.marginRight = 'auto';
+    if (my) { el.style.marginTop = my; el.style.marginBottom = my; }
+    el.style.boxSizing = 'border-box';
+  }
+
+  clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+  clone.querySelectorAll('img,iframe,video,audio,table').forEach(el => {
+    if (!el.style || el.closest('td,th')) return;
+    el.style.maxWidth = '100%';
+    el.style.boxSizing = 'border-box';
+  });
+
   clone.querySelectorAll('p').forEach(el => {
     if (el.closest('td,th')) return;
     if (el.querySelector('img,iframe,video,audio,table,div,section,article,figure,blockquote,ul,ol,hr')) return;
     el.setAttribute('style', EXPORT_TEXT_STYLE);
   });
-  clone.querySelectorAll('ul').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
-  clone.querySelectorAll('ol').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
-  clone.querySelectorAll('img,iframe,video,audio,table').forEach(el => {
-    if (!el || !el.style || el.closest('td,th')) return;
-    el.style.maxWidth = '100%';
-    el.style.boxSizing = 'border-box';
+  clone.querySelectorAll('ul,ol').forEach(el => {
+    if (el.closest('td,th')) return;
+    el.setAttribute('style', EXPORT_UL_STYLE);
+    setBox(el, CONTENT_MAX, '18px');
   });
+
+  clone.querySelectorAll('div').forEach(el => {
+    if (el.closest('td,th')) return;
+    const first = el.firstElementChild;
+    if (first && isHeadingInner(first)) setBox(el, CONTENT_MAX, '12px');
+    if (isSpecialText(el) && !hasMedia(el)) setBox(el, CONTENT_MAX, '14px');
+    if (el.classList.contains('sequence-block')) setBox(el, CONTENT_MAX, '24px');
+  });
+
   Array.from(clone.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
     const tag = el.tagName.toLowerCase();
-    const hasMedia = !!(el.querySelector && el.querySelector('img,iframe,video,audio,table'));
-    if (tag === 'table') { setExportBox(el, EXPORT_MEDIA_MAX, '24px'); return; }
-    if ((tag === 'div' || tag === 'p') && el.querySelector('table')) {
-      if (!el.style.overflowX) el.style.overflowX = 'auto';
-      setExportBox(el, EXPORT_MEDIA_MAX, '24px');
+    if (hasMedia(el) || tag === 'table' || el.classList.contains('moodle-media-block')) {
+      setBox(el, MEDIA_MAX, '24px');
+      if ((tag === 'div' || tag === 'p') && el.querySelector('table') && !el.style.overflowX) el.style.overflowX = 'auto';
       return;
     }
-    if ((tag === 'div' || tag === 'p') && hasMedia) { setExportBox(el, EXPORT_MEDIA_MAX, '24px'); return; }
-    if (tag === 'ul' || tag === 'ol') { setExportBox(el, EXPORT_CONTENT_MAX, '18px'); return; }
-    if (tag === 'hr') { setExportBox(el, EXPORT_CONTENT_MAX, '20px'); return; }
-    if (tag === 'div') {
-      const first = el.firstElementChild;
-      const style = el.getAttribute('style') || '';
-      const firstStyle = first ? (first.getAttribute('style') || '') : '';
-      const isTextualBlock = style.includes('margin:') || firstStyle.includes('display:inline-block') || firstStyle.includes('display:block') || el.classList.contains('sequence-block');
-      if (isTextualBlock) setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+    if (isTextual(el)) {
+      setBox(el, CONTENT_MAX, tag === 'hr' ? '20px' : (tag === 'ul' || tag === 'ol' ? '18px' : '14px'));
+      return;
     }
-  });
-  clone.querySelectorAll('.sequence-block').forEach(el => setExportBox(el, EXPORT_CONTENT_MAX, '24px'));
-  // Bloques especiales por color: mantienen 800px aunque estén dentro de un contenedor mayor.
-  const markers = ['#2e7d32','#7b1fa2','#f59e0b','#1d4ed8','#0d9488','#4338ca','#0f766e','#94a3b8','#6b7280'];
-  clone.querySelectorAll('div').forEach(el => {
-    const s = (el.getAttribute('style') || '').toLowerCase();
-    if (!markers.some(m => s.includes(m))) return;
-    if (el.closest('td,th')) return;
-    el.style.display = 'block';
-    el.style.width = '100%';
-    el.style.maxWidth = EXPORT_CONTENT_MAX;
-    el.style.marginLeft = 'auto';
-    el.style.marginRight = 'auto';
-    el.style.boxSizing = 'border-box';
-    el.style.overflowWrap = 'anywhere';
+    if (tag === 'div' || tag === 'p' || tag === 'section' || tag === 'article' || tag === 'blockquote') setBox(el, CONTENT_MAX, '14px');
   });
 }
 
@@ -312,7 +342,7 @@ function convertWordBody(body) {
       if (lvl > 0) {
         const content = getInline(node).replace(/[\r\n]+/g, ' ').replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
         if (content) {
-          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
+          out += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
           if (lvl===1) st.h1++; else if (lvl===2) st.h2++; else if (lvl===3) st.h3++; else st.h4++;
         }
         i++; continue;
@@ -344,7 +374,7 @@ function convertWordBody(body) {
         out += '</' + lt + '>\n'; st.li++;
         continue;
       }
-      if (tag === 'table') { out += '<div style="overflow-x:auto;margin:12px 0;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
+      if (tag === 'table') { out += '<div class="moodle-media-block" data-editor-block="media" style="overflow-x:auto;margin:24px auto;width:100%;max-width:' + EXPORT_MEDIA_MAX + ';box-sizing:border-box;">' + procTable(node) + '</div>\n'; st.tb++; i++; continue; }
       if (tag === 'img') {
         const src = node.getAttribute('src') || '';
         const alt = node.getAttribute('alt') || '';
@@ -379,7 +409,7 @@ function convertWordBody(body) {
         }
         const hLvl = detectHeadingHeuristic(node);
         if (hLvl > 0) {
-          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
+          out += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
           if (hLvl===1) st.h1++; else if (hLvl===2) st.h2++; else if (hLvl===3) st.h3++; else st.h4++;
         } else {
           out += '<p style="' + EX.p + '">' + content + '</p>\n';
@@ -818,7 +848,7 @@ function addBlock(type) {
 
     // 3. Montamos el bloque completo
     html = `
-      <div class="sequence-block" style="margin:30px 0;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+      <div class="sequence-block" data-editor-block="text" style="max-width:800px;width:100%;margin:30px auto;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;">
         <div style="width:100%;max-width:none;margin:0;background-color: #ffffff; padding: 10px;">
           <div style="border: 1px solid #eee; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
             <p style="color: #c0272d; font-size: 0.80rem; text-transform: uppercase; margin-bottom: 25px; font-weight: 800; letter-spacing: 1.5px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: inline-block;">
@@ -830,19 +860,20 @@ function addBlock(type) {
       </div><p><br></p>`;
 
   } else if (cfg.isSep) {
-    html = '<hr style="' + EX.divider + '">';
+    html = '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">';
   } else if (cfg.isList) {
-    html = '<ul style="' + EX.ul + '"><li style="' + EX.li + '">Elemento 1</li><li style="' + EX.li + '">Elemento 2</li><li style="' + EX.li + '">Elemento 3</li></ul>';
+    html = '<ul data-editor-block="text" style="' + EX.ul + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:14px auto;box-sizing:border-box;"><li style="' + EX.li + '">Elemento 1</li><li style="' + EX.li + '">Elemento 2</li><li style="' + EX.li + '">Elemento 3</li></ul>';
   } else if (cfg.isDef) {
-    html = '<div style="margin:16px 0;">'
+    html = '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">'
          + '<div style="' + EX.defterm + '" contenteditable="true">Término o concepto</div>'
          + '<div style="' + EX.defbody + '" contenteditable="true">Escribe aquí la definición o explicación del término.</div>'
          + '</div>';
   } else {
-    html = '<div style="margin:12px 0;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
+    html = '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
   }
   
   insertHTMLAtCursor(html);
+  setTimeout(() => { if (typeof normalizeEditorVisualGrid === 'function') normalizeEditorVisualGrid(editor); }, 0);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1935,44 +1966,25 @@ tableObserver.observe(editor, { childList: true, subtree: true });
 // ══════════════════════════════════════════════════════════════
 function syncPreviewExportClasses() {
   if (!editor) return;
+  if (typeof normalizeEditorVisualGrid === 'function') {
+    normalizeEditorVisualGrid(editor);
+    return;
+  }
   Array.from(editor.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
-
     el.classList.remove('moodle-content-block', 'moodle-media-block-preview');
-
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
     const hasMedia = !!(el.querySelector && el.querySelector('img,iframe,video,audio,table'));
-
-    const isPureImageMediaBlock =
-      el.classList.contains('moodle-media-block') &&
-      !!el.querySelector('img') &&
-      !el.querySelector('iframe,video,audio,table');
-
+    const isPureImageMediaBlock = el.classList.contains('moodle-media-block') && !!el.querySelector('img') && !el.querySelector('iframe,video,audio,table');
     if (isPureImageMediaBlock) {
-      // Las imágenes ya tienen su propia tarjeta interna redimensionable.
-      // No añadimos moodle-media-block-preview porque esa clase pinta un
-      // marco grande de 1000px alrededor de la imagen en la vista del editor.
-      el.style.textAlign = 'center';
-      el.style.width = '100%';
-      el.style.maxWidth = EXPORT_MEDIA_MAX;
-      el.style.marginLeft = 'auto';
-      el.style.marginRight = 'auto';
-      el.style.boxSizing = 'border-box';
-      el.style.border = 'none';
-      el.style.background = 'transparent';
-      el.style.backgroundColor = 'transparent';
-      el.style.boxShadow = 'none';
-      el.style.borderRadius = '0';
-      el.style.padding = '0';
-      el.style.overflow = 'visible';
+      el.style.textAlign = 'center'; el.style.width = '100%'; el.style.maxWidth = EXPORT_MEDIA_MAX;
+      el.style.marginLeft = 'auto'; el.style.marginRight = 'auto'; el.style.boxSizing = 'border-box';
+      el.style.border = 'none'; el.style.background = 'transparent'; el.style.backgroundColor = 'transparent';
+      el.style.boxShadow = 'none'; el.style.borderRadius = '0'; el.style.padding = '0'; el.style.overflow = 'visible';
       return;
     }
-
-    if (tag === 'table' || hasMedia || el.classList.contains('moodle-media-block')) {
-      el.classList.add('moodle-media-block-preview');
-    } else {
-      el.classList.add('moodle-content-block');
-    }
+    if (tag === 'table' || hasMedia || el.classList.contains('moodle-media-block')) el.classList.add('moodle-media-block-preview');
+    else el.classList.add('moodle-content-block');
   });
 }
 const previewExportObserver = new MutationObserver(() => syncPreviewExportClasses());
@@ -2859,5 +2871,112 @@ document.getElementById('maniobrasModal').addEventListener('click', e => {
     if (!isEditorManagedTextBlock(host)) return;
     normalizeManagedBlockContent(host);
   }, true);
+})();
+
+
+/* ============================================================
+   PARCHE v7.7 · RETÍCULA VISUAL UNIVERSAL DEL EDITOR
+   Garantiza que absolutamente todos los elementos insertables del editor
+   respeten el mismo carril visual:
+   - Texto, encabezados, listas, separadores, definiciones y bloques didácticos: 800px.
+   - Imágenes, tablas, vídeos, PDF, presentaciones y audio: 1000px.
+   ============================================================ */
+(function(){
+  if (!window.editor) return;
+  const CONTENT_MAX = typeof EXPORT_CONTENT_MAX !== 'undefined' ? EXPORT_CONTENT_MAX : '800px';
+  const MEDIA_MAX = typeof EXPORT_MEDIA_MAX !== 'undefined' ? EXPORT_MEDIA_MAX : '1000px';
+  let locked = false;
+
+  function norm(el){ return String((el && el.getAttribute && el.getAttribute('style')) || '').toLowerCase().replace(/\s+/g,''); }
+  function hasMedia(el){ return !!(el && el.querySelector && el.querySelector('img,iframe,video,audio,table')); }
+  function isPureImageBlock(el){ return el && el.classList && el.classList.contains('moodle-media-block') && el.querySelector('img') && !el.querySelector('iframe,video,audio,table'); }
+  function isHeadingInner(el){
+    const s = norm(el);
+    return s.includes('background-color:#c0272d') || s.includes('background:#c0272d') ||
+           s.includes('background-color:#8e1b1f') || s.includes('background:#8e1b1f') ||
+           s.includes('background-color:#fff0f0') || s.includes('background:#fff0f0') ||
+           s.includes('border-bottom:2pxsolid#e8b4b5');
+  }
+  function isSpecialText(el){
+    const s = norm(el);
+    return ['#2e7d32','#7b1fa2','#f59e0b','#1d4ed8','#0d9488','#4338ca','#0f766e','#94a3b8','#6b7280','#eeeeee'].some(m => s.includes(m));
+  }
+  function setBox(el, max, my){
+    if (!el || !el.style || el.closest('td,th')) return;
+    el.style.width = '100%';
+    el.style.maxWidth = max;
+    el.style.marginLeft = 'auto';
+    el.style.marginRight = 'auto';
+    if (my) { el.style.marginTop = my; el.style.marginBottom = my; }
+    el.style.boxSizing = 'border-box';
+  }
+  function setTextBox(el, my){
+    el.classList.remove('moodle-media-block-preview');
+    el.classList.add('moodle-content-block');
+    setBox(el, CONTENT_MAX, my || '14px');
+  }
+  function setMediaBox(el, my){
+    el.classList.remove('moodle-content-block');
+    if (!isPureImageBlock(el)) el.classList.add('moodle-media-block-preview');
+    setBox(el, MEDIA_MAX, my || '24px');
+  }
+  function isHeadingWrapper(el){ return !!(el && el.tagName === 'DIV' && el.firstElementChild && isHeadingInner(el.firstElementChild)); }
+  function isTextualWrapper(el){
+    if (!el || el.nodeType !== 1 || el.closest('td,th')) return false;
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'p' || tag === 'ul' || tag === 'ol' || tag === 'hr') return true;
+    if (isHeadingWrapper(el) || isSpecialText(el) || el.classList.contains('sequence-block')) return true;
+    if (tag === 'div' && !hasMedia(el)) {
+      const first = el.firstElementChild;
+      if (first && (isHeadingInner(first) || isSpecialText(first))) return true;
+      const s = norm(el);
+      return s.includes('max-width:800px') || s.includes('margin:') || s.includes('border-left') || s.includes('background-color');
+    }
+    return false;
+  }
+
+  window.normalizeEditorVisualGrid = function(root){
+    if (locked) return;
+    locked = true;
+    try {
+      root = root || editor;
+      Array.from(root.children).forEach(el => {
+        if (!el || el.nodeType !== 1) return;
+        el.classList.remove('moodle-content-block','moodle-media-block-preview');
+        const tag = el.tagName.toLowerCase();
+        const media = hasMedia(el) || tag === 'table' || el.classList.contains('moodle-media-block');
+        if (media) {
+          setMediaBox(el, '24px');
+          if (isPureImageBlock(el)) {
+            el.style.textAlign = 'center';
+            el.style.border = 'none'; el.style.background = 'transparent'; el.style.backgroundColor = 'transparent';
+            el.style.boxShadow = 'none'; el.style.borderRadius = '0'; el.style.padding = '0'; el.style.overflow = 'visible';
+          }
+          if ((tag === 'div' || tag === 'p') && el.querySelector('table') && !el.style.overflowX) el.style.overflowX = 'auto';
+          return;
+        }
+        if (isTextualWrapper(el)) {
+          setTextBox(el, tag === 'hr' ? '20px' : (tag === 'ul' || tag === 'ol' ? '18px' : '14px'));
+          return;
+        }
+        if (tag === 'div' || tag === 'p' || tag === 'section' || tag === 'article' || tag === 'blockquote') setTextBox(el, '14px');
+      });
+    } finally { locked = false; }
+  };
+
+  const oldInsert = window.insertHTMLAtCursor || (typeof insertHTMLAtCursor === 'function' ? insertHTMLAtCursor : null);
+  if (oldInsert && !oldInsert.__gridWrapped) {
+    const wrapped = function(html){
+      const result = oldInsert.apply(this, arguments);
+      setTimeout(() => window.normalizeEditorVisualGrid(editor), 0);
+      return result;
+    };
+    wrapped.__gridWrapped = true;
+    window.insertHTMLAtCursor = wrapped;
+    try { insertHTMLAtCursor = wrapped; } catch(e) {}
+  }
+
+  editor.addEventListener('input', () => window.normalizeEditorVisualGrid(editor), true);
+  setTimeout(() => window.normalizeEditorVisualGrid(editor), 0);
 })();
 
