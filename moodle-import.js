@@ -180,6 +180,7 @@
     cleanImportedAttributes(root);
     normalizeImportedTables(root);
     normalizeImportedMedia(root);
+    normalizeImportedLayout(root);
     normalizeInvalidParagraphs(root);
     removeEmptyNeutralSpans(root);
 
@@ -469,6 +470,68 @@
         wrapper.setAttribute('style', 'width:100%;max-width:1000px;margin:20px auto;box-sizing:border-box;text-align:center;');
         media.parentNode.insertBefore(wrapper, media);
         wrapper.appendChild(media);
+      }
+    });
+  }
+
+
+  function normalizeImportedLayout(root) {
+    function normStyle(el) {
+      return String((el && el.getAttribute && el.getAttribute('style')) || '')
+        .toLowerCase()
+        .replace(/\s+/g, '');
+    }
+    function isHeadingInner(el) {
+      const s = normStyle(el);
+      return s.includes('background-color:#c0272d') ||
+             s.includes('background:#c0272d') ||
+             s.includes('background-color:#8e1b1f') ||
+             s.includes('background:#8e1b1f') ||
+             s.includes('background-color:#fff0f0') ||
+             s.includes('background:#fff0f0') ||
+             s.includes('border-bottom:2pxsolid#e8b4b5');
+    }
+    function isHeadingWrapper(el) {
+      return !!(el && el.nodeType === 1 && el.tagName === 'DIV' && el.firstElementChild && isHeadingInner(el.firstElementChild));
+    }
+    function setContentBox(el, marginY) {
+      if (!el || !el.style || el.closest('td,th')) return;
+      el.style.width = '100%';
+      el.style.maxWidth = '800px';
+      el.style.marginLeft = 'auto';
+      el.style.marginRight = 'auto';
+      el.style.marginTop = marginY || '14px';
+      el.style.marginBottom = marginY || '14px';
+      el.style.boxSizing = 'border-box';
+    }
+    function setMediaBox(el, marginY) {
+      if (!el || !el.style || el.closest('td,th')) return;
+      el.style.width = '100%';
+      el.style.maxWidth = '1000px';
+      el.style.marginLeft = 'auto';
+      el.style.marginRight = 'auto';
+      el.style.marginTop = marginY || '20px';
+      el.style.marginBottom = marginY || '20px';
+      el.style.boxSizing = 'border-box';
+    }
+
+    root.querySelectorAll('div').forEach(function (el) {
+      if (isHeadingWrapper(el)) setContentBox(el, '12px');
+    });
+    Array.from(root.children).forEach(function (el) {
+      if (!el || el.nodeType !== 1) return;
+      const tag = el.tagName.toLowerCase();
+      const hasMedia = !!(el.querySelector && el.querySelector('img,iframe,video,audio,table'));
+      if (isHeadingWrapper(el)) { setContentBox(el, '12px'); return; }
+      if (tag === 'p' || tag === 'ul' || tag === 'ol') { setContentBox(el, tag === 'p' ? '14px' : '18px'); return; }
+      if (tag === 'table') { setMediaBox(el, '24px'); return; }
+      if ((tag === 'div' || tag === 'p') && hasMedia) { setMediaBox(el, '24px'); return; }
+      if (tag === 'div') {
+        const first = el.firstElementChild;
+        const style = el.getAttribute('style') || '';
+        const firstStyle = first ? (first.getAttribute('style') || '') : '';
+        const isTextualBlock = style.includes('margin:') || firstStyle.includes('display:inline-block') || firstStyle.includes('display:block') || el.classList.contains('sequence-block');
+        if (isTextualBlock) setContentBox(el, '24px');
       }
     });
   }

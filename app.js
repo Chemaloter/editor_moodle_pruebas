@@ -76,9 +76,46 @@ function setExportBox(el, maxWidth, topBottom) {
   el.style.boxSizing = 'border-box';
 }
 function applyOptimizedReadingWidthForExport(clone) {
-  // Criterio único:
-  // - Texto, títulos, listas y bloques institucionales: 800px.
-  // - Recursos visuales: imágenes, vídeos, PDF, presentaciones, audio y tablas: 1000px.
+  function styleTextBox(el, topBottom) {
+    if (!el || !el.style || el.closest('td,th')) return;
+    el.style.width = '100%';
+    el.style.maxWidth = EXPORT_CONTENT_MAX;
+    el.style.marginLeft = 'auto';
+    el.style.marginRight = 'auto';
+    el.style.marginTop = topBottom || '14px';
+    el.style.marginBottom = topBottom || '14px';
+    el.style.boxSizing = 'border-box';
+  }
+  function styleMediaBox(el, topBottom) {
+    if (!el || !el.style || el.closest('td,th')) return;
+    el.style.width = '100%';
+    el.style.maxWidth = EXPORT_MEDIA_MAX;
+    el.style.marginLeft = 'auto';
+    el.style.marginRight = 'auto';
+    el.style.marginTop = topBottom || '20px';
+    el.style.marginBottom = topBottom || '20px';
+    el.style.boxSizing = 'border-box';
+  }
+  function normStyle(el) {
+    return String((el && el.getAttribute && el.getAttribute('style')) || '').toLowerCase().replace(/\s+/g, '');
+  }
+  function isHeadingInner(el) {
+    if (!el || el.nodeType !== 1) return false;
+    const s = normStyle(el);
+    return s.includes('background-color:#c0272d') ||
+           s.includes('background:#c0272d') ||
+           s.includes('background-color:#8e1b1f') ||
+           s.includes('background:#8e1b1f') ||
+           s.includes('background-color:#fff0f0') ||
+           s.includes('background:#fff0f0') ||
+           s.includes('border-bottom:2pxsolid#e8b4b5');
+  }
+  function isHeadingWrapper(el) {
+    if (!el || el.nodeType !== 1 || el.tagName.toLowerCase() !== 'div') return false;
+    const first = el.firstElementChild;
+    return !!(first && isHeadingInner(first));
+  }
+
   clone.querySelectorAll('p').forEach(el => {
     if (el.closest('td,th')) return;
     if (el.querySelector('img,iframe,video,audio,table,div,section,article,figure,blockquote,ul,ol,hr')) return;
@@ -86,34 +123,44 @@ function applyOptimizedReadingWidthForExport(clone) {
   });
   clone.querySelectorAll('ul').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
   clone.querySelectorAll('ol').forEach(el => { if (!el.closest('td,th')) el.setAttribute('style', EXPORT_UL_STYLE); });
+
   clone.querySelectorAll('img,iframe,video,audio,table').forEach(el => {
     if (!el || !el.style || el.closest('td,th')) return;
     el.style.maxWidth = '100%';
     el.style.boxSizing = 'border-box';
   });
+
+  clone.querySelectorAll('div').forEach(el => {
+    if (el.closest('td,th')) return;
+    if (isHeadingWrapper(el)) styleTextBox(el, '12px');
+  });
+
   Array.from(clone.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
     const tag = el.tagName.toLowerCase();
     const hasMedia = !!(el.querySelector && el.querySelector('img,iframe,video,audio,table'));
-    if (tag === 'table') { setExportBox(el, EXPORT_MEDIA_MAX, '24px'); return; }
+    if (isHeadingWrapper(el)) { styleTextBox(el, '12px'); return; }
+    if (tag === 'table') { styleMediaBox(el, '24px'); return; }
     if ((tag === 'div' || tag === 'p') && el.querySelector('table')) {
       if (!el.style.overflowX) el.style.overflowX = 'auto';
-      setExportBox(el, EXPORT_MEDIA_MAX, '24px');
+      styleMediaBox(el, '24px');
       return;
     }
-    if ((tag === 'div' || tag === 'p') && hasMedia) { setExportBox(el, EXPORT_MEDIA_MAX, '24px'); return; }
-    if (tag === 'ul' || tag === 'ol') { setExportBox(el, EXPORT_CONTENT_MAX, '18px'); return; }
-    if (tag === 'hr') { setExportBox(el, EXPORT_CONTENT_MAX, '20px'); return; }
+    if ((tag === 'div' || tag === 'p') && hasMedia) { styleMediaBox(el, '24px'); return; }
+    if (tag === 'ul' || tag === 'ol') { styleTextBox(el, '18px'); return; }
+    if (tag === 'hr') { styleTextBox(el, '20px'); return; }
+    if (tag === 'p') { styleTextBox(el, '14px'); return; }
     if (tag === 'div') {
       const first = el.firstElementChild;
       const style = el.getAttribute('style') || '';
       const firstStyle = first ? (first.getAttribute('style') || '') : '';
       const isTextualBlock = style.includes('margin:') || firstStyle.includes('display:inline-block') || firstStyle.includes('display:block') || el.classList.contains('sequence-block');
-      if (isTextualBlock) setExportBox(el, EXPORT_CONTENT_MAX, '24px');
+      if (isTextualBlock) styleTextBox(el, '24px');
     }
   });
-  clone.querySelectorAll('.sequence-block').forEach(el => setExportBox(el, EXPORT_CONTENT_MAX, '24px'));
-  // Bloques especiales por color: mantienen 800px aunque estén dentro de un contenedor mayor.
+
+  clone.querySelectorAll('.sequence-block').forEach(el => styleTextBox(el, '24px'));
+
   const markers = ['#2e7d32','#7b1fa2','#f59e0b','#1d4ed8','#0d9488','#4338ca','#0f766e','#94a3b8','#6b7280'];
   clone.querySelectorAll('div').forEach(el => {
     const s = (el.getAttribute('style') || '').toLowerCase();
@@ -312,7 +359,7 @@ function convertWordBody(body) {
       if (lvl > 0) {
         const content = getInline(node).replace(/[\r\n]+/g, ' ').replace(/^[\s\r\n]+|[\s\r\n]+$/g, '');
         if (content) {
-          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
+          out += '<div style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;"><div style="' + EX['h'+lvl] + '">' + content + '</div></div>\n';
           if (lvl===1) st.h1++; else if (lvl===2) st.h2++; else if (lvl===3) st.h3++; else st.h4++;
         }
         i++; continue;
@@ -379,7 +426,7 @@ function convertWordBody(body) {
         }
         const hLvl = detectHeadingHeuristic(node);
         if (hLvl > 0) {
-          out += '<div style="margin:12px 0 8px 0;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
+          out += '<div style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;"><div style="' + EX['h'+hLvl] + '">' + content + '</div></div>\n';
           if (hLvl===1) st.h1++; else if (hLvl===2) st.h2++; else if (hLvl===3) st.h3++; else st.h4++;
         } else {
           out += '<p style="' + EX.p + '">' + content + '</p>\n';
@@ -839,7 +886,7 @@ function addBlock(type) {
          + '<div style="' + EX.defbody + '" contenteditable="true">Escribe aquí la definición o explicación del término.</div>'
          + '</div>';
   } else {
-    html = '<div style="margin:12px 0;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
+    html = '<div style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
   }
   
   insertHTMLAtCursor(html);
@@ -1935,23 +1982,39 @@ tableObserver.observe(editor, { childList: true, subtree: true });
 // ══════════════════════════════════════════════════════════════
 function syncPreviewExportClasses() {
   if (!editor) return;
+  function normStyle(el) {
+    return String((el && el.getAttribute && el.getAttribute('style')) || '').toLowerCase().replace(/\s+/g, '');
+  }
+  function isHeadingWrapper(el) {
+    const first = el && el.firstElementChild;
+    if (!first) return false;
+    const s = normStyle(first);
+    return s.includes('background-color:#c0272d') ||
+           s.includes('background:#c0272d') ||
+           s.includes('background-color:#8e1b1f') ||
+           s.includes('background:#8e1b1f') ||
+           s.includes('background-color:#fff0f0') ||
+           s.includes('background:#fff0f0') ||
+           s.includes('border-bottom:2pxsolid#e8b4b5');
+  }
   Array.from(editor.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
-
     el.classList.remove('moodle-content-block', 'moodle-media-block-preview');
-
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
     const hasMedia = !!(el.querySelector && el.querySelector('img,iframe,video,audio,table'));
+    const isPureImageMediaBlock = el.classList.contains('moodle-media-block') && !!el.querySelector('img') && !el.querySelector('iframe,video,audio,table');
 
-    const isPureImageMediaBlock =
-      el.classList.contains('moodle-media-block') &&
-      !!el.querySelector('img') &&
-      !el.querySelector('iframe,video,audio,table');
+    if (isHeadingWrapper(el)) {
+      el.classList.add('moodle-content-block');
+      el.style.width = '100%';
+      el.style.maxWidth = EXPORT_CONTENT_MAX;
+      el.style.marginLeft = 'auto';
+      el.style.marginRight = 'auto';
+      el.style.boxSizing = 'border-box';
+      return;
+    }
 
     if (isPureImageMediaBlock) {
-      // Las imágenes ya tienen su propia tarjeta interna redimensionable.
-      // No añadimos moodle-media-block-preview porque esa clase pinta un
-      // marco grande de 1000px alrededor de la imagen en la vista del editor.
       el.style.textAlign = 'center';
       el.style.width = '100%';
       el.style.maxWidth = EXPORT_MEDIA_MAX;
