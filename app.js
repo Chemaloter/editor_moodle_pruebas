@@ -2473,7 +2473,9 @@ document.getElementById('maniobrasModal').addEventListener('click', e => {
    ============================================================ */
 (function(){
   if (typeof buildFinalHTML !== 'function') return;
-  const __buildFinalHTML_v68 = buildFinalHTML;
+  const __buildFinalHTML_v68 = (typeof buildFinalHTML_PATCH_v631 === 'function')
+  ? buildFinalHTML_PATCH_v631
+  : buildFinalHTML;
   function softenTablesInHtml(html) {
     if (!html || html.indexOf('<table') === -1) return html;
     const tmp = document.createElement('div');
