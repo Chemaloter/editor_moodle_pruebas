@@ -2274,7 +2274,7 @@ document.getElementById('maniobrasModal').addEventListener('click', e => {
   }
 
   // Reemplaza buildFinalHTML conservando los <br> introducidos por el usuario.
-  buildFinalHTML = function() {
+  function buildFinalHTML_PATCH_v631() {
     const clone = editor.cloneNode(true);
 
     if (typeof cleanExportAttributes === 'function') cleanExportAttributes(clone);
