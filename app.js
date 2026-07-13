@@ -1521,12 +1521,7 @@ function buildFinalHTML() {
   html = html.replace(/ style="outline: none; cursor: text;"/gi, '');
   html = html.replace(/\sclass=""/gi, '');
   html = html.replace(/<p><br><\/p>/gi, '<p>&nbsp;</p>');
-  const PLACEHOLDER = '\x00BR\x00';
-  html = html.replace(/(<t[dh][^>]*>[\s\S]*?<\/t[dh]>)/gi, match =>
-    match.replace(/<br\s*\/?\>/gi, PLACEHOLDER)
-  );
-  html = html.replace(/<br\s*\/?\>/gi, '');
-  html = html.replace(/\x00BR\x00/g, '<br>');
+html = html.replace(/<br\s*\/?>/gi, '<br>');
   html = html.trim();
   if (html && html !== '<p>&nbsp;</p>') {
     const includeBanner = document.getElementById('toggle-banner')?.checked !== false;
