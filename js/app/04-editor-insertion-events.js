@@ -111,10 +111,41 @@ function placeCaretAtStart(node) {
   selection.addRange(range);
 }
 
+function placeCaretAfter(node) {
+  const range = document.createRange();
+  range.setStartAfter(node);
+  range.collapse(true);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
 function ensureParagraphBeforeDirectTyping(event) {
-  if (!event || !['insertText', 'insertCompositionText'].includes(event.inputType)) return;
+  if (!event || !['insertText', 'insertFromComposition'].includes(event.inputType)) return;
   if (!isEditorVisuallyEmpty()) return;
 
+  const insertedText = typeof event.data === 'string' ? event.data : '';
+  if (!insertedText) return;
+
+  // Chrome calcula el destino de la escritura antes de ejecutar beforeinput.
+  // Por eso no basta con crear un párrafo y mover la selección: hay que cancelar
+  // la inserción nativa e insertar manualmente el primer texto en el nuevo <p>.
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  saveBlockUndo();
+
+  const paragraph = createPlainEditorParagraph();
+  const textNode = document.createTextNode(insertedText);
+  paragraph.appendChild(textNode);
+  editor.replaceChildren(paragraph);
+  placeCaretAfter(textNode);
+  savedRange = null;
+  captureEditorCursor();
+  editor.dispatchEvent(new Event('input', { bubbles:true }));
+}
+
+function prepareParagraphForComposition() {
+  if (!isEditorVisuallyEmpty()) return;
   const paragraph = createPlainEditorParagraph();
   editor.replaceChildren(paragraph);
   placeCaretAtStart(paragraph);
@@ -171,6 +202,7 @@ function splitPlainParagraphOnEnter(event) {
 }
 
 editor.addEventListener('beforeinput', ensureParagraphBeforeDirectTyping, true);
+editor.addEventListener('compositionstart', prepareParagraphForComposition, true);
 editor.addEventListener('keydown', splitPlainParagraphOnEnter, true);
 
 // ══════════════════════════════════════════════════════════════
