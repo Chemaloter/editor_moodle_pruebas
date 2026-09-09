@@ -63,7 +63,9 @@ function captureEditorCursor() {
 }
 
 editor.addEventListener('keydown', captureEditorCursor, true);
+editor.addEventListener('keyup', captureEditorCursor, true);
 editor.addEventListener('mouseup', captureEditorCursor, true);
+editor.addEventListener('input', captureEditorCursor, true);
 
 document.querySelectorAll('.btn-action, .btn-copy').forEach(btn => {
   btn.addEventListener('mousedown', captureEditorCursor, true);
@@ -89,44 +91,67 @@ function saveBlockUndo() {
   snapshotUndo();
 }
 
+const UNDO_OBSERVER_OPTIONS = { childList: true, subtree: true, characterData: true };
 const undoObserver = new MutationObserver(() => {
   if (undoLocked) return;
   scheduleSnapshot();
 });
 
+function applyHistoryState(state) {
+  if (!state) return;
+  undoLocked = true;
+  undoObserver.disconnect();
+  editor.innerHTML = state.html;
+  savedRange = null;
+  undoObserver.observe(editor, UNDO_OBSERVER_OPTIONS);
+  undoLocked = false;
+  editor.focus();
+  setTimeout(() => {
+    restoreCursorPath(state.cursor);
+    captureEditorCursor();
+  }, 0);
+  refreshOutput();
+}
+
 function doUndo() {
   clearTimeout(undoTimer);
+  captureEditorCursor();
   const html = editor.innerHTML;
-  if (undoStack.length === 0 || undoStack[undoStack.length-1].html !== html) {
+  if (undoStack.length === 0 || undoStack[undoStack.length - 1].html !== html) {
     undoStack.push({ html, cursor: lastCursor });
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+  } else {
+    undoStack[undoStack.length - 1].cursor = lastCursor;
   }
   if (undoStack.length < 2) { editor.focus(); return; }
   const current = undoStack.pop();
   redoStack.push(current);
   const prev = undoStack[undoStack.length - 1];
-  undoLocked = true;
-  editor.innerHTML = prev.html;
-  savedRange = null;
-  undoLocked = false;
-  editor.focus();
-  setTimeout(() => restoreCursorPath(current.cursor), 0);
-  refreshOutput();
+  applyHistoryState(prev);
 }
 
 function doRedo() {
+  clearTimeout(undoTimer);
   if (redoStack.length === 0) { editor.focus(); return; }
+  captureEditorCursor();
+  const current = { html: editor.innerHTML, cursor: lastCursor };
+  if (undoStack.length === 0 || undoStack[undoStack.length - 1].html !== current.html) {
+    undoStack.push(current);
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+  } else {
+    undoStack[undoStack.length - 1].cursor = current.cursor;
+  }
   const next = redoStack.pop();
-  undoStack.push({ html: editor.innerHTML, cursor: lastCursor });
-  undoLocked = true;
-  editor.innerHTML = next.html;
-  savedRange = null;
-  undoLocked = false;
-  editor.focus();
-  setTimeout(() => restoreCursorPath(next.cursor), 0);
-  refreshOutput();
+  if (undoStack.length === 0 || undoStack[undoStack.length - 1].html !== next.html) {
+    undoStack.push(next);
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+  } else {
+    undoStack[undoStack.length - 1].cursor = next.cursor;
+  }
+  applyHistoryState(next);
 }
 
-undoObserver.observe(editor, { childList: true, subtree: true, characterData: true });
+undoObserver.observe(editor, UNDO_OBSERVER_OPTIONS);
 undoStack.push({ html: editor.innerHTML, cursor: null });
 
 document.querySelector('.toolbar').addEventListener('mousedown', function(e) {
