@@ -81,6 +81,99 @@ function buildStyledParagraphsFromPlainText(text) {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  ESCRITURA DIRECTA NORMALIZADA
+//  Garantiza que el primer carácter y cada Intro se escriban siempre
+//  dentro de párrafos institucionales, sin crear DIV centrados distintos.
+// ══════════════════════════════════════════════════════════════
+function isEditorVisuallyEmpty() {
+  const text = editor.textContent.replace(/\u00a0/g, ' ').trim();
+  const hasContent = !!editor.querySelector('img,iframe,video,audio,table,ul,ol,hr');
+  return !text && !hasContent;
+}
+
+function createPlainEditorParagraph(sourceParagraph) {
+  const paragraph = document.createElement('p');
+  paragraph.setAttribute(
+    'style',
+    sourceParagraph && sourceParagraph.getAttribute('style')
+      ? sourceParagraph.getAttribute('style')
+      : EXPORT_TEXT_STYLE
+  );
+  return paragraph;
+}
+
+function placeCaretAtStart(node) {
+  const range = document.createRange();
+  range.setStart(node, 0);
+  range.collapse(true);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function ensureParagraphBeforeDirectTyping(event) {
+  if (!event || !['insertText', 'insertCompositionText'].includes(event.inputType)) return;
+  if (!isEditorVisuallyEmpty()) return;
+
+  const paragraph = createPlainEditorParagraph();
+  editor.replaceChildren(paragraph);
+  placeCaretAtStart(paragraph);
+}
+
+function getTopLevelPlainParagraph(node) {
+  let element = node && node.nodeType === 1 ? node : node && node.parentElement;
+  if (!element || !editor.contains(element)) return null;
+
+  while (element.parentElement && element.parentElement !== editor) {
+    element = element.parentElement;
+  }
+
+  if (!element || element.parentElement !== editor || element.tagName !== 'P') return null;
+  if (element.querySelector('img,iframe,video,audio,table,ul,ol,div,section,article,figure,blockquote')) return null;
+  return element;
+}
+
+function splitPlainParagraphOnEnter(event) {
+  if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+
+  const selection = window.getSelection();
+  if (!selection || !selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  const paragraph = getTopLevelPlainParagraph(range.startContainer);
+  if (!paragraph || !paragraph.contains(range.endContainer)) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  saveBlockUndo();
+
+  range.deleteContents();
+
+  const tailRange = document.createRange();
+  tailRange.setStart(range.startContainer, range.startOffset);
+  tailRange.setEnd(paragraph, paragraph.childNodes.length);
+  const tail = tailRange.extractContents();
+
+  const nextParagraph = createPlainEditorParagraph(paragraph);
+  nextParagraph.appendChild(tail);
+
+  if (!paragraph.textContent.trim() && !paragraph.querySelector('br')) {
+    paragraph.appendChild(document.createElement('br'));
+  }
+  if (!nextParagraph.textContent.trim() && !nextParagraph.querySelector('br')) {
+    nextParagraph.appendChild(document.createElement('br'));
+  }
+
+  paragraph.parentNode.insertBefore(nextParagraph, paragraph.nextSibling);
+  placeCaretAtStart(nextParagraph);
+  captureEditorCursor();
+  editor.dispatchEvent(new Event('input', { bubbles:true }));
+}
+
+editor.addEventListener('beforeinput', ensureParagraphBeforeDirectTyping, true);
+editor.addEventListener('keydown', splitPlainParagraphOnEnter, true);
+
+// ══════════════════════════════════════════════════════════════
 //  EVENTOS DEL EDITOR
 // ══════════════════════════════════════════════════════════════
 editor.addEventListener('input', function() {
