@@ -22,8 +22,84 @@ const BLOCK_CFG = {
 sequence: { isSequence:true }, // <--- LÍNEA NUEVA
 };
 
+function getSelectedLinesForList(range) {
+  if (!range || range.collapsed || !editor.contains(range.commonAncestorContainer)) return [];
+
+  const fragment = range.cloneContents();
+  const temp = document.createElement('div');
+  temp.appendChild(fragment);
+
+  temp.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+  temp.querySelectorAll('p,div,li,h1,h2,h3,h4,h5,h6,section,article,blockquote').forEach(el => {
+    if (el.nextSibling) el.appendChild(document.createTextNode('\n'));
+  });
+
+  return (temp.textContent || '')
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => line.replace(/^[•·▪▫◦‣⁃\-*–—]+\s*/, '').replace(/^\d+[.)]\s*/, '').trim())
+    .filter(Boolean);
+}
+
+function convertSelectionToList(range) {
+  const lines = getSelectedLinesForList(range);
+  if (!lines.length) return false;
+
+  saveBlockUndo();
+
+  const list = document.createElement('ul');
+  list.setAttribute('data-editor-block', 'text');
+  list.setAttribute('style', EX.ul + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:14px auto;box-sizing:border-box;');
+
+  lines.forEach(line => {
+    const item = document.createElement('li');
+    item.setAttribute('style', EX.li);
+    item.textContent = line;
+    list.appendChild(item);
+  });
+
+  range.deleteContents();
+  range.insertNode(list);
+
+  const after = document.createElement('p');
+  after.innerHTML = '<br>';
+  list.parentNode.insertBefore(after, list.nextSibling);
+
+  const selection = window.getSelection();
+  const newRange = document.createRange();
+  newRange.setStart(after, 0);
+  newRange.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(newRange);
+  savedRange = null;
+  captureEditorCursor();
+  editor.dispatchEvent(new Event('input', { bubbles:true }));
+  if (typeof normalizeEditorVisualGrid === 'function') normalizeEditorVisualGrid(editor);
+  refreshOutput();
+  return true;
+}
+
 function addBlock(type) {
   const cfg = BLOCK_CFG[type]; if (!cfg) return;
+
+  if (cfg.isList) {
+    const selection = window.getSelection();
+    let listRange = null;
+    if (savedRange && !savedRange.collapsed && editor.contains(savedRange.commonAncestorContainer)) {
+      listRange = savedRange.cloneRange();
+    } else if (selection && selection.rangeCount > 0) {
+      const currentRange = selection.getRangeAt(0);
+      if (!currentRange.collapsed && editor.contains(currentRange.commonAncestorContainer)) {
+        listRange = currentRange.cloneRange();
+      }
+    }
+    if (listRange && convertSelectionToList(listRange)) return;
+  }
+
   saveBlockUndo(); // Guardamos el estado para que funcione el Ctrl+Z (Deshacer)
   let html = '';
 
