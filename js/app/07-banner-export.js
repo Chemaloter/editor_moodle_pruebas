@@ -236,11 +236,17 @@ function clearAll() {
 }
 
 async function copyHTML() {
+  const includeBanner = document.getElementById('toggle-banner')?.checked !== false;
   const areaSel = document.getElementById('area-select');
-  if (!areaSel || !areaSel.value) {
-    document.getElementById('moduleWarnModal').classList.add('open');
+
+  // El módulo solo es obligatorio cuando se exporta el documento completo,
+  // porque únicamente entonces se genera la cabecera y el pie institucional.
+  if (includeBanner && (!areaSel || !areaSel.value)) {
+    const warnModal = document.getElementById('moduleWarnModal');
+    if (warnModal) warnModal.classList.add('open');
     return;
   }
+
   const html = buildFinalHTML();
   if (!html) return;
   try {
