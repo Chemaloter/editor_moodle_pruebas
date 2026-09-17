@@ -553,53 +553,61 @@ function _pdfNormalizeLine(text) {
 // último recurso cuando el objeto font no está disponible.
 function _pdfIsBoldFont(fontName) {
   if (!fontName) return false;
-  return /bold|black|heavy|semibold|demibold|extrabold|ultrabold/i.test(fontName);
+  return /(?:^|[\s,+_-])(bold|black|heavy|semibold|semi-bold|demibold|demi-bold|extrabold|extra-bold|ultrabold|ultra-bold|medium)(?:$|[\s,+_-])/i.test(String(fontName))
+      || /(bold|black|heavy|semibold|demibold|extrabold|ultrabold|medium)/i.test(String(fontName));
 }
-
-// ✅ FIX BOLD-FONT-OBJ · decide si un font es bold usando el objeto
-// font resuelto (con .bold, .black, .name) y cae al heurístico sobre
-// el ID solo si el objeto no aporta información.
-function _pdfFontIsBold(font, fallbackName) {
+function _pdfFontIsBold(font, fallbackName, styleInfo) {
+  const candidates = [];
+  if (fallbackName) candidates.push(fallbackName);
   if (font) {
+    ['name','loadedName','fallbackName','fontFamily','baseFontName'].forEach(k => {
+      if (typeof font[k] === 'string') candidates.push(font[k]);
+    });
     if (font.bold === true || font.black === true) return true;
-    const name = typeof font.name === 'string' ? font.name : '';
-    if (/bold|black|heavy|semibold|demibold|extrabold|ultrabold/i.test(name)) return true;
-    // Si el objeto font existe y dice explícitamente que NO es bold,
-    // confiamos en él y no caemos a la heurística por ID.
-    if (font.bold === false || font.black === false) return false;
+    if (font.fontWeight != null && parseInt(font.fontWeight, 10) >= 600) return true;
   }
-  return _pdfIsBoldFont(fallbackName);
+  if (styleInfo) {
+    ['fontFamily','fontWeight'].forEach(k => {
+      if (styleInfo[k] != null) candidates.push(String(styleInfo[k]));
+    });
+  }
+  if (candidates.some(_pdfIsBoldFont)) return true;
+  if (font && (font.bold === false || font.black === false)) return false;
+  return false;
 }
-
-// ✅ FIX BOLD-FONT-OBJ · resuelve asíncronamente el objeto font para
-// un fontName dado. pdf.js lo expone en page.commonObjs (fuentes
-// compartidas entre páginas) o en page.objs (objetos locales).
 function _pdfResolveFont(page, name) {
   return new Promise(resolve => {
-    let done = false;
-    const finish = v => { if (!done && v) { done = true; resolve(v); } };
-    try { page.commonObjs.get(name, finish); } catch(e) {}
-    try { page.objs.get(name, finish); } catch(e) {}
-    setTimeout(() => { if (!done) { done = true; resolve(null); } }, 1500);
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      resolve(value || null);
+    };
+    function tryStore(store) {
+      if (!store || settled) return;
+      try {
+        const direct = store.get(name);
+        if (direct) { finish(direct); return; }
+      } catch(e) {}
+      try { store.get(name, finish); } catch(e) {}
+    }
+    tryStore(page.commonObjs);
+    tryStore(page.objs);
+    setTimeout(() => finish(null), 800);
   });
 }
-
-// ✅ FIX BOLD-FONT-OBJ · construye un Map { fontName → esBold } para
-// todos los fontName usados en los items de una página.
-async function _pdfBuildFontBoldMap(page, items) {
+async function _pdfBuildFontBoldMap(page, items, styles) {
   const names = new Set();
   (items || []).forEach(it => { if (it && it.fontName) names.add(it.fontName); });
   const map = new Map();
   for (const name of names) {
     const font = await _pdfResolveFont(page, name);
-    map.set(name, _pdfFontIsBold(font, name));
+    const styleInfo = styles && styles[name] ? styles[name] : null;
+    map.set(name, _pdfFontIsBold(font, name, styleInfo));
   }
-  if (window.PDF_DEBUG) {
-    console.log('[PDF] Font map:', Array.from(map.entries()));
-  }
+  if (window.PDF_DEBUG) console.log('[PDF] Font map:', Array.from(map.entries()));
   return map;
 }
-
 // ✅ FIX BULLET-SYMBOL + FIX BULLET-NO-SPACE
 // Lista de caracteres reconocidos como viñeta. Incluye:
 //  · Bullets Unicode estándar (•·▪▫◦‣⁃●○◆◇▶▷…)
@@ -664,80 +672,84 @@ function _pdfLooksLikeDefinitionLine(text) {
 // un `boldMap` { fontName → bool } construido por _pdfBuildFontBoldMap.
 // Si el map no trae el fontName, cae al heurístico por ID de fuente.
 function _pdfGroupItemsIntoLines(items, medianHeight, boldMap) {
-  const tolerance = Math.max(3, medianHeight * 0.45);
+  const tolerance = Math.max(2.5, medianHeight * 0.38);
   const sorted = items.slice().sort((a, b) => {
     const ya = (a.transform && a.transform[5]) || 0;
     const yb = (b.transform && b.transform[5]) || 0;
     if (Math.abs(ya - yb) > tolerance) return yb - ya;
-    const xa = (a.transform && a.transform[4]) || 0;
-    const xb = (b.transform && b.transform[4]) || 0;
-    return xa - xb;
+    return ((a.transform && a.transform[4]) || 0) - ((b.transform && b.transform[4]) || 0);
   });
-
-  const lines = [];
-  let current = null;
-
+  const groups = [];
   sorted.forEach(it => {
-    let rawText = it.str || '';
-    if (!rawText) return;
-    const hadLeading  = /^\s/.test(rawText);
-    const hadTrailing = /\s$/.test(rawText);
-    rawText = rawText.replace(/^\s+/, '').replace(/\s+$/, '');
-    if (!rawText) return;
-
+    const original = String(it.str || '');
+    if (!original.trim()) return;
     const y = (it.transform && it.transform[5]) || 0;
     const x = (it.transform && it.transform[4]) || 0;
-    const w = it.width || 0;
-    const h = it.height || medianHeight;
-
-    const bold = (boldMap && it.fontName && boldMap.has(it.fontName))
-      ? boldMap.get(it.fontName)
-      : _pdfIsBoldFont(it.fontName);
-
-    if (!current || Math.abs(current.y - y) > tolerance) {
-      if (current) lines.push(current);
-      current = {
-        y, x, xStart: x, xEnd: x + w, height: h,
-        parts: [{ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap: 0, bold }]
-      };
-    } else {
-      const gap = x - current.xEnd;
-      current.parts.push({ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap, bold });
-      current.xEnd = Math.max(current.xEnd, x + w);
-      current.height = Math.max(current.height, h);
+    const w = Math.abs(it.width || 0);
+    const h = Math.abs(it.height || medianHeight);
+    const bold = !!(boldMap && it.fontName && boldMap.get(it.fontName));
+    let line = groups.find(g => Math.abs(g.y - y) <= tolerance);
+    if (!line) {
+      line = { y, height:h, parts:[] };
+      groups.push(line);
     }
+    line.height = Math.max(line.height, h);
+    line.parts.push({ text:original, x, xEnd:x+w, width:w, bold });
   });
-  if (current) lines.push(current);
-
-  return lines
-    .map(l => {
-      let text = '';
-      let html = '';
-      l.parts.forEach((p, idx) => {
-        let sep = '';
-        if (idx > 0) {
-          const prev = l.parts[idx - 1];
-          if (p.hasLeading || prev.hasTrailing) sep = ' ';
-          else if (p.gap > (l.height || 12) * 0.15) sep = ' ';
-        }
-        text += sep + p.text;
-        const escaped = esc(p.text);
-        html += sep + (p.bold ? '<strong>' + escaped + '</strong>' : escaped);
-      });
-      // Limpieza del texto plano (para detección de encabezados, listas, etc.)
-      text = text
-        .replace(/\s+/g, ' ')
-        .replace(/\s+([,.;:!?»)\]])/g, '$1')
-        .replace(/([«¡¿(\[])\s+/g, '$1')
-        .replace(/\s+'/g, "'")
-        .trim();
-      // Limpieza ligera del html (colapsar espacios duplicados entre tags)
-      html = html.replace(/ {2,}/g, ' ').trim();
-      return { y: l.y, x: l.xStart, xEnd: l.xEnd, height: l.height, text, html };
-    })
-    .filter(l => l.text);
+  groups.sort((a,b) => b.y-a.y);
+  return groups.map(line => {
+    line.parts.sort((a,b) => a.x-b.x);
+    let text = '', html = '', xEnd = null;
+    let boldChars = 0, visibleChars = 0;
+    line.parts.forEach((part, idx) => {
+      const raw = part.text.replace(/^\s+|\s+$/g, '');
+      if (!raw) return;
+      let sep = '';
+      if (idx > 0) {
+        const prev = line.parts[idx-1];
+        const gap = part.x - (prev.xEnd || prev.x);
+        const explicitSpace = /\s$/.test(prev.text) || /^\s/.test(part.text);
+        const punctuationJoin = /^[,.;:!?%»)\]}]/.test(raw) || /[«¿¡([{/-]$/.test(text);
+        if (!punctuationJoin && (explicitSpace || gap > Math.max(1.2, line.height * 0.09))) sep = ' ';
+      }
+      text += sep + raw;
+      const safe = esc(raw);
+      html += sep + (part.bold ? '<strong style="font-weight:700;">' + safe + '</strong>' : safe);
+      const n = raw.replace(/\s/g,'').length;
+      visibleChars += n;
+      if (part.bold) boldChars += n;
+      xEnd = Math.max(xEnd == null ? part.xEnd : xEnd, part.xEnd);
+    });
+    text = text.replace(/\s+/g,' ').replace(/\s+([,.;:!?%»)\]}])/g,'$1').replace(/([«¿¡([{])\s+/g,'$1').trim();
+    html = html.replace(/ {2,}/g,' ').trim();
+    return {
+      y:line.y,
+      x:line.parts.length ? line.parts[0].x : 0,
+      xEnd:xEnd || 0,
+      height:line.height,
+      text,
+      html,
+      hasBold:boldChars > 0,
+      mostlyBold:visibleChars > 0 && boldChars / visibleChars >= 0.65
+    };
+  }).filter(line => line.text);
 }
-
+function _pdfStripBulletFromHtml(html) {
+  const box = document.createElement('div');
+  box.innerHTML = html || '';
+  const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    if (!node.textContent || !node.textContent.trim()) continue;
+    node.textContent = node.textContent
+      .replace(new RegExp('^[\\s\\u00a0]*[' + _PDF_BULLET_CHARS + '][\\s\\u00a0]*'), '')
+      .replace(/^[\s\u00a0]*\d{1,3}[.)][\s\u00a0]+/, '')
+      .replace(/^[\s\u00a0]*[a-z][.)][\s\u00a0]+/i, '')
+      .replace(/^[\s\u00a0]*[-–—*][\s\u00a0]+/, '');
+    break;
+  }
+  return box.innerHTML.trim();
+}
 function _pdfClassifyHeading(text, height, medianHeight) {
   const t = String(text || '').trim();
   if (!t) return 0;
@@ -778,104 +790,72 @@ function _pdfClassifyHeading(text, height, medianHeight) {
 function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   const blocks = [];
   let i = 0;
-
   while (i < lines.length) {
     const line = lines[i];
-    const text = line.text;
-
-    const headingLevel = _pdfClassifyHeading(text, line.height, medianHeight);
+    const headingLevel = _pdfClassifyHeading(line.text, line.height, medianHeight);
     if (headingLevel > 0) {
-      blocks.push({
-        type: 'heading',
-        level: headingLevel,
-        height: line.height,
-        text,
-        html: line.html || esc(text)
-      });
+      blocks.push({ type:'heading', level:headingLevel, height:line.height, text:line.text, html:line.html || esc(line.text) });
       i++;
       continue;
     }
-
-    // ✅ FIX BULLET-SYMBOL + FIX BULLET-NO-SPACE · ya detectamos
-    // el bullet correctamente tanto si va con espacio como si va
-    // pegado al texto. También se emite lista aunque tenga 1 solo
-    // ítem (antes caía al ramal de párrafo y dejaba "•" colgando).
-    const bullet = _pdfDetectBullet(text);
+    const bullet = _pdfDetectBullet(line.text);
     if (bullet) {
       const ordered = bullet.ordered;
-      const items = [bullet.text];
+      const baseX = line.x;
+      const items = [{ text:bullet.text, html:_pdfStripBulletFromHtml(line.html || esc(line.text)) }];
       let j = i + 1;
       while (j < lines.length) {
-        const b2 = _pdfDetectBullet(lines[j].text);
-        if (b2 && b2.ordered === ordered) { items.push(b2.text); j++; } else break;
+        const next = lines[j];
+        const nextBullet = _pdfDetectBullet(next.text);
+        if (nextBullet) {
+          if (nextBullet.ordered !== ordered) break;
+          items.push({ text:nextBullet.text, html:_pdfStripBulletFromHtml(next.html || esc(next.text)) });
+          j++;
+          continue;
+        }
+        const nextHeading = _pdfClassifyHeading(next.text, next.height, medianHeight) > 0;
+        const gap = lines[j-1].y - next.y;
+        const isContinuation = !nextHeading && gap <= medianLineGap * 1.45 && next.x > baseX + Math.max(6, medianHeight * 0.35);
+        if (!isContinuation) break;
+        const last = items[items.length-1];
+        const joinWithoutSpace = /-\s*$/.test(last.text) && /^[a-záéíóúüñ]/i.test(next.text);
+        last.text = joinWithoutSpace ? last.text.replace(/-\s*$/,'') + next.text : last.text + ' ' + next.text;
+        last.html = joinWithoutSpace ? last.html.replace(/-\s*$/,'') + (next.html || esc(next.text)) : last.html + ' ' + (next.html || esc(next.text));
+        j++;
       }
-      blocks.push({ type: 'list', ordered, items });
+      blocks.push({ type:'list', ordered, items });
       i = j;
       continue;
     }
-
-    const def = _pdfLooksLikeDefinitionLine(text);
+    const def = _pdfLooksLikeDefinitionLine(line.text);
     if (def) {
-      const items = [text];
+      const defs = [{text:line.text, html:line.html || esc(line.text)}];
       let j = i + 1;
-      while (j < lines.length) {
-        const def2 = _pdfLooksLikeDefinitionLine(lines[j].text);
-        if (!def2) break;
-        items.push(lines[j].text);
-        j++;
+      while (j < lines.length && _pdfLooksLikeDefinitionLine(lines[j].text)) {
+        defs.push({text:lines[j].text, html:lines[j].html || esc(lines[j].text)}); j++;
       }
-      if (items.length >= 3) {
-        blocks.push({ type: 'list', ordered: false, items });
-        i = j;
-        continue;
-      }
+      if (defs.length >= 3) { blocks.push({type:'list', ordered:false, items:defs}); i=j; continue; }
     }
-
-    const paragraphLines = [text];
-    const paragraphHtmls = [line.html || esc(text)];
-    const paragraphHasBold = [line.parts ? line.parts.some(p => p.bold) : false];
+    const paragraphLines = [line.text];
+    const paragraphHtmls = [line.html || esc(line.text)];
     let j = i + 1;
     while (j < lines.length) {
-      const nextLine = lines[j];
-      const nextText = nextLine.text;
-      const nextIsHeading = _pdfClassifyHeading(nextText, nextLine.height, medianHeight) > 0;
-      const nextBullet = _pdfDetectBullet(nextText);
-      const nextDef = _pdfLooksLikeDefinitionLine(nextText);
-
-      if (nextIsHeading || nextBullet || nextDef) break;
-      const gap = lines[j - 1].y - nextLine.y;
+      const next = lines[j];
+      if (_pdfClassifyHeading(next.text, next.height, medianHeight) > 0 || _pdfDetectBullet(next.text) || _pdfLooksLikeDefinitionLine(next.text)) break;
+      const gap = lines[j-1].y - next.y;
       if (gap > medianLineGap * 1.5) break;
-
-      paragraphLines.push(nextText);
-      paragraphHtmls.push(nextLine.html || esc(nextText));
-      paragraphHasBold.push(nextLine.parts ? nextLine.parts.some(p => p.bold) : false);
+      paragraphLines.push(next.text);
+      paragraphHtmls.push(next.html || esc(next.text));
       j++;
     }
-
-    let paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/g, '$1$2');
-    const anyBold = paragraphHasBold.some(b => b);
-
-    // ✅ FIX BOLD-HYPHEN · desguionización también cuando hay
-    // negritas: el lookahead salta las etiquetas inline que
-    // puedan aparecer entre el guion y la letra siguiente.
-    let paragraphHtml;
-    if (anyBold) {
-      paragraphHtml = paragraphHtmls.join(' ');
-      paragraphHtml = paragraphHtml.replace(
-        /([a-záéíóúüñ])-\s+(?=(?:<\/?(?:strong|em|b|i|u|span|sub|sup)[^>]*>)*[a-záéíóúüñ])/gi,
-        '$1'
-      );
-    } else {
-      paragraphHtml = esc(paragraphText);
-    }
-
-    blocks.push({ type: 'paragraph', text: paragraphText, html: paragraphHtml });
+    const paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/gi,'$1$2');
+    let paragraphHtml = paragraphHtmls.join(' ');
+    paragraphHtml = paragraphHtml.replace(/([a-záéíóúüñ])-\s+(?=(?:<\/?(?:strong|em|b|i|u|span|sub|sup)[^>]*>)*[a-záéíóúüñ])/gi,'$1');
+    blocks.push({type:'paragraph', text:paragraphText, html:paragraphHtml});
     i = j;
   }
-
   return blocks;
 }
-
 function _pdfMergeConsecutiveHeadings(blocks) {
   const merged = [];
   for (let i = 0; i < blocks.length; i++) {
@@ -1139,7 +1119,7 @@ async function handlePdfFile(file) {
       // ✅ FIX BOLD-FONT-OBJ · resolvemos el boldMap para esta página
       // antes de agrupar las líneas. Ya podemos saber qué fontName
       // corresponde a una fuente realmente bold.
-      const boldMap = await _pdfBuildFontBoldMap(page, items);
+      const boldMap = await _pdfBuildFontBoldMap(page, items, textContent.styles || {});
 
       const heights = items.map(it => it.height || 0).filter(h => h > 0).sort((a,b) => a-b);
       const medianHeight = heights.length ? heights[Math.floor(heights.length / 2)] : 12;
@@ -1260,7 +1240,10 @@ async function handlePdfFile(file) {
         } else if (block.type === 'list') {
           const tag = block.ordered ? 'ol' : 'ul';
           const listStyle = tag === 'ul' ? EX.ul : EX.ol;
-          const itemsHtml = block.items.map(it => '<li style="' + EX.li + '">' + esc(it) + '</li>').join('');
+          const itemsHtml = block.items.map(it => {
+            const itemHtml = typeof it === 'string' ? esc(it) : (it.html || esc(it.text || ''));
+            return '<li style="' + EX.li + '">' + itemHtml + '</li>';
+          }).join('');
           pageHtml += '<' + tag + ' data-editor-block="text" style="' + listStyle
                    + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:14px auto;box-sizing:border-box;">'
                    + itemsHtml + '</' + tag + '>\n';
