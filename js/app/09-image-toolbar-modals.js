@@ -239,10 +239,20 @@
   if (wrap) wrap.addEventListener('scroll', hide);
 })();
 
+// ══════════════════════════════════════════════════════════════
+//  SELECTOR DE ARCHIVO · v1.1
+//  Acepta .docx y .pdf. Detecta por extensión y delega al handler
+//  correspondiente (handleDocxFile o handlePdfFile).
+// ══════════════════════════════════════════════════════════════
 document.getElementById('file-input').addEventListener('change', function() {
   const file = this.files && this.files[0];
   if (file) {
-    handleDocxFile(file);
+    const name = (file.name || '').toLowerCase();
+    if (name.endsWith('.pdf')) {
+      handlePdfFile(file);
+    } else {
+      handleDocxFile(file);
+    }
     setTimeout(() => { this.value = ''; }, 500);
   }
 });
@@ -269,4 +279,3 @@ document.getElementById('maniobrasModal').addEventListener('click', e => {
 
 // PANEL IZQUIERDO AMIGABLE v6.5: mejora visual de botones y legibilidad sin cambios funcionales.
 // PANEL IZQUIERDO SCROLL GENERAL v6.6: scroll vertical único para todo el panel izquierdo; sin cambios funcionales.
-
