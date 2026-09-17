@@ -414,3 +414,190 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════════════════════════
+//  CARGA DE ARCHIVO .PDF (v1.0)
+//  Extrae texto por párrafos agrupando líneas por proximidad vertical,
+//  detecta encabezados comparando el tamaño de fuente con la mediana
+//  de la página, y extrae imágenes incrustadas como base64.
+//  Requiere: window.pdfjsLib disponible (PDF.js 3.x UMD).
+// ══════════════════════════════════════════════════════════════
+async function handlePdfFile(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    showToast('⚠️ Solo se admiten archivos .pdf');
+    return;
+  }
+  if (!window.pdfjsLib) {
+    showToast('❌ PDF.js no está cargado. Revisa el index.html.');
+    return;
+  }
+
+  showToast('⏳ Procesando ' + file.name + '...');
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const numPages = pdf.numPages;
+    let html = '';
+    let totalParagraphs = 0;
+    let totalHeadings = 0;
+    let totalImages = 0;
+
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const items = textContent.items || [];
+
+      // ── 1. Calcular mediana de altura de fuente (para detectar títulos) ──
+      const heights = items.map(it => it.height || 0).filter(h => h > 0).sort((a, b) => a - b);
+      const medianHeight = heights.length ? heights[Math.floor(heights.length / 2)] : 12;
+
+      // ── 2. Agrupar items por líneas (proximidad vertical) ──
+      const lines = [];
+      let currentLine = null;
+      const Y_TOLERANCE = 3;
+
+      items.forEach(it => {
+        const text = (it.str || '').replace(/\s+$/g, '');
+        if (!text) return;
+        const y = it.transform ? it.transform[5] : 0;
+        const x = it.transform ? it.transform[4] : 0;
+        const h = it.height || medianHeight;
+
+        if (!currentLine || Math.abs(currentLine.y - y) > Y_TOLERANCE) {
+          if (currentLine) lines.push(currentLine);
+          currentLine = { y: y, x: x, height: h, parts: [text] };
+        } else {
+          currentLine.parts.push(text);
+          currentLine.height = Math.max(currentLine.height, h);
+        }
+      });
+      if (currentLine) lines.push(currentLine);
+
+      // ── 3. Agrupar líneas en párrafos y detectar encabezados ──
+      const blocks = [];
+      let currentBlock = null;
+
+      lines.forEach(line => {
+        const lineText = line.parts.join(' ').replace(/\s+/g, ' ').trim();
+        if (!lineText) return;
+        const isHeading = line.height >= medianHeight * 1.35 && lineText.length < 120;
+
+        if (!currentBlock) {
+          currentBlock = { heading: isHeading, height: line.height, lines: [lineText] };
+        } else if (currentBlock.heading === isHeading && Math.abs(currentBlock.height - line.height) < 2) {
+          currentBlock.lines.push(lineText);
+        } else {
+          blocks.push(currentBlock);
+          currentBlock = { heading: isHeading, height: line.height, lines: [lineText] };
+        }
+      });
+      if (currentBlock) blocks.push(currentBlock);
+
+      // ── 4. Construir HTML de la página ──
+      let pageHtml = '';
+      blocks.forEach(block => {
+        const text = block.lines.join(' ');
+        if (!text.trim()) return;
+        if (block.heading) {
+          const lvl = block.height >= medianHeight * 1.9 ? 1 : block.height >= medianHeight * 1.55 ? 2 : 3;
+          pageHtml += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;"><div style="' + EX['h' + lvl] + '">' + esc(text) + '</div></div>\n';
+          totalHeadings++;
+        } else {
+          pageHtml += '<p style="' + EX.p + '">' + esc(text) + '</p>\n';
+          totalParagraphs++;
+        }
+      });
+
+      // ── 5. Extraer imágenes incrustadas de la página ──
+      try {
+        const ops = await page.getOperatorList();
+        const imgNames = new Set();
+        for (let i = 0; i < ops.fnArray.length; i++) {
+          if (ops.fnArray[i] === window.pdfjsLib.OPS.paintImageXObject) {
+            const imgName = ops.argsArray[i][0];
+            if (imgName) imgNames.add(imgName);
+          }
+        }
+        for (const imgName of imgNames) {
+          try {
+            const imgData = await new Promise((resolve) => {
+              let resolved = false;
+              const timer = setTimeout(() => { if (!resolved) { resolved = true; resolve(null); } }, 2000);
+              try {
+                page.objs.get(imgName, (img) => {
+                  if (resolved) return;
+                  resolved = true;
+                  clearTimeout(timer);
+                  resolve(img || null);
+                });
+              } catch (e) {
+                if (!resolved) { resolved = true; clearTimeout(timer); resolve(null); }
+              }
+            });
+            if (!imgData || !imgData.data || !imgData.width || !imgData.height) continue;
+            if (imgData.width < 40 || imgData.height < 40) continue; // descarta iconos mínimos
+
+            const canvas = document.createElement('canvas');
+            canvas.width = imgData.width;
+            canvas.height = imgData.height;
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(imgData.width, imgData.height);
+            const src = imgData.data;
+            const dst = imageData.data;
+            const pixels = imgData.width * imgData.height;
+            if (src.length === pixels * 4) {
+              dst.set(src);
+            } else if (src.length === pixels * 3) {
+              for (let p = 0, q = 0; p < pixels; p++, q += 3) {
+                dst[p * 4] = src[q];
+                dst[p * 4 + 1] = src[q + 1];
+                dst[p * 4 + 2] = src[q + 2];
+                dst[p * 4 + 3] = 255;
+              }
+            } else if (src.length === pixels) {
+              for (let p = 0; p < pixels; p++) {
+                const v = src[p];
+                dst[p * 4] = v; dst[p * 4 + 1] = v; dst[p * 4 + 2] = v; dst[p * 4 + 3] = 255;
+              }
+            } else {
+              continue;
+            }
+            ctx.putImageData(imageData, 0, 0);
+            const dataUrl = canvas.toDataURL('image/png');
+            pageHtml += buildImageHTML(dataUrl, 'Imagen · página ' + pageNum, '100%') + '\n';
+            totalImages++;
+          } catch (e) {
+            // Ignorar imagen problemática, seguir con las demás
+          }
+        }
+      } catch (e) {
+        // Si falla la extracción de imágenes, seguimos con el texto
+      }
+
+      // ── 6. Añadir la página al HTML global ──
+      if (pageHtml.trim()) {
+        html += '<div data-pdf-page="' + pageNum + '">\n' + pageHtml + '</div>\n';
+      }
+      if (pageNum < numPages) {
+        html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
+      }
+    }
+
+    if (!html.trim()) {
+      showToast('⚠️ No se encontró texto ni imágenes extraíbles en el PDF. Si el PDF es un escaneo, necesitará OCR externo.', 6000);
+      return;
+    }
+
+    appendHTMLToEditor(html);
+    const parts = [];
+    if (totalHeadings) parts.push(totalHeadings + ' título(s)');
+    if (totalParagraphs) parts.push(totalParagraphs + ' párrafo(s)');
+    if (totalImages) parts.push(totalImages + ' imagen(es)');
+    const summary = parts.length ? ' · ' + parts.join(' · ') : '';
+    showToast('✅ ' + file.name + ' cargado · ' + numPages + ' página(s)' + summary, 5000);
+
+  } catch (err) {
+    console.error('Error procesando PDF:', err);
+    showToast('❌ Error al procesar el PDF: ' + (err.message || err), 5000);
+  }
+}
