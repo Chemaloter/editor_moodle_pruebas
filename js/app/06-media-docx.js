@@ -553,8 +553,8 @@ function _pdfNormalizeLine(text) {
 // último recurso cuando el objeto font no está disponible.
 function _pdfIsBoldFont(fontName) {
   if (!fontName) return false;
-  return /(?:^|[\s,+_-])(bold|black|heavy|semibold|semi-bold|demibold|demi-bold|extrabold|extra-bold|ultrabold|ultra-bold|medium)(?:$|[\s,+_-])/i.test(String(fontName))
-      || /(bold|black|heavy|semibold|demibold|extrabold|ultrabold|medium)/i.test(String(fontName));
+  return /(?:^|[\s,+_-])(bold|black|heavy|semibold|semi-bold|demibold|demi-bold|extrabold|extra-bold|ultrabold|ultra-bold)(?:$|[\s,+_-])/i.test(String(fontName))
+      || /(bold|black|heavy|semibold|demibold|extrabold|ultrabold)/i.test(String(fontName));
 }
 function _pdfFontIsBold(font, fallbackName, styleInfo) {
   const candidates = [];
@@ -787,6 +787,46 @@ function _pdfClassifyHeading(text, height, medianHeight) {
   return 0;
 }
 
+function _pdfNumberingInfo(text) {
+  const t = String(text || '').trim();
+  const m = t.match(/^(\d+(?:\.\d+){0,5})\.?\s+(?=\S)/);
+  return m ? { token:m[1], depth:m[1].split('.').length } : null;
+}
+function _pdfLooksLikeTocLine(text) {
+  const t = String(text || '').trim();
+  return /\.{4,}\s*\d{1,4}\s*$/.test(t) || /\s{3,}\d{1,4}\s*$/.test(t);
+}
+function _pdfMergeAdjacentStrong(html) {
+  if (!html || html.indexOf('<strong') === -1) return html || '';
+  const box = document.createElement('div'); box.innerHTML = html;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    Array.from(box.querySelectorAll('strong')).forEach(left => {
+      if (!left.parentNode) return;
+      let node=left.nextSibling, spaces='';
+      while (node && node.nodeType===3 && !node.textContent.trim()) { spaces+=node.textContent; node=node.nextSibling; }
+      if (!node || node.nodeType!==1 || node.tagName!=='STRONG') return;
+      if ((left.getAttribute('style')||'') !== (node.getAttribute('style')||'')) return;
+      left.appendChild(document.createTextNode(spaces || ' '));
+      while (node.firstChild) left.appendChild(node.firstChild);
+      let cur=left.nextSibling;
+      while (cur && cur!==node) { const next=cur.nextSibling; cur.remove(); cur=next; }
+      node.remove(); changed=true;
+    });
+  }
+  return box.innerHTML;
+}
+function _pdfRepairSplitTokens(text, html) {
+  let fixedText=String(text||'');
+  let fixedHtml=String(html||'');
+  fixedText=fixedText.replace(/\b([A-ZÁÉÍÓÚÜÑ])\s+([a-záéíóúüñ]{3,})\b/g,'$1$2');
+  const safe=new Set(['los','las','les','del','una','uno','unos','unas','que','por','con','sin','para','como','monte','plantas','dehesas']);
+  fixedText=fixedText.replace(/\b([a-záéíóúüñ])\s+([a-záéíóúüñ]{2,})\b/g,(all,a,b)=>safe.has((a+b).toLowerCase())?(a+b):all);
+  fixedHtml=fixedHtml.replace(/\b([A-ZÁÉÍÓÚÜÑ])\s+(?=(?:<[^>]+>)*[a-záéíóúüñ]{3,}\b)/g,'$1');
+  fixedHtml=_pdfMergeAdjacentStrong(fixedHtml);
+  return {text:fixedText,html:fixedHtml};
+}
 function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   const blocks = [];
   let i = 0;
@@ -851,36 +891,56 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
     const paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/gi,'$1$2');
     let paragraphHtml = paragraphHtmls.join(' ');
     paragraphHtml = paragraphHtml.replace(/([a-záéíóúüñ])-\s+(?=(?:<\/?(?:strong|em|b|i|u|span|sub|sup)[^>]*>)*[a-záéíóúüñ])/gi,'$1');
-    blocks.push({type:'paragraph', text:paragraphText, html:paragraphHtml});
+    const repaired = _pdfRepairSplitTokens(paragraphText, paragraphHtml);
+    const tocCount = paragraphLines.filter(_pdfLooksLikeTocLine).length;
+    if (tocCount >= 2) repaired.html = paragraphHtmls.map(_pdfMergeAdjacentStrong).join('<br>');
+    blocks.push({type:'paragraph', text:repaired.text, html:repaired.html});
     i = j;
   }
   return blocks;
 }
+function _pdfPostProcessBlocks(blocks) {
+  const out=[];
+  (blocks||[]).forEach(block=>{
+    if(block.type==='paragraph'){
+      const bullet=_pdfDetectBullet(block.text);
+      if(bullet){
+        const item={text:bullet.text,html:_pdfStripBulletFromHtml(block.html||esc(block.text))};
+        const prev=out[out.length-1];
+        if(prev&&prev.type==='list'&&prev.ordered===bullet.ordered) prev.items.push(item);
+        else out.push({type:'list',ordered:bullet.ordered,items:[item]});
+        return;
+      }
+    }
+    out.push(block);
+  });
+  return out;
+}
 function _pdfMergeConsecutiveHeadings(blocks) {
-  const merged = [];
-  for (let i = 0; i < blocks.length; i++) {
-    const b = blocks[i];
-    if (b.type === 'heading' && merged.length) {
-      const prev = merged[merged.length - 1];
-      const sameOrAdjacent = prev.type === 'heading' && Math.abs(prev.level - b.level) <= 1;
-      if (sameOrAdjacent) {
-        const prevEndsClean = /[.,;:!?]$/.test(prev.text.trim());
-        const heightClose = Math.abs((prev.height || 0) - (b.height || 0)) /
-                            Math.max(prev.height || 1, b.height || 1) < 0.25;
-        if (!prevEndsClean && heightClose) {
-          prev.text = (prev.text.trim() + ' ' + b.text.trim()).replace(/\s+/g, ' ');
-          prev.html = (prev.html || esc(prev.text)) + ' ' + (b.html || esc(b.text));
-          prev.height = Math.max(prev.height || 0, b.height || 0);
-          if (b.level < prev.level) prev.level = b.level;
+  const merged=[];
+  for(let i=0;i<blocks.length;i++){
+    const b=blocks[i];
+    if(b.type==='heading'&&merged.length){
+      const prev=merged[merged.length-1];
+      const prevNum=_pdfNumberingInfo(prev.text), currNum=_pdfNumberingInfo(b.text);
+      const distinct=prevNum&&currNum&&prevNum.token!==currNum.token;
+      const adjacent=prev.type==='heading'&&Math.abs(prev.level-b.level)<=1;
+      if(adjacent&&!distinct){
+        const clean=/[.,;:!?]$/.test(prev.text.trim());
+        const heightClose=Math.abs((prev.height||0)-(b.height||0))/Math.max(prev.height||1,b.height||1)<0.25;
+        if(!clean&&heightClose){
+          prev.text=(prev.text.trim()+' '+b.text.trim()).replace(/\s+/g,' ');
+          prev.html=_pdfMergeAdjacentStrong((prev.html||esc(prev.text))+' '+(b.html||esc(b.text)));
+          prev.height=Math.max(prev.height||0,b.height||0);
+          if(b.level<prev.level) prev.level=b.level;
           continue;
         }
       }
     }
-    merged.push({ ...b });
+    merged.push({...b});
   }
   return merged;
 }
-
 /* ✅ Extracción de imágenes PDF robusta. */
 async function _pdfExtractImages(page, pageNum) {
   const OPS = window.pdfjsLib && window.pdfjsLib.OPS;
@@ -949,12 +1009,14 @@ async function _pdfExtractImages(page, pageNum) {
     }
     try {
       const canvas = document.createElement('canvas');
-      canvas.width  = imgData.width;
-      canvas.height = imgData.height;
+      const MAX_PDF_IMAGE_W = 1100;
+      const scale = imgData.width > MAX_PDF_IMAGE_W ? MAX_PDF_IMAGE_W / imgData.width : 1;
+      canvas.width  = Math.max(1, Math.round(imgData.width * scale));
+      canvas.height = Math.max(1, Math.round(imgData.height * scale));
       const ctx = canvas.getContext('2d');
 
       if (imgData.bitmap) {
-        ctx.drawImage(imgData.bitmap, 0, 0, imgData.width, imgData.height);
+        ctx.drawImage(imgData.bitmap, 0, 0, canvas.width, canvas.height);
       } else if (imgData.data && imgData.data.length > 0) {
         const src = imgData.data;
         const nPix = imgData.width * imgData.height;
@@ -975,13 +1037,19 @@ async function _pdfExtractImages(page, pageNum) {
           if (DEBUG) console.warn('[PDF p' + pageNum + '] formato desconocido len=' + src.length + ' pixeles=' + nPix);
           return null;
         }
-        ctx.putImageData(out, 0, 0);
+        if (scale === 1) ctx.putImageData(out, 0, 0);
+        else {
+          const sourceCanvas=document.createElement('canvas');
+          sourceCanvas.width=imgData.width; sourceCanvas.height=imgData.height;
+          sourceCanvas.getContext('2d').putImageData(out,0,0);
+          ctx.drawImage(sourceCanvas,0,0,canvas.width,canvas.height);
+        }
       } else {
         if (DEBUG) console.log('[PDF p' + pageNum + '] objeto sin data ni bitmap');
         return null;
       }
 
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.76);
       return { dataUrl, width: imgData.width, height: imgData.height };
     } catch(e) {
       if (DEBUG) console.warn('[PDF p' + pageNum + '] excepción canvas:', e);
@@ -1145,7 +1213,7 @@ async function handlePdfFile(file) {
         if (window.PDF_DEBUG) {
           console.log('[PDF p' + pageNum + '] fallback: renderizando página completa (opCount=' + opCount + ')');
         }
-        const fullPage = await _pdfRenderPageAsJpeg(page, 1.4, 0.78);
+        const fullPage = await _pdfRenderPageAsJpeg(page, 1.15, 0.72);
         if (fullPage) {
           pageImages = [{ dataUrl: fullPage, width: 0, height: 0, isFullPage: true }];
           usedFallback = true;
@@ -1222,7 +1290,7 @@ async function handlePdfFile(file) {
       const isFirstPage = (pageNum === 1);
 
       let blocks = _pdfBuildBlocks(filteredLines, medianHeight, medianLineGap);
-      blocks = _pdfMergeConsecutiveHeadings(blocks);
+      blocks = _pdfPostProcessBlocks(_pdfMergeConsecutiveHeadings(blocks));
 
       let pageHtml = '';
       blocks.forEach(block => {
@@ -1262,7 +1330,7 @@ async function handlePdfFile(file) {
         // aquí es donde iría la heurística de anchura recomendada
         // según aspect ratio + tamaño en píxeles. De momento todo a 100%.
         pageImages.forEach(img => {
-          pageHtml += buildImageHTML(img.dataUrl, 'Imagen', '100%') + '\n';
+          pageHtml += buildImageHTML(img.dataUrl, '', '100%') + '\n';
           totalImages++;
         });
       }
