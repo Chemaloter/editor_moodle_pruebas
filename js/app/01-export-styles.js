@@ -157,5 +157,22 @@ function applyOptimizedReadingWidthForExport(clone) {
     }
     if (tag === 'div' || tag === 'p' || tag === 'section' || tag === 'article' || tag === 'blockquote') setBox(el, CONTENT_MAX, '14px');
   });
+  // ✅ FIX 7: evita doble anidamiento a 1000px cuando el wrapper
+// ya contiene un .moodle-media-block. En ese caso el wrapper
+// se neutraliza (sin límite propio) y deja que el hijo marque el ancho.
+Array.from(clone.querySelectorAll('.moodle-media-block')).forEach(el => {
+  const parent = el.parentElement;
+  if (!parent || parent === clone) return;
+  // Si el padre solo contiene este moodle-media-block (y quizá <hr>),
+  // neutralizamos su max-width para no crear cajas anidadas a 1000px.
+  const onlyMedia = Array.from(parent.children).every(c =>
+    c === el || c.tagName === 'HR' || (c.textContent || '').trim() === ''
+  );
+  if (onlyMedia) {
+    parent.style.maxWidth = 'none';
+    parent.style.marginLeft = '0';
+    parent.style.marginRight = '0';
+  }
+});
 }
 
