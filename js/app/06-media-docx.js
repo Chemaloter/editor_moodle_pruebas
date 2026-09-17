@@ -443,7 +443,7 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   CARGA DE ARCHIVO .PDF (v3.8 · fix viñetas símbolo + negritas)
+   CARGA DE ARCHIVO .PDF (v4.0 · unión geométrica segura de fragmentos)
    ============================================================
    Cambios v3.8 (sobre v3.7):
    ✅ FIX BULLET-SYMBOL: pdf.js devuelve caracteres de viñeta
@@ -710,7 +710,22 @@ function _pdfGroupItemsIntoLines(items, medianHeight, boldMap) {
         const gap = part.x - (prev.xEnd || prev.x);
         const explicitSpace = /\s$/.test(prev.text) || /^\s/.test(part.text);
         const punctuationJoin = /^[,.;:!?%»)\]}]/.test(raw) || /[«¿¡([{/-]$/.test(text);
-        if (!punctuationJoin && (explicitSpace || gap > Math.max(1.2, line.height * 0.09))) sep = ' ';
+
+        // PDF.js puede dividir una misma palabra en dos fragmentos, por ejemplo
+        // "P" + "lantas" o "l" + "os". Solo los unimos si el PDF NO
+        // aporta un espacio explícito y la distancia geométrica es mínima.
+        // Así se conserva correctamente "A efectos", "y otros", etc.
+        const prevRaw = String(prev.text || '').trim();
+        const singleLetterContinuation =
+          !explicitSpace &&
+          /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]$/.test(prevRaw) &&
+          /^[a-záéíóúüñ]{2,}/.test(raw) &&
+          gap <= Math.max(2.4, line.height * 0.18);
+
+        if (!punctuationJoin && !singleLetterContinuation &&
+            (explicitSpace || gap > Math.max(1.2, line.height * 0.09))) {
+          sep = ' ';
+        }
       }
       text += sep + raw;
       const safe = esc(raw);
@@ -818,14 +833,14 @@ function _pdfMergeAdjacentStrong(html) {
   return box.innerHTML;
 }
 function _pdfRepairSplitTokens(text, html) {
-  let fixedText=String(text||'');
-  let fixedHtml=String(html||'');
-  fixedText=fixedText.replace(/\b([A-ZÁÉÍÓÚÜÑ])\s+([a-záéíóúüñ]{3,})\b/g,'$1$2');
-  const safe=new Set(['los','las','les','del','una','uno','unos','unas','que','por','con','sin','para','como','monte','plantas','dehesas']);
-  fixedText=fixedText.replace(/\b([a-záéíóúüñ])\s+([a-záéíóúüñ]{2,})\b/g,(all,a,b)=>safe.has((a+b).toLowerCase())?(a+b):all);
-  fixedHtml=fixedHtml.replace(/\b([A-ZÁÉÍÓÚÜÑ])\s+(?=(?:<[^>]+>)*[a-záéíóúüñ]{3,}\b)/g,'$1');
-  fixedHtml=_pdfMergeAdjacentStrong(fixedHtml);
-  return {text:fixedText,html:fixedHtml};
+  // La decisión de unir letras se toma antes, en _pdfGroupItemsIntoLines,
+  // donde todavía disponemos de coordenadas y espacios explícitos del PDF.
+  // Aquí no hacemos sustituciones lingüísticas globales, porque podrían
+  // convertir expresiones válidas como "A efectos" en "Aefectos".
+  return {
+    text: String(text || ''),
+    html: _pdfMergeAdjacentStrong(String(html || ''))
+  };
 }
 function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   const blocks = [];
