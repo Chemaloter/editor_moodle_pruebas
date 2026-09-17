@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <link href="styles.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<!-- ── PDF.js 6.3.289 (versión estable) ── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/pdf.min.mjs" type="module"></script>
 <!-- ── REACT + BABEL (Generador de Maniobras) ── -->
 <script crossorigin="" src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin="" src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -27,8 +29,8 @@
 <main>
 <div class="left-col"><div class="left-panel-scroll"><div class="upload-zone">
 <label class="btn-upload">
-        📂 Abrir Word (.docx)
-        <input accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" id="file-input" type="file"/>
+        📂 Abrir Word o PDF
+        <input accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,application/pdf" id="file-input" type="file"/>
 </label>
 <span class="upload-hint">O pega con <strong>Ctrl+V</strong> · O escribe directamente abajo</span>
 </div><div class="toolbar">
