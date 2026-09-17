@@ -414,18 +414,25 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   CARGA DE ARCHIVO .PDF (v3.2 · fixes críticos + imágenes)
+   CARGA DE ARCHIVO .PDF (v3.3 · fixes de texto + imágenes)
    ============================================================
-   Novedades v3.2:
-   ✅ FIX A: clasificación combinada altura + patrón + fuente.
-             Detecta "1.1 Incendio", "INTRODUCCIÓN", "2.4.1 ...".
-   ✅ FIX B: extracción de imágenes individuales XObject con
-             page.getOperatorList() + volcado a canvas.
-   ✅ FIX C: filtrado de líneas basura (fuente Latin-1 rota).
-   ✅ FIX D: detección de bullets por posición X + letras a., b., c.
-   ✅ FIX E: separación correcta entre encabezado y párrafo.
-   ✅ FIX F: primer título grande de la primera página → h1.
-   ✅ FIX G: umbral de imágenes basura ajustado (>=120px).
+   Cambios v3.3 (sobre v3.2):
+   ✅ FIX H: eliminada _pdfRenderPageAsJpeg (código muerto que
+             duplicaba la página como JPEG junto al texto real).
+   ✅ FIX I: eliminado contador totalPagesRendered (nunca se
+             incrementaba → resumen engañoso).
+   ✅ FIX J: reescrita _pdfGroupItemsIntoLines. Ahora respeta
+             espacios iniciales/finales de cada ítem PDF y usa
+             umbral adaptativo → adiós palabras rotas tipo
+             "Incen dio" o "Fo restal".
+   ✅ FIX K: nueva _pdfIsPageNumber() y refuerzo del filtro de
+             cabeceras/pies repetitivos (por frecuencia + posición).
+   ✅ FIX L: _pdfMergeConsecutiveHeadings ahora también fusiona
+             niveles ±1 si altura y tema son similares.
+   ✅ FIX M: de-guionado de palabras partidas por salto de línea
+             ("Incendios Fores-\ntales" → "Incendios Forestales").
+   ✅ FIX N: ampliada lista negra de cabeceras institucionales.
+   ✅ FIX O: corregida cadena summary ( ·  inicial sobrante).
    ============================================================ */
 
 const PDF_BLACKLIST_LINES = [
@@ -435,16 +442,36 @@ const PDF_BLACKLIST_LINES = [
   /^\s*curso\s+nuevo\s+ingreso\s+\d{4}\s*[-–]\s*\d{4}\s*$/i,
   /^\s*sfb\s+m[oó]dulo\s+0?\d+\s+.*$/i,
   /^\s*conceptos\s+b[aá]sicos\s+en\s+incendios\s+forestales\s*$/i,
-  /^\s*operaciones\s+de\s+extinci[oó]n\s+de\s+incendios\s+forestales\s+i\s*$/i
+  /^\s*operaciones\s+de\s+extinci[oó]n\s+de\s+incendios\s+forestales\s+i\s*$/i,
+  // ✅ FIX N: nuevas entradas institucionales habituales
+  /^\s*comunidad\s+de\s+madrid\s*$/i,
+  /^\s*bomberos\s+c\.?\s*a\.?\s*m\.?\s*$/i,
+  /^\s*centro\s+de\s+formaci[oó]n\s+.*$/i,
+  /^\s*p[áa]gina\s+\d+\s*(de\s+\d+)?\s*$/i,
+  /^\s*\d+\s*\/\s*\d+\s*$/,
+  /^\s*\d+\s+de\s+\d+\s*$/,
+  /^\s*©\s*.+$/,
+  /^\s*todos\s+los\s+derechos\s+reservados\s*$/i
 ];
 
 function _pdfIsBlacklisted(text) {
   return PDF_BLACKLIST_LINES.some(rx => rx.test(text));
 }
 
+/* ✅ FIX K: detecta si una línea es solo un número de página */
+function _pdfIsPageNumber(text) {
+  const t = String(text || '').trim();
+  if (!t) return false;
+  if (/^[\-–—\s]*\d{1,4}[\-–—\s]*$/.test(t)) return true;
+  if (/^p[aá]g(?:ina)?\.?\s*\d+/i.test(t)) return true;
+  return false;
+}
+
 /* ✅ FIX C: descarta líneas con caracteres basura (fuente Latin-1 rota) */
 function _pdfIsGarbageLine(text) {
   if (!text || text.length < 3) return false;
+  // Líneas de un único carácter son ruido (viñetas sueltas, etc.)
+  if (text.trim().length <= 1) return true;
   const suspicious = (text.match(/[\u00A0-\u00BF\u00C0-\u00FF]/g) || []);
   const validES = (text.match(/[áéíóúüñÁÉÍÓÚÜÑ¿¡«»]/g) || []);
   const garbage = suspicious.length - validES.length;
@@ -523,7 +550,10 @@ function _pdfLooksLikeDefinitionLine(text) {
   return { head, body };
 }
 
-/* Usa el hueco en X para decidir si unir con o sin espacio. */
+/* ✅ FIX J: agrupa ítems PDF en líneas preservando espacios reales.
+   Ahora cada ítem guarda si venía con espacio inicial/final y se
+   decide la separación con un umbral adaptativo → evita palabras
+   rotas por juntar items sin hueco y evita dobles espacios. */
 function _pdfGroupItemsIntoLines(items, medianHeight) {
   const tolerance = Math.max(3, medianHeight * 0.45);
   const sorted = items.slice().sort((a, b) => {
@@ -539,8 +569,13 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
   let current = null;
 
   sorted.forEach(it => {
-    const rawText = (it.str || '').replace(/\s+$/g, '');
+    let rawText = it.str || '';
     if (!rawText) return;
+    const hadLeading  = /^\s/.test(rawText);
+    const hadTrailing = /\s$/.test(rawText);
+    rawText = rawText.replace(/^\s+/, '').replace(/\s+$/, '');
+    if (!rawText) return;
+
     const y = (it.transform && it.transform[5]) || 0;
     const x = (it.transform && it.transform[4]) || 0;
     const w = it.width || 0;
@@ -548,12 +583,13 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
 
     if (!current || Math.abs(current.y - y) > tolerance) {
       if (current) lines.push(current);
-      current = { y, x, xStart: x, xEnd: x + w, height: h, raw: [rawText] };
+      current = {
+        y, x, xStart: x, xEnd: x + w, height: h,
+        parts: [{ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap: 0 }]
+      };
     } else {
       const gap = x - current.xEnd;
-      const spaceThreshold = h * 0.18;
-      const needsSpace = gap > spaceThreshold;
-      current.raw.push((needsSpace ? ' ' : '') + rawText);
+      current.parts.push({ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap });
       current.xEnd = Math.max(current.xEnd, x + w);
       current.height = Math.max(current.height, h);
     }
@@ -562,7 +598,16 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
 
   return lines
     .map(l => {
-      let text = l.raw.join('')
+      let text = '';
+      l.parts.forEach((p, idx) => {
+        if (idx === 0) { text += p.text; return; }
+        const prev = l.parts[idx - 1];
+        let sep = '';
+        if (p.hasLeading || prev.hasTrailing) sep = ' ';
+        else if (p.gap > (l.height || 12) * 0.15) sep = ' ';
+        text += sep + p.text;
+      });
+      text = text
         .replace(/\s+/g, ' ')
         .replace(/\s+([,.;:!?»)\]])/g, '$1')
         .replace(/([«¡¿(\[])\s+/g, '$1')
@@ -637,24 +682,34 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       paragraphLines.push(nextText);
       j++;
     }
-    blocks.push({ type: 'paragraph', text: paragraphLines.join(' ') });
+    // ✅ FIX M: recomponer palabra partida por guion de fin de línea
+    let paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/g, '$1$2');
+    blocks.push({ type: 'paragraph', text: paragraphText });
     i = j;
   }
 
   return blocks;
 }
 
+/* ✅ FIX L: fusión más robusta. Une encabezados consecutivos del
+   mismo nivel O de niveles adyacentes si la altura y el tema son
+   similares. Evita que "Operaciones de Extinción de" (h2) e
+   "Incendios Forestales" (h2) queden como dos bloques separados. */
 function _pdfMergeConsecutiveHeadings(blocks) {
   const merged = [];
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
     if (b.type === 'heading' && merged.length) {
       const prev = merged[merged.length - 1];
-      const sameLevel = prev.type === 'heading' && prev.level === b.level;
-      if (sameLevel) {
+      const sameOrAdjacent = prev.type === 'heading' && Math.abs(prev.level - b.level) <= 1;
+      if (sameOrAdjacent) {
         const prevEndsClean = /[.,;:!?]$/.test(prev.text.trim());
-        if (!prevEndsClean) {
+        const heightClose = Math.abs((prev.height || 0) - (b.height || 0)) /
+                            Math.max(prev.height || 1, b.height || 1) < 0.25;
+        if (!prevEndsClean && heightClose) {
           prev.text = (prev.text.trim() + ' ' + b.text.trim()).replace(/\s+/g, ' ');
+          prev.height = Math.max(prev.height || 0, b.height || 0);
+          if (b.level < prev.level) prev.level = b.level;
           continue;
         }
       }
@@ -726,19 +781,8 @@ async function _pdfExtractImages(page) {
   return images;
 }
 
-async function _pdfRenderPageAsJpeg(page, scale, quality) {
-  try {
-    const viewport = page.getViewport({ scale });
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvasContext: ctx, viewport }).promise;
-    return canvas.toDataURL('image/jpeg', quality);
-  } catch(e) { return null; }
-}
+/* ✅ FIX H: eliminada _pdfRenderPageAsJpeg (código muerto que
+   duplicaba la página como JPEG junto al texto ya extraído). */
 
 async function handlePdfFile(file) {
   if (!file) return;
@@ -818,7 +862,7 @@ async function handlePdfFile(file) {
     // ── PASO 3 · Construir HTML ───────────────────────────
     let html = '';
     let totalHeadings = 0, totalParagraphs = 0, totalImages = 0;
-    let totalListItems = 0, totalRemoved = 0, totalPagesRendered = 0;
+    let totalListItems = 0, totalRemoved = 0;
     let isFirstPage = true;
 
     for (const pd of pagesData) {
@@ -828,13 +872,14 @@ async function handlePdfFile(file) {
         const norm = _pdfNormalizeLine(line.text);
         if (repeatedLines.has(norm)) { totalRemoved++; return false; }
         if (_pdfIsBlacklisted(line.text)) { totalRemoved++; return false; }
+        if (_pdfIsPageNumber(line.text)) { totalRemoved++; return false; }   // ✅ FIX K
         if (_pdfIsGarbageLine(line.text)) { totalRemoved++; return false; }
         return true;
       });
 
       const pageImages = await _pdfExtractImages(page);
 
-      const isImageOnly = textChars < 60 && pageImages.length >= 1;
+      const isImageOnly = textChars < 30 && pageImages.length >= 1;
       if (isImageOnly && filteredLines.length === 0) {
         pageImages.forEach(img => {
           html += buildImageHTML(img.dataUrl, 'Página ' + pageNum, '100%') + '\n';
@@ -896,10 +941,10 @@ async function handlePdfFile(file) {
     if (totalParagraphs) parts.push(totalParagraphs + ' párrafo(s)');
     if (totalListItems) parts.push(totalListItems + ' ítem(s) de lista');
     if (totalImages) parts.push(totalImages + ' imagen(es)');
-    if (totalPagesRendered) parts.push(totalPagesRendered + ' página(s) renderizada(s)');
     if (totalRemoved) parts.push(totalRemoved + ' línea(s) descartada(s)');
-    const summary = parts.length ? ' · ' + parts.join(' · ') : '';
-    showToast('✅ ' + file.name + ' cargado · ' + numPages + ' página(s)' + summary, 7000);
+    // ✅ FIX O: sin ` · ` inicial sobrante en summary
+    const summary = parts.length ? parts.join(' · ') : '';
+    showToast('✅ ' + file.name + ' cargado · ' + numPages + ' página(s)' + (summary ? ' · ' + summary : ''), 7000);
 
   } catch (err) {
     console.error('Error procesando PDF:', err);
