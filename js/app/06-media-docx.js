@@ -734,7 +734,7 @@ async function _pdfExtractImages(page, pageNum) {
     const fn = ops.fnArray[i];
     const args = ops.argsArray[i];
     if (!args || !args.length) continue;
-    if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject) {
+    if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject || fn === OPS.paintImageXObjectRepeat) {
       const name = args[0];
       if (typeof name === 'string' && !seenNames.has(name)) {
         seenNames.add(name);
