@@ -414,21 +414,31 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   CARGA DE ARCHIVO .PDF (v3.4 · extracción de imágenes arreglada)
+   CARGA DE ARCHIVO .PDF (v3.5 · imágenes garantizadas)
    ============================================================
-   Cambios v3.4 (sobre v3.3):
-   ✅ FIX P: reescrita _pdfExtractImages. El código anterior usaba
-             page.objs.get(name) de forma síncrona, que en pdf.js
-             3.x devuelve null para imágenes aún no decodificadas
-             → NINGUNA imagen se extraía. Ahora se usa la forma con
-             callback page.objs.get(name, cb) / commonObjs.get con
-             Promise + timeout de seguridad por imagen.
-   ✅ FIX Q: umbral mínimo bajado a 80×80 (antes 120×120) y ratio
-             de aspecto relajado a 12 (antes 8) para no descartar
-             diagramas y figuras pequeñas legítimas.
-   ✅ Extras: diagnóstico con window.PDF_DEBUG = true → imprime
-             en consola cuántas imágenes se han encontrado,
-             resuelto y descartado por página, y por qué.
+   Cambios v3.5 (sobre v3.4):
+
+   ✅ FIX R (crash): toDataUrl ya no lanza TypeError cuando
+             imgData.data es null. Se comprueba la validez antes
+             de leer .length. Se añade soporte para imgData.bitmap
+             (ImageBitmap), que pdf.js entrega en algunos JPEG.
+
+   ✅ FIX S (espera de datos): getXObject ahora ignora los
+             "shell" que pdf.js entrega primero con data=null y
+             solo resuelve cuando el objeto tiene data con
+             length > 0 o un bitmap. Con timeout de 3000 ms.
+
+   ✅ FIX T (render de página como fallback): si tras la
+             extracción una página no tiene imágenes pero SÍ
+             tenía opcodes de imagen, se renderiza la página
+             completa como JPEG y se inserta como bloque
+             "Vista de página N". Garantiza que el usuario vea
+             las imágenes incluso cuando pdf.js no entrega los
+             XObjects individuales.
+
+   ✅ FIX U: umbral mínimo 80×80 y ratio 12 (heredado de v3.4).
+   ✅ FIX V: se cuentan los opcodes de imagen por página
+             (opCount) para decidir si aplicar el fallback.
    ============================================================ */
 
 const PDF_BLACKLIST_LINES = [
@@ -700,91 +710,73 @@ function _pdfMergeConsecutiveHeadings(blocks) {
   return merged;
 }
 
-/* ✅ FIX P + FIX Q: extracción de imágenes PDF robusta.
-   -------------------------------------------------------------------
-   El código anterior utilizaba `page.objs.get(name)` de forma
-   síncrona. En pdf.js 3.x esto devuelve `null` mientras la imagen
-   aún se está decodificando (aunque `getOperatorList()` ya la haya
-   encolado), por lo que NINGUNA imagen se estaba extrayendo.
-   La única forma fiable es usar la variante con callback:
-       page.objs.get(name, cb)   ó   page.commonObjs.get(name, cb)
-   Además envolvemos cada llamada en una Promise con timeout de
-   seguridad (500 ms) para no quedarnos colgados si un objeto nunca
-   se resuelve. Bajamos el umbral mínimo de 120×120 a 80×80 y
-   relajamos el ratio de aspecto de 8 a 12, porque hay diagramas
-   pequeños y figuras alargadas legítimas que se descartaban.
-   ------------------------------------------------------------------- */
+/* ✅ FIX R + FIX S: extracción de imágenes PDF robusta. */
 async function _pdfExtractImages(page, pageNum) {
   const OPS = window.pdfjsLib && window.pdfjsLib.OPS;
   const DEBUG = !!window.PDF_DEBUG;
-  if (!OPS) return [];
+  if (!OPS) return { images: [], opCount: 0 };
 
   let ops;
   try { ops = await page.getOperatorList(); }
   catch(e) {
     if (DEBUG) console.warn('[PDF p' + pageNum + '] getOperatorList falló:', e);
-    return [];
+    return { images: [], opCount: 0 };
   }
 
-  // ── Paso 1: recolectar nombres e inline images ────────────
+  // ── Paso 1: recolectar nombres e inline images + contar opcodes ──
   const xobjNames = [];
   const inlineImgs = [];
   const seenNames = new Set();
+  let opCount = 0;
   for (let i = 0; i < ops.fnArray.length; i++) {
     const fn = ops.fnArray[i];
     const args = ops.argsArray[i];
     if (!args || !args.length) continue;
     if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject || fn === OPS.paintImageXObjectRepeat) {
+      opCount++;
       const name = args[0];
       if (typeof name === 'string' && !seenNames.has(name)) {
         seenNames.add(name);
         xobjNames.push(name);
       }
     } else if (fn === OPS.paintInlineImageXObject) {
+      opCount++;
       inlineImgs.push(args[0]);
     }
   }
 
-  // ── Paso 2: resolver un objeto XObject con callback + timeout ──
-  // ✅ FIX P.1: consultamos page.objs Y page.commonObjs EN PARALELO.
-  // En pdf.js 3.x, `page.objs.get(name, cb)` NO lanza cuando el nombre
-  // no está en ese mapa: registra el callback silenciosamente y devuelve
-  // null. Por eso el patrón try/catch anterior nunca probaba commonObjs
-  // y las imágenes compartidas entre páginas quedaban sin resolver.
-  // Timeout subido a 3000ms porque 500ms se queda corto en PDFs con
-  // muchas imágenes o imágenes grandes.
+  // ── Paso 2: resolver XObject esperando a que tenga datos válidos ──
+  // ✅ FIX S: solo resolvemos cuando data.length > 0 o hay bitmap.
+  // pdf.js 3.x entrega primero un "shell" {width,height,data:null} y
+  // después (a veces) el objeto real con datos. Ignoramos el shell.
   function getXObject(name, timeoutMs) {
     timeoutMs = timeoutMs || 3000;
     return new Promise(resolve => {
       let done = false;
-      const finish = v => { if (!done && v) { done = true; resolve(v); } };
-      const finishNull = () => { if (!done) { done = true; resolve(null); } };
-
-      // Intento 1: página actual
-      try {
-        const sync = page.objs.get(name, finish);
-        if (sync) finish(sync);
-      } catch(e) { /* ignorar */ }
-
-      // Intento 2: objetos compartidos (XObjects reutilizados entre páginas)
-      // Se ejecuta EN PARALELO, no en catch del intento 1.
-      try {
-        const sync2 = page.commonObjs.get(name, finish);
-        if (sync2) finish(sync2);
-      } catch(e) { /* ignorar */ }
-
-      // Red de seguridad
-      setTimeout(finishNull, timeoutMs);
+      const finish = v => {
+        if (done || !v) return;
+        const hasData = v.data && v.data.length > 0;
+        const hasBitmap = !!v.bitmap;
+        if (hasData || hasBitmap) {
+          done = true;
+          resolve(v);
+        }
+        // Si no tiene datos → es un shell, seguimos esperando.
+      };
+      try { page.objs.get(name, finish); } catch(e) {}
+      try { page.commonObjs.get(name, finish); } catch(e) {}
+      setTimeout(() => { if (!done) { done = true; resolve(null); } }, timeoutMs);
     });
   }
 
-  // ── Paso 3: convertir ImageData → dataURL JPEG ────────────
+  // ── Paso 3: convertir imagen → dataURL JPEG (sin crash) ──
   const MIN_W = 80, MIN_H = 80, MAX_AR = 12;
+
   function toDataUrl(imgData) {
+    // ✅ FIX R: validación defensiva completa.
     if (!imgData || !imgData.width || !imgData.height) return null;
     if (imgData.width < MIN_W || imgData.height < MIN_H) {
-      if (DEBUG) console.log('[PDF p' + pageNum + '] descartada por tamaño ' +
-        imgData.width + '×' + imgData.height);
+      if (DEBUG) console.log('[PDF p' + pageNum + '] descartada por tamaño ' + imgData.width + '×' + imgData.height);
       return null;
     }
     const ar = imgData.width / imgData.height;
@@ -797,44 +789,54 @@ async function _pdfExtractImages(page, pageNum) {
       canvas.width  = imgData.width;
       canvas.height = imgData.height;
       const ctx = canvas.getContext('2d');
-      const out = ctx.createImageData(imgData.width, imgData.height);
-      const dst = out.data;
-      const src = imgData.data;
-      const nPix = imgData.width * imgData.height;
-      if (src.length === nPix * 4) {
-        dst.set(src);
-      } else if (src.length === nPix * 3) {
-        for (let p = 0, q = 0; p < src.length; p += 3, q += 4) {
-          dst[q] = src[p]; dst[q+1] = src[p+1]; dst[q+2] = src[p+2]; dst[q+3] = 255;
+
+      // Caso A: ImageBitmap (algunos JPEG de pdf.js)
+      if (imgData.bitmap) {
+        ctx.drawImage(imgData.bitmap, 0, 0, imgData.width, imgData.height);
+      }
+      // Caso B: data Uint8ClampedArray (RGBA, RGB o GRAY)
+      else if (imgData.data && imgData.data.length > 0) {
+        const src = imgData.data;
+        const nPix = imgData.width * imgData.height;
+        const out = ctx.createImageData(imgData.width, imgData.height);
+        const dst = out.data;
+        if (src.length === nPix * 4) {
+          dst.set(src);
+        } else if (src.length === nPix * 3) {
+          for (let p = 0, q = 0; p < src.length; p += 3, q += 4) {
+            dst[q] = src[p]; dst[q+1] = src[p+1]; dst[q+2] = src[p+2]; dst[q+3] = 255;
+          }
+        } else if (src.length === nPix) {
+          for (let p = 0, q = 0; p < src.length; p++, q += 4) {
+            const v = src[p];
+            dst[q] = v; dst[q+1] = v; dst[q+2] = v; dst[q+3] = 255;
+          }
+        } else {
+          if (DEBUG) console.warn('[PDF p' + pageNum + '] formato desconocido len=' + src.length + ' pixeles=' + nPix);
+          return null;
         }
-      } else if (src.length === nPix) {
-        for (let p = 0, q = 0; p < src.length; p++, q += 4) {
-          const v = src[p];
-          dst[q] = v; dst[q+1] = v; dst[q+2] = v; dst[q+3] = 255;
-        }
-      } else {
-        if (DEBUG) console.warn('[PDF p' + pageNum + '] formato no soportado, len=' + src.length + ' pixeles=' + nPix);
+        ctx.putImageData(out, 0, 0);
+      }
+      // Caso C: sin datos utilizables
+      else {
+        if (DEBUG) console.log('[PDF p' + pageNum + '] objeto sin data ni bitmap');
         return null;
       }
-      ctx.putImageData(out, 0, 0);
+
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       return { dataUrl, width: imgData.width, height: imgData.height };
     } catch(e) {
-      if (DEBUG) console.warn('[PDF p' + pageNum + '] excepción convirtiendo a canvas:', e);
+      if (DEBUG) console.warn('[PDF p' + pageNum + '] excepción canvas:', e);
       return null;
     }
   }
 
-  // ── Paso 4: montar todo ───────────────────────────────────
+  // ── Paso 4: montar todo ──
   const images = [];
-
-  // Inline images primero (ya tienen datos)
   for (const inline of inlineImgs) {
     const r = toDataUrl(inline);
     if (r) images.push(r);
   }
-
-  // XObject: resolver en paralelo pero esperando todas con Promise.all
   const resolved = await Promise.all(xobjNames.map(n => getXObject(n)));
   for (const imgData of resolved) {
     const r = toDataUrl(imgData);
@@ -845,10 +847,29 @@ async function _pdfExtractImages(page, pageNum) {
     console.log('[PDF p' + pageNum + '] ops=' + ops.fnArray.length +
       ' · xobj=' + xobjNames.length +
       ' · inline=' + inlineImgs.length +
-      ' · resueltas=' + images.length);
+      ' · resueltas=' + images.length +
+      ' · opCount=' + opCount);
   }
 
-  return images;
+  return { images, opCount };
+}
+
+/* ✅ FIX T: renderiza la página completa como JPEG para el fallback. */
+async function _pdfRenderPageAsJpeg(page, scale, quality) {
+  try {
+    const viewport = page.getViewport({ scale: scale || 1.4 });
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    return canvas.toDataURL('image/jpeg', quality || 0.78);
+  } catch(e) {
+    if (window.PDF_DEBUG) console.warn('[PDF] render de página falló:', e);
+    return null;
+  }
 }
 
 async function handlePdfFile(file) {
@@ -892,15 +913,31 @@ async function handlePdfFile(file) {
         ? lineGaps[Math.floor(lineGaps.length / 2)]
         : Math.max(medianHeight * 1.4, 12);
 
-      // Extraemos imágenes aquí, ANTES de liberar page
-      const pageImages = await _pdfExtractImages(page, pageNum);
+      const extraction = await _pdfExtractImages(page, pageNum);
+      let pageImages = extraction.images;
+      const opCount = extraction.opCount;
+
+      // ✅ FIX T: fallback si la página tenía opcodes de imagen pero no
+      // se ha podido extraer ninguna → renderizamos la página entera.
+      let usedFallback = false;
+      if (pageImages.length === 0 && opCount > 0) {
+        if (window.PDF_DEBUG) {
+          console.log('[PDF p' + pageNum + '] fallback: renderizando página completa (opCount=' + opCount + ')');
+        }
+        const fullPage = await _pdfRenderPageAsJpeg(page, 1.4, 0.78);
+        if (fullPage) {
+          pageImages = [{ dataUrl: fullPage, width: 0, height: 0, isFullPage: true }];
+          usedFallback = true;
+        }
+      }
 
       pagesData.push({
         pageNum,
         viewportHeight: viewport.height,
         lines, medianHeight, medianLineGap,
         textChars: lines.reduce((a, l) => a + l.text.length, 0),
-        pageImages
+        pageImages,
+        usedFallback
       });
     }
 
@@ -933,11 +970,11 @@ async function handlePdfFile(file) {
     // ── PASO 3 · Construir HTML ───────────────────────────
     let html = '';
     let totalHeadings = 0, totalParagraphs = 0, totalImages = 0;
-    let totalListItems = 0, totalRemoved = 0;
+    let totalListItems = 0, totalRemoved = 0, totalFallback = 0;
     let isFirstPage = true;
 
     for (const pd of pagesData) {
-      const { pageNum, lines, medianHeight, medianLineGap, textChars, pageImages } = pd;
+      const { pageNum, lines, medianHeight, medianLineGap, textChars, pageImages, usedFallback } = pd;
 
       const filteredLines = lines.filter(line => {
         const norm = _pdfNormalizeLine(line.text);
@@ -948,15 +985,16 @@ async function handlePdfFile(file) {
         return true;
       });
 
-      const isImageOnly = textChars < 30 && pageImages.length >= 1;
-      if (isImageOnly && filteredLines.length === 0) {
-        pageImages.forEach(img => {
-          html += buildImageHTML(img.dataUrl, 'Página ' + pageNum, '100%') + '\n';
-          totalImages++;
-        });
+      // Si el fallback se activó, adjuntamos solo la imagen de la página
+      // (evitamos duplicar el texto, que ya lo procesamos).
+      if (usedFallback && pageImages.length === 1 && pageImages[0].isFullPage) {
+        html += buildImageHTML(pageImages[0].dataUrl, '📄 Vista de página ' + pageNum + ' (imagen)', '100%') + '\n';
+        totalImages++;
+        totalFallback++;
         if (pageNum < numPages) {
           html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
         }
+        isFirstPage = false;
         continue;
       }
 
@@ -1010,6 +1048,7 @@ async function handlePdfFile(file) {
     if (totalParagraphs) parts.push(totalParagraphs + ' párrafo(s)');
     if (totalListItems) parts.push(totalListItems + ' ítem(s) de lista');
     if (totalImages) parts.push(totalImages + ' imagen(es)');
+    if (totalFallback) parts.push(totalFallback + ' página(s) renderizada(s)');
     if (totalRemoved) parts.push(totalRemoved + ' línea(s) descartada(s)');
     const summary = parts.length ? parts.join(' · ') : '';
     showToast('✅ ' + file.name + ' cargado · ' + numPages + ' página(s)' + (summary ? ' · ' + summary : ''), 7000);
