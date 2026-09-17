@@ -443,32 +443,57 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   CARGA DE ARCHIVO .PDF (v3.7 · parches flujo PDF → Moodle)
+   CARGA DE ARCHIVO .PDF (v3.8 · fix viñetas símbolo + negritas)
    ============================================================
-   Cambios v3.7 (sobre v3.6):
-   ✅ FIX BULLET-1: los bullets sueltos (un solo ítem consecutivo)
-      ya no se convierten en párrafo con el marcador "•" pegado al
-      texto. Ahora siempre se emiten como <ul><li>…</li></ul>,
-      aunque la lista tenga un único elemento.
+   Cambios v3.8 (sobre v3.7):
+   ✅ FIX BULLET-SYMBOL: pdf.js devuelve caracteres de viñeta
+      procedentes de fuentes de símbolos (Wingdings, Symbol,
+      Monotype Sorts...) como caracteres Unicode de reemplazo,
+      habitualmente el cuadrado blanco "□" (U+25A1) o el bullet
+      de zona privada "\uF0B7". Antes NINGUNO de esos caracteres
+      estaba en la lista de detección y el bullet pasaba
+      desapercibido: los ítems se fusionaban en un único párrafo
+      y la viñeta quedaba pegada al texto ("□Borde: ...").
+      Ahora se reconocen todos los caracteres de viñeta
+      habituales + los de zona privada de fuentes simbólicas.
+
+   ✅ FIX BULLET-NO-SPACE: en muchos PDFs el glifo de viñeta va
+      pegado a la primera palabra del ítem, sin espacio
+      ("□Borde:"). El patrón antiguo exigía un espacio
+      obligatorio tras el bullet. Ahora hay un segundo patrón
+      específico para viñetas sin espacio.
+
+   ✅ FIX BOLD-FONT-OBJ: pdf.js NO expone el nombre real de la
+      fuente en `textContent.items[i].fontName` — expone un ID
+      interno del tipo "g_d0_f1". Ese ID nunca contiene la
+      palabra "bold", así que la heurística anterior jamás
+      detectaba negritas reales. El nombre real y los flags
+      `.bold` / `.black` están en el objeto font resuelto vía
+      `page.commonObjs.get(fontName)`. Se pre-cargan los fonts
+      de cada página con `await page.getOperatorList()` y se
+      construye un `boldMap` antes de agrupar líneas.
+
    ✅ FIX BOLD-HYPHEN: la desguionización de palabras cortadas al
-      final de línea también se aplica cuando el párrafo contiene
-      negritas (<strong>) u otras marcas inline. Antes se perdía
-      por completo en cualquier párrafo con al menos una negrita.
-   ✅ FIX HEADING-CE: los encabezados extraídos del PDF se emiten
-      con `contenteditable="true"` en el div interno. Sin esto no
-      eran bloques gestionados por el editor (parche v6.7) y Enter
-      los partía en dos bloques sueltos.
+      final de línea ("infor- mación") también se aplica cuando
+      el párrafo contiene tramos en negrita, gracias a un
+      lookahead que salta las etiquetas inline intermedias.
+
+   ✅ FIX HEADING-CE: los encabezados extraídos del PDF se
+      emiten con `contenteditable="true"` en el div interno,
+      para que el parche v6.7 los trate como bloques gestionados
+      y Enter inserte un salto interno en vez de partirlos.
+
    ✅ FIX P-DATA: los párrafos extraídos del PDF se emiten con
       `data-editor-block="text"` para mantener coherencia con el
       resto del editor y con la exportación a Moodle.
-   ✅ FIX HR-HUERFANO: ya no se inserta un <hr> de separación
-      cuando la página no ha producido ningún contenido real
-      (portadas en blanco, separadores vacíos, etc.).
-   ✅ FIX ISFIRSTPAGE: el flag isFirstPage se recalcula por página
-      según tenga o no contenido, evitando promociones espurias
-      de títulos de la página 2 a H1.
-   ✅ FIX CAPTION-FALLBACK: el pie de foto del render de página
-      completa pierde el emoji y el "(imagen)" redundante.
+
+   ✅ FIX HR-HUERFANO: ya no se inserta un <hr> entre páginas
+      cuando la página no ha producido contenido real (portadas
+      en blanco, páginas con solo cabecera/pie repetidos, etc.).
+
+   ✅ FIX ISFIRSTPAGE: el flag isFirstPage se recalcula por
+      página, evitando promociones espurias del primer título
+      de la página 2 a H1.
    ============================================================ */
 
 const PDF_BLACKLIST_LINES = [
@@ -487,7 +512,6 @@ const PDF_BLACKLIST_LINES = [
   /^\s*\d+\s+de\s+\d+\s*$/,
   /^\s*©\s*.+$/,
   /^\s*todos\s+los\s+derechos\s+reservados\s*$/i,
-  // ── Añadidos v3.6 ────────────────────────────────────────
   /^\s*m[oó]dulo\s+0?\d+\s+.*$/i,
   /^\s*operaciones\s+de\s+extinci[oó]n\s+de\s+incendios\s+forestales\s*$/i,
   /^\s*c\.?\s*o\.?\s*r\.?\s*p\.?\s*o\.?\s*$/i
@@ -525,70 +549,104 @@ function _pdfNormalizeLine(text) {
     .trim();
 }
 
-// ✅ FIX BOLD · helper para detectar negritas por fuente
+// ✅ FIX BOLD-FONT-OBJ · helper básico sobre fontName, usado como
+// último recurso cuando el objeto font no está disponible.
 function _pdfIsBoldFont(fontName) {
   if (!fontName) return false;
   return /bold|black|heavy|semibold|demibold|extrabold|ultrabold/i.test(fontName);
 }
 
-// ✅ FIX ESCUDOS · hash simple y rápido para identificar imágenes repetidas
-function _pdfSimpleHash(str) {
-  if (!str) return '0';
-  let h = 5381;
-  const step = Math.max(1, Math.floor(str.length / 1500));
-  for (let i = 0; i < str.length; i += step) {
-    h = ((h << 5) + h) ^ str.charCodeAt(i);
-    h = h & 0x7fffffff;
+// ✅ FIX BOLD-FONT-OBJ · decide si un font es bold usando el objeto
+// font resuelto (con .bold, .black, .name) y cae al heurístico sobre
+// el ID solo si el objeto no aporta información.
+function _pdfFontIsBold(font, fallbackName) {
+  if (font) {
+    if (font.bold === true || font.black === true) return true;
+    const name = typeof font.name === 'string' ? font.name : '';
+    if (/bold|black|heavy|semibold|demibold|extrabold|ultrabold/i.test(name)) return true;
+    // Si el objeto font existe y dice explícitamente que NO es bold,
+    // confiamos en él y no caemos a la heurística por ID.
+    if (font.bold === false || font.black === false) return false;
   }
-  return h.toString(36) + '-' + str.length;
+  return _pdfIsBoldFont(fallbackName);
 }
 
-function _pdfClassifyHeading(text, height, medianHeight) {
-  const t = String(text || '').trim();
-  if (!t) return 0;
-  const heightRatio = medianHeight > 0 ? height / medianHeight : 1;
-  const len = t.length;
-
-  const numMatch = t.match(/^(\d+(?:\.\d+)*)\.?\s+\S/);
-  const numDepth = numMatch ? (numMatch[1].match(/\./g) || []).length : 0;
-
-  const lettersArr = t.match(/[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/g) || [];
-  const upperArr   = t.match(/[A-ZÁÉÍÓÚÜÑ]/g) || [];
-  const upperRatio = lettersArr.length ? upperArr.length / lettersArr.length : 0;
-  const isAllCaps  = upperRatio >= 0.8 && len <= 90;
-
-  if (heightRatio >= 2.0 && len <= 90) return 1;
-  if (heightRatio >= 1.5) {
-    if (numDepth >= 2) return 4;
-    if (numDepth === 1) return 3;
-    if (isAllCaps) return 2;
-    return 2;
-  }
-  if (heightRatio >= 1.2) {
-    if (numDepth >= 2) return 4;
-    if (numDepth === 1) return 3;
-    if (isAllCaps) return 2;
-    return 3;
-  }
-  if (numDepth >= 1 && len <= 80 && heightRatio >= 0.95) {
-    if (numDepth >= 2) return 4;
-    if (isAllCaps) return 2;
-    return 3;
-  }
-  if (isAllCaps && len <= 60 && heightRatio >= 0.95) return 2;
-
-  return 0;
+// ✅ FIX BOLD-FONT-OBJ · resuelve asíncronamente el objeto font para
+// un fontName dado. pdf.js lo expone en page.commonObjs (fuentes
+// compartidas entre páginas) o en page.objs (objetos locales).
+function _pdfResolveFont(page, name) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = v => { if (!done && v) { done = true; resolve(v); } };
+    try { page.commonObjs.get(name, finish); } catch(e) {}
+    try { page.objs.get(name, finish); } catch(e) {}
+    setTimeout(() => { if (!done) { done = true; resolve(null); } }, 1500);
+  });
 }
+
+// ✅ FIX BOLD-FONT-OBJ · construye un Map { fontName → esBold } para
+// todos los fontName usados en los items de una página.
+async function _pdfBuildFontBoldMap(page, items) {
+  const names = new Set();
+  (items || []).forEach(it => { if (it && it.fontName) names.add(it.fontName); });
+  const map = new Map();
+  for (const name of names) {
+    const font = await _pdfResolveFont(page, name);
+    map.set(name, _pdfFontIsBold(font, name));
+  }
+  if (window.PDF_DEBUG) {
+    console.log('[PDF] Font map:', Array.from(map.entries()));
+  }
+  return map;
+}
+
+// ✅ FIX BULLET-SYMBOL + FIX BULLET-NO-SPACE
+// Lista de caracteres reconocidos como viñeta. Incluye:
+//  · Bullets Unicode estándar (•·▪▫◦‣⁃●○◆◇▶▷…)
+//  · Cuadrados de relleno "missing glyph" (□■◻◼◽◾❑❒)
+//  · Ballot boxes y checkmarks (☐☑☒✓✔✗✘)
+//  · Private Use Area de fuentes simbólicas (Symbol, Wingdings...):
+//    \uF0B7, \uF0A7, \uF0FC, \uF076, \uF0D8, \uF0E8
+const _PDF_BULLET_CHARS = [
+  '\\u2022','\\u00b7','\\u25aa','\\u25ab','\\u25e6','\\u2023','\\u2043',
+  '\\u25cf','\\u25cb','\\u25a0','\\u25a1','\\u25fb','\\u25fc','\\u25fd','\\u25fe',
+  '\\u2751','\\u2752','\\u2610','\\u2611','\\u2612',
+  '\\u2713','\\u2714','\\u2717','\\u2718',
+  '\\u25c6','\\u25c7','\\u25b6','\\u25b7',
+  '\\u25d8','\\u25d9','\\u2219',
+  '\\uf0b7','\\uf0a7','\\uf0fc','\\uf076','\\uf0d8','\\uf0e8'
+].join('');
+
+const _PDF_BULLET_RE_SPACE   = new RegExp('^([' + _PDF_BULLET_CHARS + '])\\s+(.+)$');
+const _PDF_BULLET_RE_NOSPACE = new RegExp('^([' + _PDF_BULLET_CHARS + '])(\\S.*)$');
 
 function _pdfDetectBullet(text) {
-  let m = text.match(/^([•·▪▫◦‣⁃])\s+(.+)$/);
+  const t = String(text || '');
+  if (!t) return null;
+
+  // 1. Viñeta con espacio: "• texto" o "□ texto"
+  let m = t.match(_PDF_BULLET_RE_SPACE);
   if (m) return { ordered: false, text: m[2].trim() };
-  m = text.match(/^(\d{1,2})[.)]\s+(.+)$/);
+
+  // 2. Viñeta pegada al texto: "•texto" o "□Borde: ..."
+  //    (típico cuando pdf.js extrae un glifo de fuente simbólica
+  //     y lo pega al primer carácter del ítem siguiente)
+  m = t.match(_PDF_BULLET_RE_NOSPACE);
+  if (m) return { ordered: false, text: m[2].trim() };
+
+  // 3. Numerado: "1. texto" o "1) texto"
+  m = t.match(/^(\d{1,2})[.)]\s+(.+)$/);
   if (m) return { ordered: true, text: m[2].trim() };
-  m = text.match(/^([a-z])[.)]\s+(.+)$/);
+
+  // 4. Letra: "a) texto"
+  m = t.match(/^([a-z])[.)]\s+(.+)$/);
   if (m) return { ordered: false, text: m[2].trim() };
-  m = text.match(/^[-–—*]\s+(.+)$/);
+
+  // 5. Guion con espacio obligatorio (para no cortar palabras tipo
+  //    "well-known" cuando el guion va en medio del texto)
+  m = t.match(/^[-–—*]\s+(.+)$/);
   if (m) return { ordered: false, text: m[1].trim() };
+
   return null;
 }
 
@@ -602,9 +660,10 @@ function _pdfLooksLikeDefinitionLine(text) {
   return { head, body };
 }
 
-// ✅ FIX BOLD · _pdfGroupItemsIntoLines ahora genera también `html`
-//    con <strong> insertados en los fragmentos en negrita.
-function _pdfGroupItemsIntoLines(items, medianHeight) {
+// ✅ FIX BOLD-FONT-OBJ · _pdfGroupItemsIntoLines acepta opcionalmente
+// un `boldMap` { fontName → bool } construido por _pdfBuildFontBoldMap.
+// Si el map no trae el fontName, cae al heurístico por ID de fuente.
+function _pdfGroupItemsIntoLines(items, medianHeight, boldMap) {
   const tolerance = Math.max(3, medianHeight * 0.45);
   const sorted = items.slice().sort((a, b) => {
     const ya = (a.transform && a.transform[5]) || 0;
@@ -630,7 +689,10 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
     const x = (it.transform && it.transform[4]) || 0;
     const w = it.width || 0;
     const h = it.height || medianHeight;
-    const bold = _pdfIsBoldFont(it.fontName);
+
+    const bold = (boldMap && it.fontName && boldMap.has(it.fontName))
+      ? boldMap.get(it.fontName)
+      : _pdfIsBoldFont(it.fontName);
 
     if (!current || Math.abs(current.y - y) > tolerance) {
       if (current) lines.push(current);
@@ -676,7 +738,43 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
     .filter(l => l.text);
 }
 
-// ✅ FIX BULLET-1 + FIX BOLD-HYPHEN
+function _pdfClassifyHeading(text, height, medianHeight) {
+  const t = String(text || '').trim();
+  if (!t) return 0;
+  const heightRatio = medianHeight > 0 ? height / medianHeight : 1;
+  const len = t.length;
+
+  const numMatch = t.match(/^(\d+(?:\.\d+)*)\.?\s+\S/);
+  const numDepth = numMatch ? (numMatch[1].match(/\./g) || []).length : 0;
+
+  const lettersArr = t.match(/[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/g) || [];
+  const upperArr   = t.match(/[A-ZÁÉÍÓÚÜÑ]/g) || [];
+  const upperRatio = lettersArr.length ? upperArr.length / lettersArr.length : 0;
+  const isAllCaps  = upperRatio >= 0.8 && len <= 90;
+
+  if (heightRatio >= 2.0 && len <= 90) return 1;
+  if (heightRatio >= 1.5) {
+    if (numDepth >= 2) return 4;
+    if (numDepth === 1) return 3;
+    if (isAllCaps) return 2;
+    return 2;
+  }
+  if (heightRatio >= 1.2) {
+    if (numDepth >= 2) return 4;
+    if (numDepth === 1) return 3;
+    if (isAllCaps) return 2;
+    return 3;
+  }
+  if (numDepth >= 1 && len <= 80 && heightRatio >= 0.95) {
+    if (numDepth >= 2) return 4;
+    if (isAllCaps) return 2;
+    return 3;
+  }
+  if (isAllCaps && len <= 60 && heightRatio >= 0.95) return 2;
+
+  return 0;
+}
+
 function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   const blocks = [];
   let i = 0;
@@ -698,9 +796,10 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       continue;
     }
 
-    // ✅ FIX BULLET-1 · siempre se emite como lista, aunque haya 1 solo ítem.
-    //    Antes, un único bullet caía al ramal de párrafo y dejaba el marcador
-    //    "•" pegado al texto.
+    // ✅ FIX BULLET-SYMBOL + FIX BULLET-NO-SPACE · ya detectamos
+    // el bullet correctamente tanto si va con espacio como si va
+    // pegado al texto. También se emite lista aunque tenga 1 solo
+    // ítem (antes caía al ramal de párrafo y dejaba "•" colgando).
     const bullet = _pdfDetectBullet(text);
     if (bullet) {
       const ordered = bullet.ordered;
@@ -756,10 +855,9 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
     let paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/g, '$1$2');
     const anyBold = paragraphHasBold.some(b => b);
 
-    // ✅ FIX BOLD-HYPHEN · la desguionización se aplica también al HTML
-    //    cuando hay negritas, evitando que queden cosas como "infor- mación".
-    //    El lookahead salta por las etiquetas inline que pueda haber entre
-    //    el guion y la letra minúscula siguiente.
+    // ✅ FIX BOLD-HYPHEN · desguionización también cuando hay
+    // negritas: el lookahead salta las etiquetas inline que
+    // puedan aparecer entre el guion y la letra siguiente.
     let paragraphHtml;
     if (anyBold) {
       paragraphHtml = paragraphHtmls.join(' ');
@@ -993,6 +1091,17 @@ function _pdfFilterRepeatedImages(pagesData) {
   return pagesData;
 }
 
+function _pdfSimpleHash(str) {
+  if (!str) return '0';
+  let h = 5381;
+  const step = Math.max(1, Math.floor(str.length / 1500));
+  for (let i = 0; i < str.length; i += step) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h & 0x7fffffff;
+  }
+  return h.toString(36) + '-' + str.length;
+}
+
 async function handlePdfFile(file) {
   if (!file) return;
   if (!file.name.toLowerCase().endsWith('.pdf')) {
@@ -1015,14 +1124,27 @@ async function handlePdfFile(file) {
     const pagesData = [];
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
+
+      // ✅ FIX BOLD-FONT-OBJ · pre-calentamos el cache de fuentes
+      // llamando al operator list. pdf.js entonces envía al hilo
+      // principal los objetos font con .bold / .black / .name.
+      // La llamada es idempotente y cacheada, así que _pdfExtractImages
+      // después no repite trabajo.
+      try { await page.getOperatorList(); } catch(e) {}
+
       const viewport = page.getViewport({ scale: 1 });
       const textContent = await page.getTextContent();
       const items = textContent.items || [];
 
+      // ✅ FIX BOLD-FONT-OBJ · resolvemos el boldMap para esta página
+      // antes de agrupar las líneas. Ya podemos saber qué fontName
+      // corresponde a una fuente realmente bold.
+      const boldMap = await _pdfBuildFontBoldMap(page, items);
+
       const heights = items.map(it => it.height || 0).filter(h => h > 0).sort((a,b) => a-b);
       const medianHeight = heights.length ? heights[Math.floor(heights.length / 2)] : 12;
 
-      const lines = _pdfGroupItemsIntoLines(items, medianHeight);
+      const lines = _pdfGroupItemsIntoLines(items, medianHeight, boldMap);
 
       const lineGaps = [];
       for (let k = 1; k < lines.length; k++) {
@@ -1107,18 +1229,16 @@ async function handlePdfFile(file) {
       });
 
       if (usedFallback && pageImages.length === 1 && pageImages[0].isFullPage) {
-        // ✅ FIX CAPTION-FALLBACK · caption limpio, sin emoji ni "(imagen)"
         html += buildImageHTML(pageImages[0].dataUrl, 'Vista de la página ' + pageNum, '100%') + '\n';
         totalImages++;
         totalFallback++;
-        // ✅ FIX HR-HUERFANO · solo añadimos <hr> si no es la última página
         if (pageNum < numPages) {
           html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
         }
         continue;
       }
 
-      // ✅ FIX ISFIRSTPAGE · el flag se recalcula por página según contenido real
+      // ✅ FIX ISFIRSTPAGE · solo la página 1 promueve el primer título a H1.
       const isFirstPage = (pageNum === 1);
 
       let blocks = _pdfBuildBlocks(filteredLines, medianHeight, medianLineGap);
@@ -1130,9 +1250,10 @@ async function handlePdfFile(file) {
           let lvl = block.level || 3;
           if (isFirstPage && pageHtml === '' && lvl <= 2 && block.text.length > 15) lvl = 1;
           const headingInner = block.html || esc(block.text);
-          // ✅ FIX HEADING-CE · contenteditable=true en el div interno,
-          //    para que el editor lo trate como bloque gestionado (v6.7)
-          //    y Enter inserte salto interno en vez de partir el bloque.
+          // ✅ FIX HEADING-CE · contenteditable=true en el div interno
+          // para que el editor (parche v6.7) lo trate como bloque
+          // gestionado y Enter inserte salto interno en lugar de
+          // partir el bloque en dos.
           pageHtml += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;">'
                    + '<div style="' + EX['h' + lvl] + '" contenteditable="true">' + headingInner + '</div></div>\n';
           totalHeadings++;
@@ -1146,22 +1267,26 @@ async function handlePdfFile(file) {
           totalListItems += block.items.length;
         } else {
           const pInner = block.html || esc(block.text);
-          // ✅ FIX P-DATA · data-editor-block="text" para coherencia con el editor
+          // ✅ FIX P-DATA · data-editor-block="text" para coherencia
+          // con el resto de bloques del editor y con la exportación.
           pageHtml += '<p data-editor-block="text" style="' + EX.p + '">' + pInner + '</p>\n';
           totalParagraphs++;
         }
       });
 
       if (pageImages.length) {
+        // ⚠️ PENDIENTE (a implementar tras tu decisión):
+        // aquí es donde iría la heurística de anchura recomendada
+        // según aspect ratio + tamaño en píxeles. De momento todo a 100%.
         pageImages.forEach(img => {
           pageHtml += buildImageHTML(img.dataUrl, 'Imagen', '100%') + '\n';
           totalImages++;
         });
       }
 
-      // ✅ FIX HR-HUERFANO · solo añadimos el bloque y el <hr> si la página
-      //    ha producido contenido real. Portadas vacías o páginas en blanco
-      //    ya no generan separadores huérfanos.
+      // ✅ FIX HR-HUERFANO · solo emitimos separador si la página
+      // aportó contenido real. Evita <hr> colgando tras portadas
+      // en blanco o páginas con solo cabecera/pie repetidos.
       const hasContent = pageHtml.trim().length > 0;
       if (hasContent) html += pageHtml;
       if (hasContent && pageNum < numPages) {
