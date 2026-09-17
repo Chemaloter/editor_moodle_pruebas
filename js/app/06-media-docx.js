@@ -746,26 +746,35 @@ async function _pdfExtractImages(page, pageNum) {
   }
 
   // ── Paso 2: resolver un objeto XObject con callback + timeout ──
+  // ✅ FIX P.1: consultamos page.objs Y page.commonObjs EN PARALELO.
+  // En pdf.js 3.x, `page.objs.get(name, cb)` NO lanza cuando el nombre
+  // no está en ese mapa: registra el callback silenciosamente y devuelve
+  // null. Por eso el patrón try/catch anterior nunca probaba commonObjs
+  // y las imágenes compartidas entre páginas quedaban sin resolver.
+  // Timeout subido a 3000ms porque 500ms se queda corto en PDFs con
+  // muchas imágenes o imágenes grandes.
   function getXObject(name, timeoutMs) {
-    timeoutMs = timeoutMs || 500;
+    timeoutMs = timeoutMs || 3000;
     return new Promise(resolve => {
       let done = false;
-      const finish = v => { if (!done) { done = true; resolve(v); } };
-      // Intentamos primero page.objs (imágenes propias de la página)
+      const finish = v => { if (!done && v) { done = true; resolve(v); } };
+      const finishNull = () => { if (!done) { done = true; resolve(null); } };
+
+      // Intento 1: página actual
       try {
         const sync = page.objs.get(name, finish);
         if (sync) finish(sync);
-      } catch(e1) {
-        // Y si falla, commonObjs (imágenes compartidas entre páginas)
-        try {
-          const sync2 = page.commonObjs.get(name, finish);
-          if (sync2) finish(sync2);
-        } catch(e2) {
-          if (DEBUG) console.warn('[PDF p' + pageNum + '] no encontrado: ' + name, e1, e2);
-          finish(null);
-        }
-      }
-      setTimeout(() => finish(null), timeoutMs);
+      } catch(e) { /* ignorar */ }
+
+      // Intento 2: objetos compartidos (XObjects reutilizados entre páginas)
+      // Se ejecuta EN PARALELO, no en catch del intento 1.
+      try {
+        const sync2 = page.commonObjs.get(name, finish);
+        if (sync2) finish(sync2);
+      } catch(e) { /* ignorar */ }
+
+      // Red de seguridad
+      setTimeout(finishNull, timeoutMs);
     });
   }
 
