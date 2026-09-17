@@ -414,44 +414,43 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   CARGA DE ARCHIVO .PDF (v3.0 + FIXES CRÍTICOS v3.1)
+   CARGA DE ARCHIVO .PDF (v3.2 · fixes críticos + imágenes)
    ============================================================
-   CAMBIOS respecto a v3.0:
-   ✅ FIX 1: _pdfCountLargeImages solo cuenta imágenes inline con
-             dimensiones reales >= 400x400. Ya no cuenta XObjects
-             cuyo tamaño es desconocido (evita falsos positivos).
-   ✅ FIX 2: Se elimina el bloque que añadía la página renderizada
-             como imagen cuando había texto + imágenes (causaba
-             duplicación de contenido).
-   ✅ FIX 3: Umbral de "página dominante por imagen" mucho más
-             estricto (2+ imágenes grandes Y <100 caracteres).
-   ✅ FIX 4: Escala y calidad reducidas si hay que renderizar.
-   ✅ FIX 5: Lista negra de cabeceras/pies + detección mejorada
-             por frecuencia (baja de 50% a 35%).
-   ✅ FIX 6: _pdfGroupItemsIntoLines usa el hueco en X para decidir
-             si añadir espacio, evitando "culturale s" o
-             "espontánea mente".
-   ✅ FIX 7: Post-procesado de texto (espacios antes de puntuación,
-             espacios tras apertura de signos).
-   ✅ FIX 8: Fusión de encabezados consecutivos del mismo nivel
-             ("CONCEPTOS BÁSICOS" + "EN INCENDIOS FORESTALES").
-   ✅ FIX 9: Se elimina el wrapper <div data-pdf-page> con estilos
-             inline duplicados para no anidar contenedores a 1000px.
+   Novedades v3.2:
+   ✅ FIX A: clasificación combinada altura + patrón + fuente.
+             Detecta "1.1 Incendio", "INTRODUCCIÓN", "2.4.1 ...".
+   ✅ FIX B: extracción de imágenes individuales XObject con
+             page.getOperatorList() + volcado a canvas.
+   ✅ FIX C: filtrado de líneas basura (fuente Latin-1 rota).
+   ✅ FIX D: detección de bullets por posición X + letras a., b., c.
+   ✅ FIX E: separación correcta entre encabezado y párrafo.
+   ✅ FIX F: primer título grande de la primera página → h1.
+   ✅ FIX G: umbral de imágenes basura ajustado (>=120px).
    ============================================================ */
 
-// ✅ FIX 5: Lista negra de líneas que son claramente cabeceras/pies
-// Se ancla con ^...$ para no eliminar contenido mixto.
 const PDF_BLACKLIST_LINES = [
   /^\s*instructor\s+sfb\s+.+$/i,
   /^\s*direcci[oó]n\s+general\s+de\s+emergencias\s*$/i,
   /^\s*cuerpo\s+de\s+bomberos\s+de\s+la\s+c\.?\s*m\.?\s*$/i,
   /^\s*curso\s+nuevo\s+ingreso\s+\d{4}\s*[-–]\s*\d{4}\s*$/i,
   /^\s*sfb\s+m[oó]dulo\s+0?\d+\s+.*$/i,
-  /^\s*conceptos\s+b[aá]sicos\s+en\s+incendios\s+forestales\s*$/i
+  /^\s*conceptos\s+b[aá]sicos\s+en\s+incendios\s+forestales\s*$/i,
+  /^\s*operaciones\s+de\s+extinci[oó]n\s+de\s+incendios\s+forestales\s+i\s*$/i
 ];
 
 function _pdfIsBlacklisted(text) {
   return PDF_BLACKLIST_LINES.some(rx => rx.test(text));
+}
+
+/* ✅ FIX C: descarta líneas con caracteres basura (fuente Latin-1 rota) */
+function _pdfIsGarbageLine(text) {
+  if (!text || text.length < 3) return false;
+  const suspicious = (text.match(/[\u00A0-\u00BF\u00C0-\u00FF]/g) || []);
+  const validES = (text.match(/[áéíóúüñÁÉÍÓÚÜÑ¿¡«»]/g) || []);
+  const garbage = suspicious.length - validES.length;
+  const letters = (text.match(/[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/g) || []).length;
+  if (letters === 0) return text.length > 5;
+  return garbage > letters * 0.4;
 }
 
 function _pdfNormalizeLine(text) {
@@ -463,8 +462,68 @@ function _pdfNormalizeLine(text) {
     .trim();
 }
 
-// ✅ FIX 6: usa el hueco en X para decidir si unir con o sin espacio.
-// Esto arregla "culturale s" → "culturales" y "espontánea mente" → "espontáneamente".
+/* ✅ FIX A: clasificador combinado altura + patrón + contenido. */
+function _pdfClassifyHeading(text, height, medianHeight) {
+  const t = String(text || '').trim();
+  if (!t) return 0;
+  const heightRatio = medianHeight > 0 ? height / medianHeight : 1;
+  const len = t.length;
+
+  const numMatch = t.match(/^(\d+(?:\.\d+)*)\.?\s+\S/);
+  const numDepth = numMatch ? (numMatch[1].match(/\./g) || []).length : 0;
+
+  const lettersArr = t.match(/[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/g) || [];
+  const upperArr   = t.match(/[A-ZÁÉÍÓÚÜÑ]/g) || [];
+  const upperRatio = lettersArr.length ? upperArr.length / lettersArr.length : 0;
+  const isAllCaps  = upperRatio >= 0.8 && len <= 90;
+
+  if (heightRatio >= 2.0 && len <= 90) return 1;
+  if (heightRatio >= 1.5) {
+    if (numDepth >= 2) return 4;
+    if (numDepth === 1) return 3;
+    if (isAllCaps) return 2;
+    return 2;
+  }
+  if (heightRatio >= 1.2) {
+    if (numDepth >= 2) return 4;
+    if (numDepth === 1) return 3;
+    if (isAllCaps) return 2;
+    return 3;
+  }
+  if (numDepth >= 1 && len <= 80 && heightRatio >= 0.95) {
+    if (numDepth >= 2) return 4;
+    if (isAllCaps) return 2;
+    return 3;
+  }
+  if (isAllCaps && len <= 60 && heightRatio >= 0.95) return 2;
+
+  return 0;
+}
+
+/* ✅ FIX D: detecta bullet por primer item o por patrón de texto. */
+function _pdfDetectBullet(text) {
+  let m = text.match(/^([•·▪▫◦‣⁃])\s+(.+)$/);
+  if (m) return { ordered: false, text: m[2].trim() };
+  m = text.match(/^(\d{1,2})[.)]\s+(.+)$/);
+  if (m) return { ordered: true, text: m[2].trim() };
+  m = text.match(/^([a-z])[.)]\s+(.+)$/);
+  if (m) return { ordered: false, text: m[2].trim() };
+  m = text.match(/^[-–—*]\s+(.+)$/);
+  if (m) return { ordered: false, text: m[1].trim() };
+  return null;
+}
+
+function _pdfLooksLikeDefinitionLine(text) {
+  const m = text.match(/^([A-ZÁÉÍÓÚÑ][a-záéíóúüñA-Z\s]{0,40}?)\s*:\s+(.+)$/);
+  if (!m) return null;
+  const head = m[1].trim();
+  const body = m[2].trim();
+  if (head.length < 3 || head.length > 45) return null;
+  if (body.length < 15) return null;
+  return { head, body };
+}
+
+/* Usa el hueco en X para decidir si unir con o sin espacio. */
 function _pdfGroupItemsIntoLines(items, medianHeight) {
   const tolerance = Math.max(3, medianHeight * 0.45);
   const sorted = items.slice().sort((a, b) => {
@@ -489,11 +548,10 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
 
     if (!current || Math.abs(current.y - y) > tolerance) {
       if (current) lines.push(current);
-      current = { y, x, xEnd: x + w, height: h, raw: [rawText] };
+      current = { y, x, xStart: x, xEnd: x + w, height: h, raw: [rawText] };
     } else {
-      // ✅ FIX 6: decidir espacio en función del hueco horizontal
       const gap = x - current.xEnd;
-      const spaceThreshold = h * 0.18; // ≈ espacio tipográfico
+      const spaceThreshold = h * 0.18;
       const needsSpace = gap > spaceThreshold;
       current.raw.push((needsSpace ? ' ' : '') + rawText);
       current.xEnd = Math.max(current.xEnd, x + w);
@@ -504,36 +562,15 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
 
   return lines
     .map(l => {
-      // ✅ FIX 7: post-procesado de espacios
       let text = l.raw.join('')
         .replace(/\s+/g, ' ')
         .replace(/\s+([,.;:!?»)\]])/g, '$1')
         .replace(/([«¡¿(\[])\s+/g, '$1')
         .replace(/\s+'/g, "'")
         .trim();
-      return { y: l.y, x: l.x, height: l.height, text };
+      return { y: l.y, x: l.xStart, xEnd: l.xEnd, height: l.height, text };
     })
     .filter(l => l.text);
-}
-
-function _pdfDetectBullet(text) {
-  let m = text.match(/^([•\-–—*·▪▫◦‣⁃])\s+(.+)$/);
-  if (m) return { ordered: false, text: m[2].trim() };
-  m = text.match(/^(\d{1,2})[.)]\s+(.+)$/);
-  if (m) return { ordered: true, text: m[2].trim() };
-  m = text.match(/^([a-z])[.)]\s+(.+)$/);
-  if (m) return { ordered: false, text: m[2].trim() };
-  return null;
-}
-
-function _pdfLooksLikeDefinitionLine(text) {
-  const m = text.match(/^([A-ZÁÉÍÓÚÑ][a-záéíóúüñA-Z\s]{0,40}?)\s*:\s+(.+)$/);
-  if (!m) return null;
-  const head = m[1].trim();
-  const body = m[2].trim();
-  if (head.length < 3 || head.length > 45) return null;
-  if (body.length < 15) return null;
-  return { head, body };
 }
 
 function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
@@ -543,10 +580,10 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   while (i < lines.length) {
     const line = lines[i];
     const text = line.text;
-    const isHeading = line.height >= medianHeight * 1.35 && text.length < 120 && !/^\d{1,3}$/.test(text);
 
-    if (isHeading) {
-      blocks.push({ type: 'heading', height: line.height, text });
+    const headingLevel = _pdfClassifyHeading(text, line.height, medianHeight);
+    if (headingLevel > 0) {
+      blocks.push({ type: 'heading', level: headingLevel, height: line.height, text });
       i++;
       continue;
     }
@@ -558,13 +595,10 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       let j = i + 1;
       while (j < lines.length) {
         const b2 = _pdfDetectBullet(lines[j].text);
-        if (b2 && b2.ordered === ordered) {
-          items.push(b2.text);
-          j++;
-        } else break;
+        if (b2 && b2.ordered === ordered) { items.push(b2.text); j++; } else break;
       }
       if (items.length >= 2) {
-        blocks.push({ type: ordered ? 'ol' : 'ul', items });
+        blocks.push({ type: 'list', ordered, items });
         i = j;
         continue;
       }
@@ -581,7 +615,7 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
         j++;
       }
       if (items.length >= 3) {
-        blocks.push({ type: 'ul', items });
+        blocks.push({ type: 'list', ordered: false, items });
         i = j;
         continue;
       }
@@ -592,12 +626,11 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
     while (j < lines.length) {
       const nextLine = lines[j];
       const nextText = nextLine.text;
-      const nextIsHeading = nextLine.height >= medianHeight * 1.35 && nextText.length < 120 && !/^\d{1,3}$/.test(nextText);
+      const nextIsHeading = _pdfClassifyHeading(nextText, nextLine.height, medianHeight) > 0;
       const nextBullet = _pdfDetectBullet(nextText);
       const nextDef = _pdfLooksLikeDefinitionLine(nextText);
 
       if (nextIsHeading || nextBullet || nextDef) break;
-
       const gap = lines[j - 1].y - nextLine.y;
       if (gap > medianLineGap * 1.5) break;
 
@@ -611,21 +644,17 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   return blocks;
 }
 
-// ✅ FIX 8: fusiona encabezados consecutivos del mismo nivel.
-// Arregla "CONCEPTOS BÁSICOS" + "EN INCENDIOS FORESTALES" → una sola cabecera.
 function _pdfMergeConsecutiveHeadings(blocks) {
   const merged = [];
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
     if (b.type === 'heading' && merged.length) {
       const prev = merged[merged.length - 1];
-      const sameLevel = prev.type === 'heading' && Math.abs((prev.height || 0) - (b.height || 0)) < 2;
+      const sameLevel = prev.type === 'heading' && prev.level === b.level;
       if (sameLevel) {
-        // Si el anterior no acaba en puntuación fuerte, unimos con espacio
         const prevEndsClean = /[.,;:!?]$/.test(prev.text.trim());
         if (!prevEndsClean) {
           prev.text = (prev.text.trim() + ' ' + b.text.trim()).replace(/\s+/g, ' ');
-          prev.height = Math.max(prev.height, b.height);
           continue;
         }
       }
@@ -635,33 +664,71 @@ function _pdfMergeConsecutiveHeadings(blocks) {
   return merged;
 }
 
-// ✅ FIX 1: solo cuenta imágenes inline con dimensiones reales >= 400x400.
-// NO cuenta XObjects/JpegXObject cuyo tamaño no se conoce sin resolver.
-async function _pdfCountLargeImages(page) {
-  try {
-    const ops = await page.getOperatorList();
-    let count = 0;
-    for (let i = 0; i < ops.fnArray.length; i++) {
-      const fn = ops.fnArray[i];
-      const arg = ops.argsArray[i] ? ops.argsArray[i][0] : null;
-      if (!arg) continue;
-      if (fn === window.pdfjsLib.OPS.paintInlineImageXObject) {
-        if (arg.width >= 400 && arg.height >= 400) count++;
-      }
-      // NOTA: paintImageXObject / paintJpegXObject referencian XObjects
-      // por nombre; su tamaño real no se conoce en el operator list.
-      // NO los contamos para evitar falsos positivos que disparen el
-      // renderizado de la página entera.
+/* ✅ FIX B: extracción de imágenes individuales de la página. */
+async function _pdfExtractImages(page) {
+  const OPS = window.pdfjsLib.OPS;
+  if (!OPS) return [];
+  let ops;
+  try { ops = await page.getOperatorList(); } catch(e) { return []; }
+  const images = [];
+  const seen = new Set();
+
+  for (let i = 0; i < ops.fnArray.length; i++) {
+    const fn = ops.fnArray[i];
+    const args = ops.argsArray[i];
+    if (!args || !args.length) continue;
+    if (fn !== OPS.paintImageXObject && fn !== OPS.paintJpegXObject && fn !== OPS.paintInlineImageXObject) continue;
+
+    let imgData = null;
+    if (fn === OPS.paintInlineImageXObject) {
+      imgData = args[0];
+    } else {
+      const name = args[0];
+      if (typeof name !== 'string' || seen.has(name)) continue;
+      seen.add(name);
+      try { imgData = page.objs.get(name); }
+      catch(e1) { try { imgData = page.commonObjs.get(name); } catch(e2) { imgData = null; } }
     }
-    return count;
-  } catch (e) {
-    return 0;
+    if (!imgData || !imgData.width || !imgData.height) continue;
+    if (imgData.width < 120 || imgData.height < 120) continue;
+    const ar = imgData.width / imgData.height;
+    if (ar > 8 || ar < 0.125) continue;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width  = imgData.width;
+      canvas.height = imgData.height;
+      const ctx = canvas.getContext('2d');
+      const out = ctx.createImageData(imgData.width, imgData.height);
+      const dst = out.data;
+      const src = imgData.data;
+      const nPix = imgData.width * imgData.height;
+
+      if (src.length === nPix * 4) {
+        dst.set(src);
+      } else if (src.length === nPix * 3) {
+        for (let p = 0, q = 0; p < src.length; p += 3, q += 4) {
+          dst[q] = src[p]; dst[q+1] = src[p+1]; dst[q+2] = src[p+2]; dst[q+3] = 255;
+        }
+      } else if (src.length === nPix) {
+        for (let p = 0, q = 0; p < src.length; p++, q += 4) {
+          const v = src[p];
+          dst[q] = v; dst[q+1] = v; dst[q+2] = v; dst[q+3] = 255;
+        }
+      } else {
+        continue;
+      }
+      ctx.putImageData(out, 0, 0);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      images.push({ dataUrl, width: imgData.width, height: imgData.height });
+    } catch(e) { /* saltar */ }
   }
+  return images;
 }
 
 async function _pdfRenderPageAsJpeg(page, scale, quality) {
   try {
-    const viewport = page.getViewport({ scale: scale });
+    const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -670,9 +737,7 @@ async function _pdfRenderPageAsJpeg(page, scale, quality) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvasContext: ctx, viewport }).promise;
     return canvas.toDataURL('image/jpeg', quality);
-  } catch (e) {
-    return null;
-  }
+  } catch(e) { return null; }
 }
 
 async function handlePdfFile(file) {
@@ -693,7 +758,7 @@ async function handlePdfFile(file) {
     const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const numPages = pdf.numPages;
 
-    // ── PASO 1 · Recolectar datos por página ─────────────────
+    // ── PASO 1 · Recolectar datos ─────────────────────────
     const pagesData = [];
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
@@ -701,17 +766,17 @@ async function handlePdfFile(file) {
       const textContent = await page.getTextContent();
       const items = textContent.items || [];
 
-      const heights = items.map(it => it.height || 0).filter(h => h > 0).sort((a, b) => a - b);
+      const heights = items.map(it => it.height || 0).filter(h => h > 0).sort((a,b) => a-b);
       const medianHeight = heights.length ? heights[Math.floor(heights.length / 2)] : 12;
 
       const lines = _pdfGroupItemsIntoLines(items, medianHeight);
 
       const lineGaps = [];
-      for (let i = 1; i < lines.length; i++) {
-        const gap = lines[i - 1].y - lines[i].y;
+      for (let k = 1; k < lines.length; k++) {
+        const gap = lines[k-1].y - lines[k].y;
         if (gap > 0 && gap < 80) lineGaps.push(gap);
       }
-      lineGaps.sort((a, b) => a - b);
+      lineGaps.sort((a,b) => a-b);
       const medianLineGap = lineGaps.length
         ? lineGaps[Math.floor(lineGaps.length / 2)]
         : Math.max(medianHeight * 1.4, 12);
@@ -720,16 +785,14 @@ async function handlePdfFile(file) {
         pageNum, page,
         viewportHeight: viewport.height,
         lines, medianHeight, medianLineGap,
-        textChars: lines.reduce((acc, l) => acc + l.text.length, 0)
+        textChars: lines.reduce((a, l) => a + l.text.length, 0)
       });
     }
 
-    // ── PASO 2 · Detectar cabeceras/pies repetidos ───────────
-    // ✅ FIX 5: umbral bajado de 50% a 35%.
+    // ── PASO 2 · Cabeceras/pies repetidos ─────────────────
     const lineFrequency = new Map();
     const lineTopFrequency = new Map();
     const lineBottomFrequency = new Map();
-
     pagesData.forEach(pd => {
       const seen = new Set();
       pd.lines.forEach(line => {
@@ -745,70 +808,58 @@ async function handlePdfFile(file) {
       });
     });
 
-    const freqThreshold = Math.max(2, Math.floor(numPages * 0.35)); // ✅ FIX 5
+    const freqThreshold = Math.max(2, Math.floor(numPages * 0.35));
     const posThreshold  = Math.max(2, Math.floor(numPages * 0.25));
     const repeatedLines = new Set();
-    lineFrequency.forEach((count, norm) => {
-      if (count >= freqThreshold) repeatedLines.add(norm);
-    });
-    lineTopFrequency.forEach((count, norm) => {
-      if (count >= posThreshold) repeatedLines.add(norm);
-    });
-    lineBottomFrequency.forEach((count, norm) => {
-      if (count >= posThreshold) repeatedLines.add(norm);
-    });
+    lineFrequency.forEach((c, n) => { if (c >= freqThreshold) repeatedLines.add(n); });
+    lineTopFrequency.forEach((c, n) => { if (c >= posThreshold) repeatedLines.add(n); });
+    lineBottomFrequency.forEach((c, n) => { if (c >= posThreshold) repeatedLines.add(n); });
 
-    // ── PASO 3 · Construir HTML final ────────────────────────
+    // ── PASO 3 · Construir HTML ───────────────────────────
     let html = '';
     let totalHeadings = 0, totalParagraphs = 0, totalImages = 0;
     let totalListItems = 0, totalRemoved = 0, totalPagesRendered = 0;
+    let isFirstPage = true;
 
     for (const pd of pagesData) {
       const { pageNum, page, lines, medianHeight, medianLineGap, textChars } = pd;
 
-      // Filtrar cabeceras/pies repetidos + lista negra
       const filteredLines = lines.filter(line => {
         const norm = _pdfNormalizeLine(line.text);
         if (repeatedLines.has(norm)) { totalRemoved++; return false; }
-        if (_pdfIsBlacklisted(line.text)) { totalRemoved++; return false; } // ✅ FIX 5
+        if (_pdfIsBlacklisted(line.text)) { totalRemoved++; return false; }
+        if (_pdfIsGarbageLine(line.text)) { totalRemoved++; return false; }
         return true;
       });
 
-      // ✅ FIX 1 + FIX 3: umbral estricto para renderizar página como imagen.
-      const largeImageCount = await _pdfCountLargeImages(page);
-      const isImageDominant = largeImageCount >= 2 && textChars < 100;
+      const pageImages = await _pdfExtractImages(page);
 
-      if (isImageDominant) {
-        // ✅ FIX 4: escala y calidad reducidas.
-        const dataUrl = await _pdfRenderPageAsJpeg(page, 1.2, 0.7);
-        if (dataUrl) {
-          html += buildImageHTML(dataUrl, 'Página ' + pageNum + ' · documento PDF', '100%') + '\n';
-          totalPagesRendered++;
+      const isImageOnly = textChars < 60 && pageImages.length >= 1;
+      if (isImageOnly && filteredLines.length === 0) {
+        pageImages.forEach(img => {
+          html += buildImageHTML(img.dataUrl, 'Página ' + pageNum, '100%') + '\n';
           totalImages++;
-          if (pageNum < numPages) {
-            html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
-          }
-          continue;
+        });
+        if (pageNum < numPages) {
+          html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
         }
+        continue;
       }
 
-      // Construir bloques de texto.
       let blocks = _pdfBuildBlocks(filteredLines, medianHeight, medianLineGap);
-      // ✅ FIX 8: fusionar encabezados consecutivos
       blocks = _pdfMergeConsecutiveHeadings(blocks);
 
       let pageHtml = '';
       blocks.forEach(block => {
         if (block.type === 'heading') {
-          const lvl = block.height >= medianHeight * 1.9 ? 1
-                    : block.height >= medianHeight * 1.55 ? 2
-                    : 3;
+          let lvl = block.level || 3;
+          if (isFirstPage && pageHtml === '' && lvl <= 2 && block.text.length > 15) lvl = 1;
           pageHtml += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;">'
                    + '<div style="' + EX['h' + lvl] + '">' + esc(block.text) + '</div></div>\n';
           totalHeadings++;
-        } else if (block.type === 'ul' || block.type === 'ol') {
-          const tag = block.type;
-          const listStyle = (tag === 'ul' ? EX.ul : EX.ol);
+        } else if (block.type === 'list') {
+          const tag = block.ordered ? 'ol' : 'ul';
+          const listStyle = tag === 'ul' ? EX.ul : EX.ol;
           const itemsHtml = block.items.map(it => '<li style="' + EX.li + '">' + esc(it) + '</li>').join('');
           pageHtml += '<' + tag + ' data-editor-block="text" style="' + listStyle
                    + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:14px auto;box-sizing:border-box;">'
@@ -820,20 +871,18 @@ async function handlePdfFile(file) {
         }
       });
 
-      // ❌ FIX 2: ELIMINADO el bloque que añadía la página renderizada como
-      // imagen "por si acaso". Causaba duplicación de texto + imagen.
-      // if (largeImageCount > 0 && !isImageDominant) {
-      //   const dataUrl = await _pdfRenderPageAsJpeg(page, 1.5, 0.82);
-      //   if (dataUrl) { pageHtml += buildImageHTML(dataUrl, ...); }
-      // }
-
-      // ✅ FIX 9: sin wrapper con estilos inline (evita doble anidamiento a 1000px).
-      if (pageHtml.trim()) {
-        html += pageHtml;
+      if (pageImages.length) {
+        pageImages.forEach(img => {
+          pageHtml += buildImageHTML(img.dataUrl, 'Imagen', '100%') + '\n';
+          totalImages++;
+        });
       }
+
+      if (pageHtml.trim()) html += pageHtml;
       if (pageNum < numPages) {
         html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
       }
+      isFirstPage = false;
     }
 
     if (!html.trim()) {
@@ -846,8 +895,9 @@ async function handlePdfFile(file) {
     if (totalHeadings) parts.push(totalHeadings + ' título(s)');
     if (totalParagraphs) parts.push(totalParagraphs + ' párrafo(s)');
     if (totalListItems) parts.push(totalListItems + ' ítem(s) de lista');
+    if (totalImages) parts.push(totalImages + ' imagen(es)');
     if (totalPagesRendered) parts.push(totalPagesRendered + ' página(s) renderizada(s)');
-    if (totalRemoved) parts.push(totalRemoved + ' línea(s) de cabecera/pie descartada(s)');
+    if (totalRemoved) parts.push(totalRemoved + ' línea(s) descartada(s)');
     const summary = parts.length ? ' · ' + parts.join(' · ') : '';
     showToast('✅ ' + file.name + ' cargado · ' + numPages + ' página(s)' + summary, 7000);
 
