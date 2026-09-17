@@ -169,38 +169,92 @@ function cleanPreviewOnlyClasses(root) {
   });
 }
 function cleanExportAttributes(root) {
-  root.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
-  root.querySelectorAll('[bis_skin_checked]').forEach(el => el.removeAttribute('bis_skin_checked'));
-  root.querySelectorAll('[data-placeholder]').forEach(el => el.removeAttribute('data-placeholder'));
-  root.querySelectorAll('[spellcheck]').forEach(el => el.removeAttribute('spellcheck'));
+  // Atributos exclusivos del editor. Ninguno es necesario en Moodle.
+  const removableAttributes = [
+    'contenteditable', 'bis_skin_checked', 'data-placeholder', 'spellcheck',
+    'data-editor-block', 'data-mce-style', 'data-mce-selected',
+    'data-mce-src', 'data-mce-href'
+  ];
+  root.querySelectorAll('*').forEach(el => {
+    removableAttributes.forEach(attr => el.removeAttribute(attr));
+
+    // Elimina ayudas de edición, pero conserva títulos reales del usuario.
+    const title = (el.getAttribute('title') || '').trim();
+    if (title === 'Haz clic para editar el título') el.removeAttribute('title');
+
+    // Limpieza CSS propiedad a propiedad. Es más segura que sustituir
+    // cadenas completas y funciona aunque el navegador reordene el style.
+    if (el.style) {
+      el.style.removeProperty('outline');
+      el.style.removeProperty('cursor');
+      if (!String(el.getAttribute('style') || '').trim()) el.removeAttribute('style');
+    }
+  });
+}
+function cleanPdfImageAccessibility(root) {
+  Array.from(root.querySelectorAll('img')).forEach(img => {
+    const alt = (img.getAttribute('alt') || '').replace(/\s+/g, ' ').trim();
+    const src = img.getAttribute('src') || '';
+    const insideMedia = !!img.closest('.moodle-media-block');
+
+    // Las imágenes extraídas automáticamente del PDF no tienen una
+    // descripción fiable. alt="" evita anunciar "Imagen" sin contexto.
+    // No se toca el escudo ni imágenes con un texto alternativo real.
+    if (insideMedia && src.startsWith('data:image/') && (!alt || alt === 'Imagen')) {
+      img.setAttribute('alt', '');
+    }
+  });
+}
+function removeEmptyTopLevelParagraphs(root) {
+  Array.from(root.children).forEach(el => {
+    if (!el || el.tagName !== 'P') return;
+    const text = (el.textContent || '').replace(/\u00a0/g, ' ').trim();
+    const hasMeaningfulElement = !!el.querySelector('img,iframe,video,audio,table,ul,ol,div,section,article,figure,blockquote,a');
+    const onlyBreaks = !text && !hasMeaningfulElement && Array.from(el.childNodes).every(node => {
+      return node.nodeType === 3
+        ? !node.textContent.replace(/\u00a0/g, ' ').trim()
+        : node.nodeType === 1 && node.tagName === 'BR';
+    });
+    if (onlyBreaks) el.remove();
+  });
+}
+function removeEditorComments(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
+  const comments = [];
+  let node;
+  while ((node = walker.nextNode())) comments.push(node);
+  comments.forEach(comment => {
+    if (/^\s*BLOQUE\s+\d+\s*:/i.test(comment.nodeValue || '')) comment.remove();
+  });
 }
 // ══════════════════════════════════════════════════════════════
 //  CONSTRUIR HTML FINAL
 // ══════════════════════════════════════════════════════════════
 function buildFinalHTML() {
   const clone = editor.cloneNode(true);
-  cleanExportAttributes(clone);
+
+  // Primero se normaliza la estructura y el ancho mientras todavía existen
+  // las clases internas necesarias para reconocer texto y multimedia.
   normalizeInvalidParagraphBlocks(clone);
   removeDefaultResourcePlaceholders(clone);
   neutralizeBrokenInternalLinks(clone);
-  cleanPreviewOnlyClasses(clone);
   applyOptimizedReadingWidthForExport(clone);
-  let blockIndex = 0;
-  Array.from(clone.childNodes).forEach(node => {
-    const label = getBlockLabel(node);
-    if (label) {
-      blockIndex++;
-      const comment = document.createComment(` BLOQUE ${blockIndex}: ${label} `);
-      clone.insertBefore(comment, node);
-    }
-  });
-  let html = clone.innerHTML || '';
-  html = html.replace(/ style="outline: none; cursor: text;"/gi, '');
-  html = html.replace(/\sclass=""/gi, '');
-  html = html.replace(/<p><br><\/p>/gi, '<p>&nbsp;</p>');
-html = html.replace(/<br\s*\/?>/gi, '<br>');
-  html = html.trim();
-  if (html && html !== '<p>&nbsp;</p>') {
+
+  // Después se eliminan exclusivamente residuos del editor. La clase
+  // moodle-media-block se conserva porque el importador la usa al reabrir
+  // contenido publicado y no afecta a Moodle al llevar todos los estilos inline.
+  cleanPdfImageAccessibility(clone);
+  cleanExportAttributes(clone);
+  cleanPreviewOnlyClasses(clone);
+  removeEditorComments(clone);
+  removeEmptyTopLevelParagraphs(clone);
+
+  let html = (clone.innerHTML || '')
+    .replace(/\sclass=""/gi, '')
+    .replace(/<br\s*\/?\s*>/gi, '<br>')
+    .trim();
+
+  if (html) {
     const includeBanner = document.getElementById('toggle-banner')?.checked !== false;
     if (includeBanner) {
       html = buildBanner('header') + '\n' + html + '\n' + buildBanner('footer');
@@ -208,7 +262,6 @@ html = html.replace(/<br\s*\/?>/gi, '<br>');
   }
   return html;
 }
-
 // ══════════════════════════════════════════════════════════════
 //  REFRESCAR OUTPUT / STATS / LIMPIAR / COPIAR
 // ══════════════════════════════════════════════════════════════
