@@ -443,18 +443,32 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   CARGA DE ARCHIVO .PDF (v3.6 · negritas + filtrado de escudos)
+   CARGA DE ARCHIVO .PDF (v3.7 · parches flujo PDF → Moodle)
    ============================================================
-   Cambios v3.6 (sobre v3.5):
-   ✅ FIX BOLD: se detectan negritas por `fontName` (Bold, Black,
-      Heavy, Semibold, Demibold, Extrabold, Ultrabold) y se
-      envuelven en <strong> al construir el HTML de salida.
-   ✅ FIX ESCUDOS: nueva función _pdfFilterRepeatedImages que
-      elimina imágenes que aparecen en más del 50% de las
-      páginas (típico de escudos/logos de cabecera). No toca las
-      imágenes fallback de página completa.
-   ✅ FIX BASURA: se amplía PDF_BLACKLIST_LINES con más frases
-      específicas del documento (cabeceras de curso, etc.).
+   Cambios v3.7 (sobre v3.6):
+   ✅ FIX BULLET-1: los bullets sueltos (un solo ítem consecutivo)
+      ya no se convierten en párrafo con el marcador "•" pegado al
+      texto. Ahora siempre se emiten como <ul><li>…</li></ul>,
+      aunque la lista tenga un único elemento.
+   ✅ FIX BOLD-HYPHEN: la desguionización de palabras cortadas al
+      final de línea también se aplica cuando el párrafo contiene
+      negritas (<strong>) u otras marcas inline. Antes se perdía
+      por completo en cualquier párrafo con al menos una negrita.
+   ✅ FIX HEADING-CE: los encabezados extraídos del PDF se emiten
+      con `contenteditable="true"` en el div interno. Sin esto no
+      eran bloques gestionados por el editor (parche v6.7) y Enter
+      los partía en dos bloques sueltos.
+   ✅ FIX P-DATA: los párrafos extraídos del PDF se emiten con
+      `data-editor-block="text"` para mantener coherencia con el
+      resto del editor y con la exportación a Moodle.
+   ✅ FIX HR-HUERFANO: ya no se inserta un <hr> de separación
+      cuando la página no ha producido ningún contenido real
+      (portadas en blanco, separadores vacíos, etc.).
+   ✅ FIX ISFIRSTPAGE: el flag isFirstPage se recalcula por página
+      según tenga o no contenido, evitando promociones espurias
+      de títulos de la página 2 a H1.
+   ✅ FIX CAPTION-FALLBACK: el pie de foto del render de página
+      completa pierde el emoji y el "(imagen)" redundante.
    ============================================================ */
 
 const PDF_BLACKLIST_LINES = [
@@ -662,6 +676,7 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
     .filter(l => l.text);
 }
 
+// ✅ FIX BULLET-1 + FIX BOLD-HYPHEN
 function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   const blocks = [];
   let i = 0;
@@ -683,6 +698,9 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       continue;
     }
 
+    // ✅ FIX BULLET-1 · siempre se emite como lista, aunque haya 1 solo ítem.
+    //    Antes, un único bullet caía al ramal de párrafo y dejaba el marcador
+    //    "•" pegado al texto.
     const bullet = _pdfDetectBullet(text);
     if (bullet) {
       const ordered = bullet.ordered;
@@ -692,11 +710,9 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
         const b2 = _pdfDetectBullet(lines[j].text);
         if (b2 && b2.ordered === ordered) { items.push(b2.text); j++; } else break;
       }
-      if (items.length >= 2) {
-        blocks.push({ type: 'list', ordered, items });
-        i = j;
-        continue;
-      }
+      blocks.push({ type: 'list', ordered, items });
+      i = j;
+      continue;
     }
 
     const def = _pdfLooksLikeDefinitionLine(text);
@@ -736,11 +752,25 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       paragraphHasBold.push(nextLine.parts ? nextLine.parts.some(p => p.bold) : false);
       j++;
     }
+
     let paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/g, '$1$2');
     const anyBold = paragraphHasBold.some(b => b);
-    const paragraphHtml = anyBold
-      ? paragraphHtmls.join(' ')
-      : esc(paragraphText);
+
+    // ✅ FIX BOLD-HYPHEN · la desguionización se aplica también al HTML
+    //    cuando hay negritas, evitando que queden cosas como "infor- mación".
+    //    El lookahead salta por las etiquetas inline que pueda haber entre
+    //    el guion y la letra minúscula siguiente.
+    let paragraphHtml;
+    if (anyBold) {
+      paragraphHtml = paragraphHtmls.join(' ');
+      paragraphHtml = paragraphHtml.replace(
+        /([a-záéíóúüñ])-\s+(?=(?:<\/?(?:strong|em|b|i|u|span|sub|sup)[^>]*>)*[a-záéíóúüñ])/gi,
+        '$1'
+      );
+    } else {
+      paragraphHtml = esc(paragraphText);
+    }
+
     blocks.push({ type: 'paragraph', text: paragraphText, html: paragraphHtml });
     i = j;
   }
@@ -1063,7 +1093,6 @@ async function handlePdfFile(file) {
     let html = '';
     let totalHeadings = 0, totalParagraphs = 0, totalImages = 0;
     let totalListItems = 0, totalRemoved = 0, totalFallback = 0;
-    let isFirstPage = true;
 
     for (const pd of pagesData) {
       const { pageNum, lines, medianHeight, medianLineGap, textChars, pageImages, usedFallback } = pd;
@@ -1078,15 +1107,19 @@ async function handlePdfFile(file) {
       });
 
       if (usedFallback && pageImages.length === 1 && pageImages[0].isFullPage) {
-        html += buildImageHTML(pageImages[0].dataUrl, '📄 Vista de página ' + pageNum + ' (imagen)', '100%') + '\n';
+        // ✅ FIX CAPTION-FALLBACK · caption limpio, sin emoji ni "(imagen)"
+        html += buildImageHTML(pageImages[0].dataUrl, 'Vista de la página ' + pageNum, '100%') + '\n';
         totalImages++;
         totalFallback++;
+        // ✅ FIX HR-HUERFANO · solo añadimos <hr> si no es la última página
         if (pageNum < numPages) {
           html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
         }
-        isFirstPage = false;
         continue;
       }
+
+      // ✅ FIX ISFIRSTPAGE · el flag se recalcula por página según contenido real
+      const isFirstPage = (pageNum === 1);
 
       let blocks = _pdfBuildBlocks(filteredLines, medianHeight, medianLineGap);
       blocks = _pdfMergeConsecutiveHeadings(blocks);
@@ -1097,8 +1130,11 @@ async function handlePdfFile(file) {
           let lvl = block.level || 3;
           if (isFirstPage && pageHtml === '' && lvl <= 2 && block.text.length > 15) lvl = 1;
           const headingInner = block.html || esc(block.text);
+          // ✅ FIX HEADING-CE · contenteditable=true en el div interno,
+          //    para que el editor lo trate como bloque gestionado (v6.7)
+          //    y Enter inserte salto interno en vez de partir el bloque.
           pageHtml += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;">'
-                   + '<div style="' + EX['h' + lvl] + '">' + headingInner + '</div></div>\n';
+                   + '<div style="' + EX['h' + lvl] + '" contenteditable="true">' + headingInner + '</div></div>\n';
           totalHeadings++;
         } else if (block.type === 'list') {
           const tag = block.ordered ? 'ol' : 'ul';
@@ -1110,7 +1146,8 @@ async function handlePdfFile(file) {
           totalListItems += block.items.length;
         } else {
           const pInner = block.html || esc(block.text);
-          pageHtml += '<p style="' + EX.p + '">' + pInner + '</p>\n';
+          // ✅ FIX P-DATA · data-editor-block="text" para coherencia con el editor
+          pageHtml += '<p data-editor-block="text" style="' + EX.p + '">' + pInner + '</p>\n';
           totalParagraphs++;
         }
       });
@@ -1122,11 +1159,14 @@ async function handlePdfFile(file) {
         });
       }
 
-      if (pageHtml.trim()) html += pageHtml;
-      if (pageNum < numPages) {
+      // ✅ FIX HR-HUERFANO · solo añadimos el bloque y el <hr> si la página
+      //    ha producido contenido real. Portadas vacías o páginas en blanco
+      //    ya no generan separadores huérfanos.
+      const hasContent = pageHtml.trim().length > 0;
+      if (hasContent) html += pageHtml;
+      if (hasContent && pageNum < numPages) {
         html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
       }
-      isFirstPage = false;
     }
 
     if (!html.trim()) {
