@@ -414,12 +414,123 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════════════════════════
-//  CARGA DE ARCHIVO .PDF (v1.0)
-//  Extrae texto por párrafos agrupando líneas por proximidad vertical,
-//  detecta encabezados comparando el tamaño de fuente con la mediana
-//  de la página, y extrae imágenes incrustadas como base64.
+//  CARGA DE ARCHIVO .PDF (v2.0)
+//  Mejoras respecto a v1.0:
+//  - Detección y eliminación de cabeceras/pies repetidos entre páginas.
+//  - Descartar números de página como títulos (regex 1-3 dígitos).
+//  - Detección de viñetas (•, -, –, —, *, ·, 1., 2. …) y agrupación en <ul>/<ol>.
+//  - Segmentación de párrafos por hueco vertical real (mediana por página).
+//  - Ordenación previa de items por (Y desc, X asc) para PDFs con texto desordenado.
+//  - Extracción ampliada de imágenes: paintImageXObject + paintInlineImageXObject + paintJpegXObject.
 //  Requiere: window.pdfjsLib disponible (PDF.js 3.x UMD).
 // ══════════════════════════════════════════════════════════════
+
+// Normaliza una línea para comparar cabeceras/pies entre páginas:
+// "Página 3" y "Página 5" se convierten en "página n", y por tanto coinciden.
+function _pdfNormalizeLine(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[\d]+/g, 'n')
+    .replace(/[^a-záéíóúüñn\s]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Agrupa items de texto en líneas por proximidad vertical.
+// Antes de agrupar, ordena por (Y descendente, X ascendente) para que
+// los items que el PDF tenga desordenados internamente se coloquen bien.
+function _pdfGroupItemsIntoLines(items, medianHeight) {
+  const tolerance = Math.max(3, medianHeight * 0.45);
+  const sorted = items.slice().sort((a, b) => {
+    const ya = (a.transform && a.transform[5]) || 0;
+    const yb = (b.transform && b.transform[5]) || 0;
+    if (Math.abs(ya - yb) > tolerance) return yb - ya; // arriba → abajo
+    const xa = (a.transform && a.transform[4]) || 0;
+    const xb = (b.transform && b.transform[4]) || 0;
+    return xa - xb; // izquierda → derecha
+  });
+
+  const lines = [];
+  let current = null;
+  sorted.forEach(it => {
+    const text = (it.str || '').replace(/\s+$/g, '');
+    if (!text) return;
+    const y = (it.transform && it.transform[5]) || 0;
+    const x = (it.transform && it.transform[4]) || 0;
+    const h = it.height || medianHeight;
+    if (!current || Math.abs(current.y - y) > tolerance) {
+      if (current) lines.push(current);
+      current = { y, x, height: h, parts: [text] };
+    } else {
+      current.parts.push(text);
+      current.height = Math.max(current.height, h);
+    }
+  });
+  if (current) lines.push(current);
+  return lines
+    .map(l => ({ y: l.y, x: l.x, height: l.height, text: l.parts.join(' ').replace(/\s+/g, ' ').trim() }))
+    .filter(l => l.text);
+}
+
+// Detecta el patrón de viñeta y devuelve {ordered, text} o null.
+function _pdfDetectBullet(text) {
+  const m = text.match(/^([•\-–—*·▪▫◦‣⁃]|\d{1,2}[.)])\s+(.+)$/);
+  if (!m) return null;
+  return { ordered: /^\d/.test(m[1]), text: m[2].trim() };
+}
+
+// Agrupa líneas en bloques: heading, paragraph, ul, ol.
+// Usa el hueco vertical para separar párrafos.
+function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
+  const blocks = [];
+  let current = null;
+
+  lines.forEach(line => {
+    const text = line.text;
+    const isHeading = line.height >= medianHeight * 1.35 && text.length < 120 && !/^\d{1,3}$/.test(text);
+    const bullet = _pdfDetectBullet(text);
+    const blockType = isHeading ? 'heading' : (bullet ? (bullet.ordered ? 'ol' : 'ul') : 'paragraph');
+
+    const prevLine = current && current.lines && current.lines.length
+      ? current.lines[current.lines.length - 1] : null;
+    const gap = prevLine ? (prevLine.y - line.y) : 0;
+    const isParagraphBreak = prevLine && gap > medianLineGap * 1.5;
+
+    const normalizedText = bullet ? bullet.text : text;
+
+    if (current && current.type === blockType && !isParagraphBreak) {
+      if (blockType === 'ul' || blockType === 'ol') {
+        current.items.push(normalizedText);
+      } else {
+        current.lines.push({ y: line.y, text: normalizedText });
+      }
+      return;
+    }
+
+    if (current) blocks.push(current);
+
+    if (blockType === 'heading') {
+      current = { type: 'heading', height: line.height, lines: [{ y: line.y, text }] };
+    } else if (blockType === 'ul' || blockType === 'ol') {
+      current = { type: blockType, items: [normalizedText], lines: [{ y: line.y, text: normalizedText }] };
+    } else {
+      current = { type: 'paragraph', lines: [{ y: line.y, text }] };
+    }
+  });
+
+  if (current) blocks.push(current);
+
+  return blocks.map(b => {
+    if (b.type === 'heading') {
+      return { type: 'heading', height: b.height, text: b.lines.map(l => l.text).join(' ') };
+    }
+    if (b.type === 'ul' || b.type === 'ol') {
+      return { type: b.type, items: b.items.slice() };
+    }
+    return { type: 'paragraph', text: b.lines.map(l => l.text).join(' ') };
+  });
+}
+
 async function handlePdfFile(file) {
   if (!file) return;
   if (!file.name.toLowerCase().endsWith('.pdf')) {
@@ -437,105 +548,131 @@ async function handlePdfFile(file) {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const numPages = pdf.numPages;
-    let html = '';
-    let totalParagraphs = 0;
-    let totalHeadings = 0;
-    let totalImages = 0;
 
+    // ── PASO 1 · Recolectar líneas por página ────────────────
+    const pagesData = [];
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const items = textContent.items || [];
 
-      // ── 1. Calcular mediana de altura de fuente (para detectar títulos) ──
       const heights = items.map(it => it.height || 0).filter(h => h > 0).sort((a, b) => a - b);
       const medianHeight = heights.length ? heights[Math.floor(heights.length / 2)] : 12;
 
-      // ── 2. Agrupar items por líneas (proximidad vertical) ──
-      const lines = [];
-      let currentLine = null;
-      const Y_TOLERANCE = 3;
+      const lines = _pdfGroupItemsIntoLines(items, medianHeight);
 
-      items.forEach(it => {
-        const text = (it.str || '').replace(/\s+$/g, '');
-        if (!text) return;
-        const y = it.transform ? it.transform[5] : 0;
-        const x = it.transform ? it.transform[4] : 0;
-        const h = it.height || medianHeight;
+      // Mediana de la separación vertical entre líneas consecutivas.
+      const lineGaps = [];
+      for (let i = 1; i < lines.length; i++) {
+        const gap = lines[i - 1].y - lines[i].y;
+        if (gap > 0 && gap < 80) lineGaps.push(gap);
+      }
+      lineGaps.sort((a, b) => a - b);
+      const medianLineGap = lineGaps.length
+        ? lineGaps[Math.floor(lineGaps.length / 2)]
+        : Math.max(medianHeight * 1.4, 12);
 
-        if (!currentLine || Math.abs(currentLine.y - y) > Y_TOLERANCE) {
-          if (currentLine) lines.push(currentLine);
-          currentLine = { y: y, x: x, height: h, parts: [text] };
-        } else {
-          currentLine.parts.push(text);
-          currentLine.height = Math.max(currentLine.height, h);
-        }
+      pagesData.push({ pageNum, page, lines, medianHeight, medianLineGap });
+    }
+
+    // ── PASO 2 · Detectar cabeceras/pies repetidos ───────────
+    // Cuenta cuántas páginas contienen cada línea normalizada.
+    const lineFrequency = new Map();
+    pagesData.forEach(pd => {
+      const seen = new Set();
+      pd.lines.forEach(line => {
+        const norm = _pdfNormalizeLine(line.text);
+        if (!norm || norm.length < 4) return;
+        if (seen.has(norm)) return;
+        seen.add(norm);
+        lineFrequency.set(norm, (lineFrequency.get(norm) || 0) + 1);
       });
-      if (currentLine) lines.push(currentLine);
+    });
+    const repeatThreshold = Math.max(2, Math.floor(numPages * 0.8));
+    const repeatedLines = new Set();
+    lineFrequency.forEach((count, norm) => {
+      if (count >= repeatThreshold) repeatedLines.add(norm);
+    });
 
-      // ── 3. Agrupar líneas en párrafos y detectar encabezados ──
-      const blocks = [];
-      let currentBlock = null;
+    // ── PASO 3 · Construir HTML ──────────────────────────────
+    let html = '';
+    let totalHeadings = 0, totalParagraphs = 0, totalImages = 0, totalListItems = 0, totalRemoved = 0;
 
-      lines.forEach(line => {
-        const lineText = line.parts.join(' ').replace(/\s+/g, ' ').trim();
-        if (!lineText) return;
-        const isHeading = line.height >= medianHeight * 1.35 && lineText.length < 120;
+    for (const pd of pagesData) {
+      const { pageNum, page, lines, medianHeight, medianLineGap } = pd;
 
-        if (!currentBlock) {
-          currentBlock = { heading: isHeading, height: line.height, lines: [lineText] };
-        } else if (currentBlock.heading === isHeading && Math.abs(currentBlock.height - line.height) < 2) {
-          currentBlock.lines.push(lineText);
-        } else {
-          blocks.push(currentBlock);
-          currentBlock = { heading: isHeading, height: line.height, lines: [lineText] };
-        }
+      // Filtrar líneas repetidas (cabeceras/pies).
+      const filteredLines = lines.filter(line => {
+        const norm = _pdfNormalizeLine(line.text);
+        if (repeatedLines.has(norm)) { totalRemoved++; return false; }
+        return true;
       });
-      if (currentBlock) blocks.push(currentBlock);
 
-      // ── 4. Construir HTML de la página ──
+      // Construir bloques a partir de las líneas filtradas.
+      const blocks = _pdfBuildBlocks(filteredLines, medianHeight, medianLineGap);
+
       let pageHtml = '';
       blocks.forEach(block => {
-        const text = block.lines.join(' ');
-        if (!text.trim()) return;
-        if (block.heading) {
-          const lvl = block.height >= medianHeight * 1.9 ? 1 : block.height >= medianHeight * 1.55 ? 2 : 3;
-          pageHtml += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;"><div style="' + EX['h' + lvl] + '">' + esc(text) + '</div></div>\n';
+        if (block.type === 'heading') {
+          const lvl = block.height >= medianHeight * 1.9 ? 1
+                    : block.height >= medianHeight * 1.55 ? 2
+                    : 3;
+          pageHtml += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;">'
+                   + '<div style="' + EX['h' + lvl] + '">' + esc(block.text) + '</div></div>\n';
           totalHeadings++;
+        } else if (block.type === 'ul' || block.type === 'ol') {
+          const tag = block.type;
+          const listStyle = (tag === 'ul' ? EX.ul : EX.ol);
+          const itemsHtml = block.items.map(it => '<li style="' + EX.li + '">' + esc(it) + '</li>').join('');
+          pageHtml += '<' + tag + ' data-editor-block="text" style="' + listStyle
+                   + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:14px auto;box-sizing:border-box;">'
+                   + itemsHtml + '</' + tag + '>\n';
+          totalListItems += block.items.length;
         } else {
-          pageHtml += '<p style="' + EX.p + '">' + esc(text) + '</p>\n';
+          pageHtml += '<p style="' + EX.p + '">' + esc(block.text) + '</p>\n';
           totalParagraphs++;
         }
       });
 
-      // ── 5. Extraer imágenes incrustadas de la página ──
+      // ── Extracción de imágenes ampliada ────────────────────
       try {
         const ops = await page.getOperatorList();
-        const imgNames = new Set();
+        const imageJobs = [];
         for (let i = 0; i < ops.fnArray.length; i++) {
-          if (ops.fnArray[i] === window.pdfjsLib.OPS.paintImageXObject) {
-            const imgName = ops.argsArray[i][0];
-            if (imgName) imgNames.add(imgName);
+          const fn = ops.fnArray[i];
+          const arg = ops.argsArray[i] ? ops.argsArray[i][0] : null;
+          if (!arg) continue;
+          if (fn === window.pdfjsLib.OPS.paintInlineImageXObject) {
+            imageJobs.push({ inline: true, data: arg });
+          } else if (fn === window.pdfjsLib.OPS.paintImageXObject || fn === window.pdfjsLib.OPS.paintJpegXObject) {
+            imageJobs.push({ inline: false, name: arg });
           }
         }
-        for (const imgName of imgNames) {
+
+        for (const job of imageJobs) {
           try {
-            const imgData = await new Promise((resolve) => {
-              let resolved = false;
-              const timer = setTimeout(() => { if (!resolved) { resolved = true; resolve(null); } }, 2000);
-              try {
-                page.objs.get(imgName, (img) => {
-                  if (resolved) return;
-                  resolved = true;
-                  clearTimeout(timer);
-                  resolve(img || null);
-                });
-              } catch (e) {
-                if (!resolved) { resolved = true; clearTimeout(timer); resolve(null); }
-              }
-            });
-            if (!imgData || !imgData.data || !imgData.width || !imgData.height) continue;
-            if (imgData.width < 40 || imgData.height < 40) continue; // descarta iconos mínimos
+            let imgData = null;
+            if (job.inline) {
+              imgData = job.data;
+            } else {
+              imgData = await new Promise((resolve) => {
+                let resolved = false;
+                const timer = setTimeout(() => { if (!resolved) { resolved = true; resolve(null); } }, 2000);
+                try {
+                  page.objs.get(job.name, (img) => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve(img || null);
+                  });
+                } catch (e) {
+                  if (!resolved) { resolved = true; clearTimeout(timer); resolve(null); }
+                }
+              });
+            }
+            if (!imgData || !imgData.width || !imgData.height) continue;
+            if (!imgData.data) continue;
+            if (imgData.width < 60 || imgData.height < 60) continue; // descarta iconos mínimos
 
             const canvas = document.createElement('canvas');
             canvas.width = imgData.width;
@@ -549,7 +686,7 @@ async function handlePdfFile(file) {
               dst.set(src);
             } else if (src.length === pixels * 3) {
               for (let p = 0, q = 0; p < pixels; p++, q += 3) {
-                dst[p * 4] = src[q];
+                dst[p * 4]     = src[q];
                 dst[p * 4 + 1] = src[q + 1];
                 dst[p * 4 + 2] = src[q + 2];
                 dst[p * 4 + 3] = 255;
@@ -567,14 +704,13 @@ async function handlePdfFile(file) {
             pageHtml += buildImageHTML(dataUrl, 'Imagen · página ' + pageNum, '100%') + '\n';
             totalImages++;
           } catch (e) {
-            // Ignorar imagen problemática, seguir con las demás
+            // Ignorar imagen problemática
           }
         }
       } catch (e) {
         // Si falla la extracción de imágenes, seguimos con el texto
       }
 
-      // ── 6. Añadir la página al HTML global ──
       if (pageHtml.trim()) {
         html += '<div data-pdf-page="' + pageNum + '">\n' + pageHtml + '</div>\n';
       }
@@ -592,9 +728,11 @@ async function handlePdfFile(file) {
     const parts = [];
     if (totalHeadings) parts.push(totalHeadings + ' título(s)');
     if (totalParagraphs) parts.push(totalParagraphs + ' párrafo(s)');
+    if (totalListItems) parts.push(totalListItems + ' ítem(s) de lista');
     if (totalImages) parts.push(totalImages + ' imagen(es)');
+    if (totalRemoved) parts.push(totalRemoved + ' línea(s) de cabecera/pie descartada(s)');
     const summary = parts.length ? ' · ' + parts.join(' · ') : '';
-    showToast('✅ ' + file.name + ' cargado · ' + numPages + ' página(s)' + summary, 5000);
+    showToast('✅ ' + file.name + ' cargado · ' + numPages + ' página(s)' + summary, 6000);
 
   } catch (err) {
     console.error('Error procesando PDF:', err);
