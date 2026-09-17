@@ -330,17 +330,20 @@ editor.addEventListener('paste', function(e) {
 
 editor.addEventListener('dragover',  e => { e.preventDefault(); editor.classList.add('dragover'); });
 editor.addEventListener('dragleave', ()  => editor.classList.remove('dragover'));
+// v1.1 · drop ampliado: acepta .docx, .pdf e imágenes.
 editor.addEventListener('drop', function(e) {
   e.preventDefault();
   editor.classList.remove('dragover');
   const file = e.dataTransfer.files[0];
   if (!file) return;
-  if (file.name.toLowerCase().endsWith('.docx')) {
+  const name = (file.name || '').toLowerCase();
+  if (name.endsWith('.docx')) {
     handleDocxFile(file);
+  } else if (name.endsWith('.pdf')) {
+    handlePdfFile(file);
   } else if (file.type.startsWith('image/')) {
     compressAndInsertImage(file, '100%', '');
   } else {
-    showToast('⚠️ Solo se admiten archivos .docx e imágenes');
+    showToast('⚠️ Solo se admiten archivos .docx, .pdf e imágenes');
   }
 });
-
