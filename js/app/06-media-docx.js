@@ -413,15 +413,46 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
   if (e.key === 'Escape') closeMediaModal();
 });
 
-// ══════════════════════════════════════════════════════════════
-//  CARGA DE ARCHIVO .PDF (v3.0)
-//  Novedades respecto a v2.0:
-//  - Cabeceras/pies: umbral 50% + detección por posición (Y >90% o <10%).
-//  - Listas por patrón textual: ≥3 líneas consecutivas con "Palabra:" o "a." o "1.".
-//  - Renderizado de páginas con imágenes grandes como JPEG (scale 2.0, calidad 0.85).
-//  - Sustituye el texto de la página por imagen si predomina imagen sobre texto.
-//  Requiere: window.pdfjsLib disponible (PDF.js 3.x UMD).
-// ══════════════════════════════════════════════════════════════
+/* ============================================================
+   CARGA DE ARCHIVO .PDF (v3.0 + FIXES CRÍTICOS v3.1)
+   ============================================================
+   CAMBIOS respecto a v3.0:
+   ✅ FIX 1: _pdfCountLargeImages solo cuenta imágenes inline con
+             dimensiones reales >= 400x400. Ya no cuenta XObjects
+             cuyo tamaño es desconocido (evita falsos positivos).
+   ✅ FIX 2: Se elimina el bloque que añadía la página renderizada
+             como imagen cuando había texto + imágenes (causaba
+             duplicación de contenido).
+   ✅ FIX 3: Umbral de "página dominante por imagen" mucho más
+             estricto (2+ imágenes grandes Y <100 caracteres).
+   ✅ FIX 4: Escala y calidad reducidas si hay que renderizar.
+   ✅ FIX 5: Lista negra de cabeceras/pies + detección mejorada
+             por frecuencia (baja de 50% a 35%).
+   ✅ FIX 6: _pdfGroupItemsIntoLines usa el hueco en X para decidir
+             si añadir espacio, evitando "culturale s" o
+             "espontánea mente".
+   ✅ FIX 7: Post-procesado de texto (espacios antes de puntuación,
+             espacios tras apertura de signos).
+   ✅ FIX 8: Fusión de encabezados consecutivos del mismo nivel
+             ("CONCEPTOS BÁSICOS" + "EN INCENDIOS FORESTALES").
+   ✅ FIX 9: Se elimina el wrapper <div data-pdf-page> con estilos
+             inline duplicados para no anidar contenedores a 1000px.
+   ============================================================ */
+
+// ✅ FIX 5: Lista negra de líneas que son claramente cabeceras/pies
+// Se ancla con ^...$ para no eliminar contenido mixto.
+const PDF_BLACKLIST_LINES = [
+  /^\s*instructor\s+sfb\s+.+$/i,
+  /^\s*direcci[oó]n\s+general\s+de\s+emergencias\s*$/i,
+  /^\s*cuerpo\s+de\s+bomberos\s+de\s+la\s+c\.?\s*m\.?\s*$/i,
+  /^\s*curso\s+nuevo\s+ingreso\s+\d{4}\s*[-–]\s*\d{4}\s*$/i,
+  /^\s*sfb\s+m[oó]dulo\s+0?\d+\s+.*$/i,
+  /^\s*conceptos\s+b[aá]sicos\s+en\s+incendios\s+forestales\s*$/i
+];
+
+function _pdfIsBlacklisted(text) {
+  return PDF_BLACKLIST_LINES.some(rx => rx.test(text));
+}
 
 function _pdfNormalizeLine(text) {
   return String(text || '')
@@ -432,6 +463,8 @@ function _pdfNormalizeLine(text) {
     .trim();
 }
 
+// ✅ FIX 6: usa el hueco en X para decidir si unir con o sin espacio.
+// Esto arregla "culturale s" → "culturales" y "espontánea mente" → "espontáneamente".
 function _pdfGroupItemsIntoLines(items, medianHeight) {
   const tolerance = Math.max(3, medianHeight * 0.45);
   const sorted = items.slice().sort((a, b) => {
@@ -445,43 +478,54 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
 
   const lines = [];
   let current = null;
+
   sorted.forEach(it => {
-    const text = (it.str || '').replace(/\s+$/g, '');
-    if (!text) return;
+    const rawText = (it.str || '').replace(/\s+$/g, '');
+    if (!rawText) return;
     const y = (it.transform && it.transform[5]) || 0;
     const x = (it.transform && it.transform[4]) || 0;
+    const w = it.width || 0;
     const h = it.height || medianHeight;
+
     if (!current || Math.abs(current.y - y) > tolerance) {
       if (current) lines.push(current);
-      current = { y, x, height: h, parts: [text] };
+      current = { y, x, xEnd: x + w, height: h, raw: [rawText] };
     } else {
-      current.parts.push(text);
+      // ✅ FIX 6: decidir espacio en función del hueco horizontal
+      const gap = x - current.xEnd;
+      const spaceThreshold = h * 0.18; // ≈ espacio tipográfico
+      const needsSpace = gap > spaceThreshold;
+      current.raw.push((needsSpace ? ' ' : '') + rawText);
+      current.xEnd = Math.max(current.xEnd, x + w);
       current.height = Math.max(current.height, h);
     }
   });
   if (current) lines.push(current);
+
   return lines
-    .map(l => ({ y: l.y, x: l.x, height: l.height, text: l.parts.join(' ').replace(/\s+/g, ' ').trim() }))
+    .map(l => {
+      // ✅ FIX 7: post-procesado de espacios
+      let text = l.raw.join('')
+        .replace(/\s+/g, ' ')
+        .replace(/\s+([,.;:!?»)\]])/g, '$1')
+        .replace(/([«¡¿(\[])\s+/g, '$1')
+        .replace(/\s+'/g, "'")
+        .trim();
+      return { y: l.y, x: l.x, height: l.height, text };
+    })
     .filter(l => l.text);
 }
 
-// Detecta patrón de viñeta (por carácter o por patrón textual).
-// Devuelve {ordered, text} o null.
 function _pdfDetectBullet(text) {
-  // 1. Caracteres de viñeta Unicode
   let m = text.match(/^([•\-–—*·▪▫◦‣⁃])\s+(.+)$/);
   if (m) return { ordered: false, text: m[2].trim() };
-  // 2. Numerada: "1. ", "1) "
   m = text.match(/^(\d{1,2})[.)]\s+(.+)$/);
   if (m) return { ordered: true, text: m[2].trim() };
-  // 3. Alfabética: "a. ", "b) "
   m = text.match(/^([a-z])[.)]\s+(.+)$/);
   if (m) return { ordered: false, text: m[2].trim() };
   return null;
 }
 
-// Detecta línea "tipo lista" por patrón "Palabra:" o "Palabra o Palabra:".
-// Es heurístico: solo cuenta si la palabra antes de ":" es 1-4 palabras y no un número.
 function _pdfLooksLikeDefinitionLine(text) {
   const m = text.match(/^([A-ZÁÉÍÓÚÑ][a-záéíóúüñA-Z\s]{0,40}?)\s*:\s+(.+)$/);
   if (!m) return null;
@@ -492,8 +536,6 @@ function _pdfLooksLikeDefinitionLine(text) {
   return { head, body };
 }
 
-// Agrupa líneas en bloques. Además de heading/paragraph/ul/ol,
-// ahora detecta secuencias de ≥3 líneas con patrón "Palabra:" como lista.
 function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   const blocks = [];
   let i = 0;
@@ -503,14 +545,12 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
     const text = line.text;
     const isHeading = line.height >= medianHeight * 1.35 && text.length < 120 && !/^\d{1,3}$/.test(text);
 
-    // ── Caso 1: título ──
     if (isHeading) {
       blocks.push({ type: 'heading', height: line.height, text });
       i++;
       continue;
     }
 
-    // ── Caso 2: lista con viñeta explícita ──
     const bullet = _pdfDetectBullet(text);
     if (bullet) {
       const ordered = bullet.ordered;
@@ -530,10 +570,9 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       }
     }
 
-    // ── Caso 3: lista por patrón textual "Palabra: definición" ──
     const def = _pdfLooksLikeDefinitionLine(text);
     if (def) {
-      const items = [text]; // mantenemos "Palabra: definición" como ítem completo
+      const items = [text];
       let j = i + 1;
       while (j < lines.length) {
         const def2 = _pdfLooksLikeDefinitionLine(lines[j].text);
@@ -541,7 +580,6 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
         items.push(lines[j].text);
         j++;
       }
-      // Solo agrupar si son ≥3 líneas consecutivas con el mismo patrón.
       if (items.length >= 3) {
         blocks.push({ type: 'ul', items });
         i = j;
@@ -549,7 +587,6 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       }
     }
 
-    // ── Caso 4: párrafo (posiblemente multilínea) ──
     const paragraphLines = [text];
     let j = i + 1;
     while (j < lines.length) {
@@ -574,7 +611,32 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
   return blocks;
 }
 
-// Cuenta imágenes potencialmente grandes en una página (heurística previa al render).
+// ✅ FIX 8: fusiona encabezados consecutivos del mismo nivel.
+// Arregla "CONCEPTOS BÁSICOS" + "EN INCENDIOS FORESTALES" → una sola cabecera.
+function _pdfMergeConsecutiveHeadings(blocks) {
+  const merged = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.type === 'heading' && merged.length) {
+      const prev = merged[merged.length - 1];
+      const sameLevel = prev.type === 'heading' && Math.abs((prev.height || 0) - (b.height || 0)) < 2;
+      if (sameLevel) {
+        // Si el anterior no acaba en puntuación fuerte, unimos con espacio
+        const prevEndsClean = /[.,;:!?]$/.test(prev.text.trim());
+        if (!prevEndsClean) {
+          prev.text = (prev.text.trim() + ' ' + b.text.trim()).replace(/\s+/g, ' ');
+          prev.height = Math.max(prev.height, b.height);
+          continue;
+        }
+      }
+    }
+    merged.push({ ...b });
+  }
+  return merged;
+}
+
+// ✅ FIX 1: solo cuenta imágenes inline con dimensiones reales >= 400x400.
+// NO cuenta XObjects/JpegXObject cuyo tamaño no se conoce sin resolver.
 async function _pdfCountLargeImages(page) {
   try {
     const ops = await page.getOperatorList();
@@ -584,11 +646,12 @@ async function _pdfCountLargeImages(page) {
       const arg = ops.argsArray[i] ? ops.argsArray[i][0] : null;
       if (!arg) continue;
       if (fn === window.pdfjsLib.OPS.paintInlineImageXObject) {
-        if (arg.width >= 150 && arg.height >= 150) count++;
-      } else if (fn === window.pdfjsLib.OPS.paintImageXObject || fn === window.pdfjsLib.OPS.paintJpegXObject) {
-        // No podemos saber el tamaño sin resolver el objeto. Lo contamos como posible.
-        count++;
+        if (arg.width >= 400 && arg.height >= 400) count++;
       }
+      // NOTA: paintImageXObject / paintJpegXObject referencian XObjects
+      // por nombre; su tamaño real no se conoce en el operator list.
+      // NO los contamos para evitar falsos positivos que disparen el
+      // renderizado de la página entera.
     }
     return count;
   } catch (e) {
@@ -596,7 +659,6 @@ async function _pdfCountLargeImages(page) {
   }
 }
 
-// Renderiza una página completa como JPEG dataURL.
 async function _pdfRenderPageAsJpeg(page, scale, quality) {
   try {
     const viewport = page.getViewport({ scale: scale });
@@ -663,7 +725,7 @@ async function handlePdfFile(file) {
     }
 
     // ── PASO 2 · Detectar cabeceras/pies repetidos ───────────
-    // Criterio doble: (a) frecuencia global ≥50%; (b) zona superior/inferior ≥30%.
+    // ✅ FIX 5: umbral bajado de 50% a 35%.
     const lineFrequency = new Map();
     const lineTopFrequency = new Map();
     const lineBottomFrequency = new Map();
@@ -676,7 +738,6 @@ async function handlePdfFile(file) {
         if (!seen.has(norm)) {
           seen.add(norm);
           lineFrequency.set(norm, (lineFrequency.get(norm) || 0) + 1);
-          // Posición relativa (0 = base, 1 = tope)
           const rel = pd.viewportHeight ? (line.y / pd.viewportHeight) : 0.5;
           if (rel > 0.90) lineTopFrequency.set(norm, (lineTopFrequency.get(norm) || 0) + 1);
           if (rel < 0.10) lineBottomFrequency.set(norm, (lineBottomFrequency.get(norm) || 0) + 1);
@@ -684,8 +745,8 @@ async function handlePdfFile(file) {
       });
     });
 
-    const freqThreshold = Math.max(2, Math.floor(numPages * 0.5));
-    const posThreshold  = Math.max(2, Math.floor(numPages * 0.3));
+    const freqThreshold = Math.max(2, Math.floor(numPages * 0.35)); // ✅ FIX 5
+    const posThreshold  = Math.max(2, Math.floor(numPages * 0.25));
     const repeatedLines = new Set();
     lineFrequency.forEach((count, norm) => {
       if (count >= freqThreshold) repeatedLines.add(norm);
@@ -705,36 +766,36 @@ async function handlePdfFile(file) {
     for (const pd of pagesData) {
       const { pageNum, page, lines, medianHeight, medianLineGap, textChars } = pd;
 
-      // Filtrar cabeceras/pies repetidos.
+      // Filtrar cabeceras/pies repetidos + lista negra
       const filteredLines = lines.filter(line => {
         const norm = _pdfNormalizeLine(line.text);
         if (repeatedLines.has(norm)) { totalRemoved++; return false; }
+        if (_pdfIsBlacklisted(line.text)) { totalRemoved++; return false; } // ✅ FIX 5
         return true;
       });
 
-      // Detección previa de imágenes: si hay imágenes grandes o poco texto con imagen.
+      // ✅ FIX 1 + FIX 3: umbral estricto para renderizar página como imagen.
       const largeImageCount = await _pdfCountLargeImages(page);
-      const isImageDominant = largeImageCount > 0 && (textChars < 300);
+      const isImageDominant = largeImageCount >= 2 && textChars < 100;
 
       if (isImageDominant) {
-        // Renderizar la página entera como JPEG.
-        const dataUrl = await _pdfRenderPageAsJpeg(page, 2.0, 0.85);
+        // ✅ FIX 4: escala y calidad reducidas.
+        const dataUrl = await _pdfRenderPageAsJpeg(page, 1.2, 0.7);
         if (dataUrl) {
-          html += '<div data-pdf-page="' + pageNum + '">\n';
           html += buildImageHTML(dataUrl, 'Página ' + pageNum + ' · documento PDF', '100%') + '\n';
-          html += '</div>\n';
           totalPagesRendered++;
           totalImages++;
           if (pageNum < numPages) {
             html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
           }
-          continue; // saltamos el procesamiento de texto de esta página
+          continue;
         }
-        // Si el renderizado falla, caemos al procesamiento de texto normal.
       }
 
       // Construir bloques de texto.
-      const blocks = _pdfBuildBlocks(filteredLines, medianHeight, medianLineGap);
+      let blocks = _pdfBuildBlocks(filteredLines, medianHeight, medianLineGap);
+      // ✅ FIX 8: fusionar encabezados consecutivos
+      blocks = _pdfMergeConsecutiveHeadings(blocks);
 
       let pageHtml = '';
       blocks.forEach(block => {
@@ -759,18 +820,16 @@ async function handlePdfFile(file) {
         }
       });
 
-      // Si hay imágenes grandes pero también texto, añadimos la página renderizada al final.
-      if (largeImageCount > 0 && !isImageDominant) {
-        const dataUrl = await _pdfRenderPageAsJpeg(page, 1.5, 0.82);
-        if (dataUrl) {
-          pageHtml += buildImageHTML(dataUrl, 'Página ' + pageNum + ' · documento PDF', '100%') + '\n';
-          totalImages++;
-          totalPagesRendered++;
-        }
-      }
+      // ❌ FIX 2: ELIMINADO el bloque que añadía la página renderizada como
+      // imagen "por si acaso". Causaba duplicación de texto + imagen.
+      // if (largeImageCount > 0 && !isImageDominant) {
+      //   const dataUrl = await _pdfRenderPageAsJpeg(page, 1.5, 0.82);
+      //   if (dataUrl) { pageHtml += buildImageHTML(dataUrl, ...); }
+      // }
 
+      // ✅ FIX 9: sin wrapper con estilos inline (evita doble anidamiento a 1000px).
       if (pageHtml.trim()) {
-        html += '<div data-pdf-page="' + pageNum + '">\n' + pageHtml + '</div>\n';
+        html += pageHtml;
       }
       if (pageNum < numPages) {
         html += '<hr data-editor-block="text" style="' + EX.divider + ';max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:16px auto;box-sizing:border-box;">\n';
