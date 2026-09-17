@@ -212,11 +212,40 @@ function handleDocxFile(file) {
         });
       }),
       styleMap: [
-        "p[style-name='Heading 1'] => h1", "p[style-name='Heading 2'] => h2",
-        "p[style-name='Heading 3'] => h3", "p[style-name='Heading 4'] => h4",
-        "p[style-name='Título 1']  => h1", "p[style-name='Título 2']  => h2",
-        "p[style-name='Título 3']  => h3", "p[style-name='Título 4']  => h4",
-        "p[style-name='Title']     => h1", "b => strong", "i => em", "u => u",
+        // ── Encabezados por estilo ────────────────────────
+        "p[style-name='Heading 1'] => h1",
+        "p[style-name='Heading 2'] => h2",
+        "p[style-name='Heading 3'] => h3",
+        "p[style-name='Heading 4'] => h4",
+        "p[style-name='Título 1']  => h1",
+        "p[style-name='Título 2']  => h2",
+        "p[style-name='Título 3']  => h3",
+        "p[style-name='Título 4']  => h4",
+        "p[style-name='Title']     => h1",
+
+        // ── Listas: párrafos con estilo de lista de Word
+        //    se convierten en <li> reales dentro de <ul>/<ol>.
+        //    Consecutivos del mismo tipo se agrupan en la misma lista.
+        "p[style-name='List Bullet']     => ul > li",
+        "p[style-name='List Bullet 2']   => ul > li",
+        "p[style-name='List Bullet 3']   => ul > li",
+        "p[style-name='List Number']     => ol > li",
+        "p[style-name='List Number 2']   => ol > li",
+        "p[style-name='List Number 3']   => ol > li",
+        "p[style-name='List Paragraph']  => ul > li",
+        "p[style-name='Lista con viñetas'] => ul > li",
+        "p[style-name='Lista numerada']    => ol > li",
+        "p[style-name='Lista con viñetas 2'] => ul > li",
+        "p[style-name='Lista numerada 2']   => ol > li",
+
+        // ── Estilos inline ────────────────────────────────
+        "b => strong",
+        "i => em",
+        "u => u",
+        "strike => s",
+        "del => s",
+        "sub => sub",
+        "sup => sup"
       ]
     })
     .then(function(result) {
@@ -414,31 +443,18 @@ document.getElementById('mediaModal').addEventListener('keydown', e => {
 });
 
 /* ============================================================
-   CARGA DE ARCHIVO .PDF (v3.5 · imágenes garantizadas)
+   CARGA DE ARCHIVO .PDF (v3.6 · negritas + filtrado de escudos)
    ============================================================
-   Cambios v3.5 (sobre v3.4):
-
-   ✅ FIX R (crash): toDataUrl ya no lanza TypeError cuando
-             imgData.data es null. Se comprueba la validez antes
-             de leer .length. Se añade soporte para imgData.bitmap
-             (ImageBitmap), que pdf.js entrega en algunos JPEG.
-
-   ✅ FIX S (espera de datos): getXObject ahora ignora los
-             "shell" que pdf.js entrega primero con data=null y
-             solo resuelve cuando el objeto tiene data con
-             length > 0 o un bitmap. Con timeout de 3000 ms.
-
-   ✅ FIX T (render de página como fallback): si tras la
-             extracción una página no tiene imágenes pero SÍ
-             tenía opcodes de imagen, se renderiza la página
-             completa como JPEG y se inserta como bloque
-             "Vista de página N". Garantiza que el usuario vea
-             las imágenes incluso cuando pdf.js no entrega los
-             XObjects individuales.
-
-   ✅ FIX U: umbral mínimo 80×80 y ratio 12 (heredado de v3.4).
-   ✅ FIX V: se cuentan los opcodes de imagen por página
-             (opCount) para decidir si aplicar el fallback.
+   Cambios v3.6 (sobre v3.5):
+   ✅ FIX BOLD: se detectan negritas por `fontName` (Bold, Black,
+      Heavy, Semibold, Demibold, Extrabold, Ultrabold) y se
+      envuelven en <strong> al construir el HTML de salida.
+   ✅ FIX ESCUDOS: nueva función _pdfFilterRepeatedImages que
+      elimina imágenes que aparecen en más del 50% de las
+      páginas (típico de escudos/logos de cabecera). No toca las
+      imágenes fallback de página completa.
+   ✅ FIX BASURA: se amplía PDF_BLACKLIST_LINES con más frases
+      específicas del documento (cabeceras de curso, etc.).
    ============================================================ */
 
 const PDF_BLACKLIST_LINES = [
@@ -456,7 +472,11 @@ const PDF_BLACKLIST_LINES = [
   /^\s*\d+\s*\/\s*\d+\s*$/,
   /^\s*\d+\s+de\s+\d+\s*$/,
   /^\s*©\s*.+$/,
-  /^\s*todos\s+los\s+derechos\s+reservados\s*$/i
+  /^\s*todos\s+los\s+derechos\s+reservados\s*$/i,
+  // ── Añadidos v3.6 ────────────────────────────────────────
+  /^\s*m[oó]dulo\s+0?\d+\s+.*$/i,
+  /^\s*operaciones\s+de\s+extinci[oó]n\s+de\s+incendios\s+forestales\s*$/i,
+  /^\s*c\.?\s*o\.?\s*r\.?\s*p\.?\s*o\.?\s*$/i
 ];
 
 function _pdfIsBlacklisted(text) {
@@ -489,6 +509,24 @@ function _pdfNormalizeLine(text) {
     .replace(/[^a-záéíóúüñn\s]/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// ✅ FIX BOLD · helper para detectar negritas por fuente
+function _pdfIsBoldFont(fontName) {
+  if (!fontName) return false;
+  return /bold|black|heavy|semibold|demibold|extrabold|ultrabold/i.test(fontName);
+}
+
+// ✅ FIX ESCUDOS · hash simple y rápido para identificar imágenes repetidas
+function _pdfSimpleHash(str) {
+  if (!str) return '0';
+  let h = 5381;
+  const step = Math.max(1, Math.floor(str.length / 1500));
+  for (let i = 0; i < str.length; i += step) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h & 0x7fffffff;
+  }
+  return h.toString(36) + '-' + str.length;
 }
 
 function _pdfClassifyHeading(text, height, medianHeight) {
@@ -550,6 +588,8 @@ function _pdfLooksLikeDefinitionLine(text) {
   return { head, body };
 }
 
+// ✅ FIX BOLD · _pdfGroupItemsIntoLines ahora genera también `html`
+//    con <strong> insertados en los fragmentos en negrita.
 function _pdfGroupItemsIntoLines(items, medianHeight) {
   const tolerance = Math.max(3, medianHeight * 0.45);
   const sorted = items.slice().sort((a, b) => {
@@ -576,16 +616,17 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
     const x = (it.transform && it.transform[4]) || 0;
     const w = it.width || 0;
     const h = it.height || medianHeight;
+    const bold = _pdfIsBoldFont(it.fontName);
 
     if (!current || Math.abs(current.y - y) > tolerance) {
       if (current) lines.push(current);
       current = {
         y, x, xStart: x, xEnd: x + w, height: h,
-        parts: [{ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap: 0 }]
+        parts: [{ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap: 0, bold }]
       };
     } else {
       const gap = x - current.xEnd;
-      current.parts.push({ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap });
+      current.parts.push({ text: rawText, hasLeading: hadLeading, hasTrailing: hadTrailing, gap, bold });
       current.xEnd = Math.max(current.xEnd, x + w);
       current.height = Math.max(current.height, h);
     }
@@ -595,21 +636,28 @@ function _pdfGroupItemsIntoLines(items, medianHeight) {
   return lines
     .map(l => {
       let text = '';
+      let html = '';
       l.parts.forEach((p, idx) => {
-        if (idx === 0) { text += p.text; return; }
-        const prev = l.parts[idx - 1];
         let sep = '';
-        if (p.hasLeading || prev.hasTrailing) sep = ' ';
-        else if (p.gap > (l.height || 12) * 0.15) sep = ' ';
+        if (idx > 0) {
+          const prev = l.parts[idx - 1];
+          if (p.hasLeading || prev.hasTrailing) sep = ' ';
+          else if (p.gap > (l.height || 12) * 0.15) sep = ' ';
+        }
         text += sep + p.text;
+        const escaped = esc(p.text);
+        html += sep + (p.bold ? '<strong>' + escaped + '</strong>' : escaped);
       });
+      // Limpieza del texto plano (para detección de encabezados, listas, etc.)
       text = text
         .replace(/\s+/g, ' ')
         .replace(/\s+([,.;:!?»)\]])/g, '$1')
         .replace(/([«¡¿(\[])\s+/g, '$1')
         .replace(/\s+'/g, "'")
         .trim();
-      return { y: l.y, x: l.xStart, xEnd: l.xEnd, height: l.height, text };
+      // Limpieza ligera del html (colapsar espacios duplicados entre tags)
+      html = html.replace(/ {2,}/g, ' ').trim();
+      return { y: l.y, x: l.xStart, xEnd: l.xEnd, height: l.height, text, html };
     })
     .filter(l => l.text);
 }
@@ -624,7 +672,13 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
 
     const headingLevel = _pdfClassifyHeading(text, line.height, medianHeight);
     if (headingLevel > 0) {
-      blocks.push({ type: 'heading', level: headingLevel, height: line.height, text });
+      blocks.push({
+        type: 'heading',
+        level: headingLevel,
+        height: line.height,
+        text,
+        html: line.html || esc(text)
+      });
       i++;
       continue;
     }
@@ -663,6 +717,8 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
     }
 
     const paragraphLines = [text];
+    const paragraphHtmls = [line.html || esc(text)];
+    const paragraphHasBold = [line.parts ? line.parts.some(p => p.bold) : false];
     let j = i + 1;
     while (j < lines.length) {
       const nextLine = lines[j];
@@ -676,10 +732,16 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       if (gap > medianLineGap * 1.5) break;
 
       paragraphLines.push(nextText);
+      paragraphHtmls.push(nextLine.html || esc(nextText));
+      paragraphHasBold.push(nextLine.parts ? nextLine.parts.some(p => p.bold) : false);
       j++;
     }
     let paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/g, '$1$2');
-    blocks.push({ type: 'paragraph', text: paragraphText });
+    const anyBold = paragraphHasBold.some(b => b);
+    const paragraphHtml = anyBold
+      ? paragraphHtmls.join(' ')
+      : esc(paragraphText);
+    blocks.push({ type: 'paragraph', text: paragraphText, html: paragraphHtml });
     i = j;
   }
 
@@ -699,6 +761,7 @@ function _pdfMergeConsecutiveHeadings(blocks) {
                             Math.max(prev.height || 1, b.height || 1) < 0.25;
         if (!prevEndsClean && heightClose) {
           prev.text = (prev.text.trim() + ' ' + b.text.trim()).replace(/\s+/g, ' ');
+          prev.html = (prev.html || esc(prev.text)) + ' ' + (b.html || esc(b.text));
           prev.height = Math.max(prev.height || 0, b.height || 0);
           if (b.level < prev.level) prev.level = b.level;
           continue;
@@ -710,7 +773,7 @@ function _pdfMergeConsecutiveHeadings(blocks) {
   return merged;
 }
 
-/* ✅ FIX R + FIX S: extracción de imágenes PDF robusta. */
+/* ✅ Extracción de imágenes PDF robusta. */
 async function _pdfExtractImages(page, pageNum) {
   const OPS = window.pdfjsLib && window.pdfjsLib.OPS;
   const DEBUG = !!window.PDF_DEBUG;
@@ -723,7 +786,6 @@ async function _pdfExtractImages(page, pageNum) {
     return { images: [], opCount: 0 };
   }
 
-  // ── Paso 1: recolectar nombres e inline images + contar opcodes ──
   const xobjNames = [];
   const inlineImgs = [];
   const seenNames = new Set();
@@ -745,10 +807,6 @@ async function _pdfExtractImages(page, pageNum) {
     }
   }
 
-  // ── Paso 2: resolver XObject esperando a que tenga datos válidos ──
-  // ✅ FIX S: solo resolvemos cuando data.length > 0 o hay bitmap.
-  // pdf.js 3.x entrega primero un "shell" {width,height,data:null} y
-  // después (a veces) el objeto real con datos. Ignoramos el shell.
   function getXObject(name, timeoutMs) {
     timeoutMs = timeoutMs || 3000;
     return new Promise(resolve => {
@@ -761,7 +819,6 @@ async function _pdfExtractImages(page, pageNum) {
           done = true;
           resolve(v);
         }
-        // Si no tiene datos → es un shell, seguimos esperando.
       };
       try { page.objs.get(name, finish); } catch(e) {}
       try { page.commonObjs.get(name, finish); } catch(e) {}
@@ -769,11 +826,9 @@ async function _pdfExtractImages(page, pageNum) {
     });
   }
 
-  // ── Paso 3: convertir imagen → dataURL JPEG (sin crash) ──
   const MIN_W = 80, MIN_H = 80, MAX_AR = 12;
 
   function toDataUrl(imgData) {
-    // ✅ FIX R: validación defensiva completa.
     if (!imgData || !imgData.width || !imgData.height) return null;
     if (imgData.width < MIN_W || imgData.height < MIN_H) {
       if (DEBUG) console.log('[PDF p' + pageNum + '] descartada por tamaño ' + imgData.width + '×' + imgData.height);
@@ -790,12 +845,9 @@ async function _pdfExtractImages(page, pageNum) {
       canvas.height = imgData.height;
       const ctx = canvas.getContext('2d');
 
-      // Caso A: ImageBitmap (algunos JPEG de pdf.js)
       if (imgData.bitmap) {
         ctx.drawImage(imgData.bitmap, 0, 0, imgData.width, imgData.height);
-      }
-      // Caso B: data Uint8ClampedArray (RGBA, RGB o GRAY)
-      else if (imgData.data && imgData.data.length > 0) {
+      } else if (imgData.data && imgData.data.length > 0) {
         const src = imgData.data;
         const nPix = imgData.width * imgData.height;
         const out = ctx.createImageData(imgData.width, imgData.height);
@@ -816,9 +868,7 @@ async function _pdfExtractImages(page, pageNum) {
           return null;
         }
         ctx.putImageData(out, 0, 0);
-      }
-      // Caso C: sin datos utilizables
-      else {
+      } else {
         if (DEBUG) console.log('[PDF p' + pageNum + '] objeto sin data ni bitmap');
         return null;
       }
@@ -831,7 +881,6 @@ async function _pdfExtractImages(page, pageNum) {
     }
   }
 
-  // ── Paso 4: montar todo ──
   const images = [];
   for (const inline of inlineImgs) {
     const r = toDataUrl(inline);
@@ -854,7 +903,7 @@ async function _pdfExtractImages(page, pageNum) {
   return { images, opCount };
 }
 
-/* ✅ FIX T: renderiza la página completa como JPEG para el fallback. */
+/* ✅ Renderiza la página completa como JPEG para el fallback. */
 async function _pdfRenderPageAsJpeg(page, scale, quality) {
   try {
     const viewport = page.getViewport({ scale: scale || 1.4 });
@@ -870,6 +919,48 @@ async function _pdfRenderPageAsJpeg(page, scale, quality) {
     if (window.PDF_DEBUG) console.warn('[PDF] render de página falló:', e);
     return null;
   }
+}
+
+/* ✅ FIX ESCUDOS · Elimina imágenes que aparecen en más del 50%
+   de las páginas (típico de escudos/cabeceras).
+   No toca las imágenes fallback (isFullPage). */
+function _pdfFilterRepeatedImages(pagesData) {
+  const DEBUG = !!window.PDF_DEBUG;
+  const numPages = pagesData.length;
+  if (numPages < 2) return pagesData;
+
+  const hashCount = new Map();
+  pagesData.forEach(page => {
+    const seenOnPage = new Set();
+    page.pageImages.forEach(img => {
+      if (img.isFullPage) return;
+      const h = _pdfSimpleHash(img.dataUrl);
+      if (seenOnPage.has(h)) return;
+      seenOnPage.add(h);
+      hashCount.set(h, (hashCount.get(h) || 0) + 1);
+    });
+  });
+
+  const threshold = Math.max(2, Math.floor(numPages * 0.5));
+  const repeatedHashes = new Set();
+  hashCount.forEach((count, h) => {
+    if (count >= threshold) repeatedHashes.add(h);
+  });
+
+  if (repeatedHashes.size === 0) return pagesData;
+
+  let removed = 0;
+  pagesData.forEach(page => {
+    const before = page.pageImages.length;
+    page.pageImages = page.pageImages.filter(img => {
+      if (img.isFullPage) return true;
+      return !repeatedHashes.has(_pdfSimpleHash(img.dataUrl));
+    });
+    removed += (before - page.pageImages.length);
+  });
+
+  if (DEBUG) console.log('[PDF] Imágenes repetidas filtradas: ' + removed + ' (en ' + numPages + ' páginas)');
+  return pagesData;
 }
 
 async function handlePdfFile(file) {
@@ -917,8 +1008,6 @@ async function handlePdfFile(file) {
       let pageImages = extraction.images;
       const opCount = extraction.opCount;
 
-      // ✅ FIX T: fallback si la página tenía opcodes de imagen pero no
-      // se ha podido extraer ninguna → renderizamos la página entera.
       let usedFallback = false;
       if (pageImages.length === 0 && opCount > 0) {
         if (window.PDF_DEBUG) {
@@ -940,6 +1029,9 @@ async function handlePdfFile(file) {
         usedFallback
       });
     }
+
+    // ✅ FIX ESCUDOS · Filtramos imágenes repetidas ANTES de construir el HTML
+    _pdfFilterRepeatedImages(pagesData);
 
     // ── PASO 2 · Cabeceras/pies repetidos ─────────────────
     const lineFrequency = new Map();
@@ -985,8 +1077,6 @@ async function handlePdfFile(file) {
         return true;
       });
 
-      // Si el fallback se activó, adjuntamos solo la imagen de la página
-      // (evitamos duplicar el texto, que ya lo procesamos).
       if (usedFallback && pageImages.length === 1 && pageImages[0].isFullPage) {
         html += buildImageHTML(pageImages[0].dataUrl, '📄 Vista de página ' + pageNum + ' (imagen)', '100%') + '\n';
         totalImages++;
@@ -1006,8 +1096,9 @@ async function handlePdfFile(file) {
         if (block.type === 'heading') {
           let lvl = block.level || 3;
           if (isFirstPage && pageHtml === '' && lvl <= 2 && block.text.length > 15) lvl = 1;
+          const headingInner = block.html || esc(block.text);
           pageHtml += '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;">'
-                   + '<div style="' + EX['h' + lvl] + '">' + esc(block.text) + '</div></div>\n';
+                   + '<div style="' + EX['h' + lvl] + '">' + headingInner + '</div></div>\n';
           totalHeadings++;
         } else if (block.type === 'list') {
           const tag = block.ordered ? 'ol' : 'ul';
@@ -1018,7 +1109,8 @@ async function handlePdfFile(file) {
                    + itemsHtml + '</' + tag + '>\n';
           totalListItems += block.items.length;
         } else {
-          pageHtml += '<p style="' + EX.p + '">' + esc(block.text) + '</p>\n';
+          const pInner = block.html || esc(block.text);
+          pageHtml += '<p style="' + EX.p + '">' + pInner + '</p>\n';
           totalParagraphs++;
         }
       });
