@@ -157,22 +157,31 @@ function applyOptimizedReadingWidthForExport(clone) {
     }
     if (tag === 'div' || tag === 'p' || tag === 'section' || tag === 'article' || tag === 'blockquote') setBox(el, CONTENT_MAX, '14px');
   });
-  // ✅ FIX 7: evita doble anidamiento a 1000px cuando el wrapper
-// ya contiene un .moodle-media-block. En ese caso el wrapper
-// se neutraliza (sin límite propio) y deja que el hijo marque el ancho.
-Array.from(clone.querySelectorAll('.moodle-media-block')).forEach(el => {
-  const parent = el.parentElement;
-  if (!parent || parent === clone) return;
-  // Si el padre solo contiene este moodle-media-block (y quizá <hr>),
-  // neutralizamos su max-width para no crear cajas anidadas a 1000px.
-  const onlyMedia = Array.from(parent.children).every(c =>
-    c === el || c.tagName === 'HR' || (c.textContent || '').trim() === ''
-  );
-  if (onlyMedia) {
-    parent.style.maxWidth = 'none';
-    parent.style.marginLeft = '0';
-    parent.style.marginRight = '0';
-  }
-});
-}
 
+  // ✅ FIX 7 (revisado): evita el doble anidamiento a 1000px en bloques
+  // multimedia (especialmente PDF e imágenes extraídas). En lugar de mirar
+  // solo el padre inmediato, recorremos toda la cadena de ancestros hacia
+  // arriba: cualquier wrapper que contenga ÚNICAMENTE un .moodle-media-block
+  // (con o sin <hr> y nodos vacíos) se neutraliza (max-width:none, sin
+  // márgenes laterales auto) para que sea el propio .moodle-media-block
+  // quien fije el ancho real (1000px) sin crear cajas anidadas.
+  Array.from(clone.querySelectorAll('.moodle-media-block')).forEach(mediaEl => {
+    let parent = mediaEl.parentElement;
+    while (parent && parent !== clone) {
+      const children = Array.from(parent.children);
+      const onlyMedia = children.length > 0 && children.every(c => {
+        if (c === mediaEl) return true;
+        if (c.tagName === 'HR' && !c.querySelector('*')) return true;
+        const textEmpty = (c.textContent || '').trim() === '';
+        const noMediaInside = !c.querySelector('img,iframe,video,audio,table,.moodle-media-block');
+        return textEmpty && noMediaInside;
+      });
+      if (!onlyMedia) break;
+      parent.style.maxWidth = 'none';
+      parent.style.width = '100%';
+      parent.style.marginLeft = '0';
+      parent.style.marginRight = '0';
+      parent = parent.parentElement;
+    }
+  });
+}
