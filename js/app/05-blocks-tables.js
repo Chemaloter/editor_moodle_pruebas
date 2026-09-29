@@ -147,22 +147,121 @@ function buildTimeline() {
     '</div>';
 }
 
-// ── 3 · Insignia / Badge (5 presets de color) ──
-function buildInsignia() {
-  const badges = [
-    { bg: '#C0272D', text: 'NUEVO' },
-    { bg: '#16a34a', text: 'COMPLETADO' },
-    { bg: '#1d4ed8', text: 'INFO' },
-    { bg: '#d97706', text: 'ATENCIÓN' },
-    { bg: '#6b7280', text: 'BORRADOR' }
-  ];
-  const spans = badges.map(function(b) {
-    return '<span contenteditable="true" style="outline:none;display:inline-block;background:' + b.bg + ';color:#ffffff;padding:6px 16px;border-radius:999px;font-family:' + _GRUPOB_FONT + ';font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;">' + b.text + '</span>';
-  }).join('');
-  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:14px auto;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;">' +
-    spans +
-    '</div>';
+// ── 3 · Etiquetas de estado (chips) ──
+// Presets agrupados por categoría, con vocabulario orientado a formación
+// de bomberos. El botón del toolbar abre un modal (openEtiquetasModal)
+// en lugar de insertar 5 pastillas de serie.
+const ETIQUETAS_PRESETS = [
+  { grupo:'Estado', items:[
+    { texto:'NUEVO',       bg:'#C0272D' },
+    { texto:'ACTUALIZADO', bg:'#16a34a' },
+    { texto:'COMPLETADO',  bg:'#16a34a' },
+    { texto:'PENDIENTE',   bg:'#6b7280' }
+  ]},
+  { grupo:'Obligatoriedad', items:[
+    { texto:'OBLIGATORIO', bg:'#C0272D' },
+    { texto:'RECOMENDADO', bg:'#d97706' },
+    { texto:'OPCIONAL',    bg:'#6b7280' }
+  ]},
+  { grupo:'Nivel', items:[
+    { texto:'BÁSICO',      bg:'#16a34a' },
+    { texto:'INTERMEDIO',  bg:'#d97706' },
+    { texto:'AVANZADO',    bg:'#b91c1c' }
+  ]},
+  { grupo:'Formato', items:[
+    { texto:'VÍDEO',       bg:'#7c3aed' },
+    { texto:'PDF',         bg:'#b91c1c' },
+    { texto:'LECTURA',     bg:'#6b7280' },
+    { texto:'PRÁCTICA',    bg:'#0f766e' },
+    { texto:'TEST',        bg:'#1d4ed8' }
+  ]},
+  { grupo:'Seguridad', items:[
+    { texto:'PELIGRO',     bg:'#b91c1c' },
+    { texto:'PRECAUCIÓN',  bg:'#d97706' },
+    { texto:'SEGURO',      bg:'#15803d' }
+  ]},
+  { grupo:'Institucional', items:[
+    { texto:'CBCM',            bg:'#7a1515' },
+    { texto:'ÁREA FORMACIÓN',  bg:'#7a1515' },
+    { texto:'RECICLAJE',       bg:'#ea580c' }
+  ]}
+];
+
+function _buildEtiquetaSpan(texto, bg) {
+  return '<span contenteditable="true" style="outline:none;display:inline-block;background:' + bg + ';color:#ffffff;padding:6px 16px;border-radius:999px;font-family:' + _GRUPOB_FONT + ';font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;">' + esc(texto) + '</span>';
 }
+
+function _buildEtiquetaWrapper(inner) {
+  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:14px auto;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;">' + inner + '</div>';
+}
+
+function openEtiquetasModal() {
+  if (typeof captureEditorCursor === 'function') captureEditorCursor();
+  const root = document.getElementById('etiquetasModalBody');
+  if (!root) return;
+  let html = '';
+  ETIQUETAS_PRESETS.forEach(function(grupo){
+    html += '<div class="etiq-group">';
+    html += '<div class="etiq-group-title">' + esc(grupo.grupo) + '</div>';
+    html += '<div class="etiq-row">';
+    grupo.items.forEach(function(it){
+      html += '<button type="button" class="etiq-chip" data-texto="' + esc(it.texto) + '" data-bg="' + it.bg + '" style="background:' + it.bg + ';">' + esc(it.texto) + '</button>';
+    });
+    html += '</div></div>';
+  });
+  root.innerHTML = html;
+  const modal = document.getElementById('etiquetasModal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeEtiquetasModal() {
+  const modal = document.getElementById('etiquetasModal');
+  if (modal) modal.classList.remove('open');
+}
+
+function insertEtiquetaFromChip(btn) {
+  const texto = btn.getAttribute('data-texto') || '';
+  const bg = btn.getAttribute('data-bg') || '#C0272D';
+  if (typeof saveBlockUndo === 'function') saveBlockUndo();
+  const html = _buildEtiquetaWrapper(_buildEtiquetaSpan(texto, bg));
+  if (typeof insertHTMLAtCursor === 'function') insertHTMLAtCursor(html);
+  closeEtiquetasModal();
+  setTimeout(function(){
+    if (typeof refreshOutput === 'function') refreshOutput();
+  }, 0);
+}
+
+function insertEtiquetaPersonalizada() {
+  const txtEl = document.getElementById('etiqCustomText');
+  const colEl = document.getElementById('etiqCustomColor');
+  const texto = txtEl ? txtEl.value.trim() : '';
+  const bg = colEl ? colEl.value : '#C0272D';
+  if (!texto) {
+    if (typeof showToast === 'function') showToast('⚠️ Escribe un texto para la etiqueta');
+    return;
+  }
+  if (typeof saveBlockUndo === 'function') saveBlockUndo();
+  const html = _buildEtiquetaWrapper(_buildEtiquetaSpan(texto, bg));
+  if (typeof insertHTMLAtCursor === 'function') insertHTMLAtCursor(html);
+  closeEtiquetasModal();
+  setTimeout(function(){
+    if (typeof refreshOutput === 'function') refreshOutput();
+  }, 0);
+}
+
+(function bindEtiquetasModal(){
+  const modal = document.getElementById('etiquetasModal');
+  if (!modal) return;
+  modal.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'etiquetasModal') { closeEtiquetasModal(); return; }
+    const chip = e.target.closest && e.target.closest('.etiq-chip');
+    if (chip) { insertEtiquetaFromChip(chip); return; }
+    if (e.target && e.target.id === 'etiqInsertCustom') { insertEtiquetaPersonalizada(); }
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeEtiquetasModal();
+  });
+})();
 
 // ── 4 · Checklist interactivo con <input type="checkbox"> ──
 function buildChecklist() {
