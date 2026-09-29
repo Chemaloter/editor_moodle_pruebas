@@ -100,6 +100,9 @@ main{flex:1;display:flex;flex-direction:column;min-height:0;}
 .be-img{background:#0e7490;} .be-video{background:#7c3aed;} .be-pdf{background:#b91c1c;} .be-ppt{background:#c2571a;}
 .be-practice{background:#0f766e;} .be-sequence{background:#2e7d32;}
 .be-def{background:#455a64;}
+.be-acordeon{background:#8b5cf6;} .be-timeline{background:#0891b2;}
+.be-insignia{background:#d97706;} .be-checklist{background:#059669;}
+.be-progreso{background:#e11d48;}
 
 /* ── BARRA DE FORMATO ── */
 .format-bar{
@@ -1301,6 +1304,24 @@ body {
   .tools-blocks .be-sequence{
     grid-column:1 / -1 !important;
   }
+  /* Sección Interacción · Visual (Grupo B) */
+.tools-interact{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  padding:10px !important;
+  border:1px solid #ddd6fe !important;
+  border-radius:14px !important;
+  background:linear-gradient(180deg,#faf5ff 0%,#ffffff 72%) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 3px rgba(139,92,246,.05) !important;
+}
+.tools-interact .toolbar-label{
+  font-size:11.5px !important;
+  margin-bottom:2px !important;
+}
+.tools-interact .btn-el{
+  min-height:34px !important;
+  font-size:12.4px !important;
+  padding:8px 10px !important;
+}
 
   /* Recursos: 2 columnas, más amable */
   .tools-resources{
@@ -1335,6 +1356,11 @@ body {
   .be-video{border-left-color:#7c3aed !important;}
   .be-pdf{border-left-color:#b91c1c !important;}
   .be-ppt{border-left-color:#c2571a !important;}
+  .be-acordeon{border-left-color:#8b5cf6 !important;}
+.be-timeline{border-left-color:#0891b2 !important;}
+.be-insignia{border-left-color:#d97706 !important;}
+.be-checklist{border-left-color:#059669 !important;}
+.be-progreso{border-left-color:#e11d48 !important;}
 
   /* Sobrescribe estilos inline antiguos de botones concretos */
   .tools-resources .btn-el[style],
