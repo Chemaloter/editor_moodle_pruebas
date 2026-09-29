@@ -23,8 +23,12 @@ sequence: { isSequence:true },
 };
 
 // ══════════════════════════════════════════════════════════════
-//  SECCIONES / SUBSECCIONES MOODLE · Estilos de plantilla.txt
-//  Genera H1-H4 con las propiedades EXACTAS del fichero plantilla.txt
+//  SECCIONES / SUBSECCIONES MOODLE
+//  Genera H1–H4 con la estructura EXACTA de plantilla.txt.
+//  Los bloques se anclan a la IZQUIERDA del editor: no se centran
+//  ni respetan la retícula 800/1000.
+//  Se marcan con la clase .moodle-seccion-block para que las capas
+//  de normalización (preview y export) los ignoren.
 // ══════════════════════════════════════════════════════════════
 const SECCIONES_CFG = {
   h1: { defaultText: '🚒 [ESCRIBE AQUÍ EL TEXTO H1]' },
@@ -49,12 +53,16 @@ function insertSeccion(tipo) {
   if (!cfg) return;
   if (typeof saveBlockUndo === 'function') saveBlockUndo();
 
-  // Estructura IDÉNTICA a plantilla.txt:
-  // wrapper con data-editor-block="text" y div interno con EX[tipo]
   const innerStyle = (typeof EX !== 'undefined' && EX[tipo]) ? EX[tipo] : '';
+
+  // Estructura EXACTA de plantilla.txt, con clase marcadora
+  // y contenteditable para poder editar en el editor.
   const html =
-    '<div data-editor-block="text" style="width:100%;margin:14px 0;box-sizing:border-box;text-align:left;">' +
-      '<div style="' + innerStyle + '" contenteditable="true">' + esc(cfg.defaultText) + '</div>' +
+    '<div class="moodle-seccion-block" data-editor-block="text" ' +
+    'style="width:100%;margin:14px 0;box-sizing:border-box;text-align:left;">' +
+      '<div style="' + innerStyle + '" contenteditable="true">' +
+        esc(cfg.defaultText) +
+      '</div>' +
     '</div>';
 
   if (typeof insertHTMLAtCursor === 'function') {
@@ -63,12 +71,11 @@ function insertSeccion(tipo) {
   closeSeccionesModal();
 
   setTimeout(() => {
-    if (typeof normalizeEditorVisualGrid === 'function') normalizeEditorVisualGrid(editor);
     if (typeof refreshOutput === 'function') refreshOutput();
   }, 0);
 }
 
-// Delegación de eventos dentro del modal
+// Delegación de eventos del modal
 (function bindSeccionesModal() {
   const modal = document.getElementById('seccionesModal');
   if (!modal) return;
