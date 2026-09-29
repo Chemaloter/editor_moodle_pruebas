@@ -1811,7 +1811,7 @@ body {
   text-align: left !important;
 }
 /* ============================================================
-   MODAL ETIQUETAS DE ESTADO
+   MODAL ETIQUETAS DE ESTADO · selección múltiple
    ============================================================ */
 .etiquetas-modal { max-width: 640px; }
 .etiquetas-modal-hdr {
@@ -1842,8 +1842,10 @@ body {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* Chip base · estado normal */
 .etiq-chip {
-  border: none;
+  border: 2px solid transparent;
   border-radius: 999px;
   color: #fff;
   padding: 7px 14px;
@@ -1852,13 +1854,28 @@ body {
   font-weight: 800;
   letter-spacing: .5px;
   cursor: pointer;
-  transition: transform .12s ease, box-shadow .12s ease;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  position: relative;
 }
 .etiq-chip:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0,0,0,.18);
 }
 
+/* Chip seleccionado */
+.etiq-chip.is-selected {
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(17,24,39,.15), 0 4px 12px rgba(0,0,0,.18);
+  transform: translateY(-1px);
+}
+.etiq-chip.is-selected::after {
+  content: '✓';
+  display: inline-block;
+  margin-left: 6px;
+  font-weight: 900;
+}
+
+/* Bloque personalizado */
 .etiq-custom {
   border-top: 1px dashed var(--border);
   padding-top: 14px;
@@ -1876,6 +1893,7 @@ body {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: stretch;
 }
 .etiq-custom-row input[type="text"] {
   flex: 1 1 200px;
@@ -1888,9 +1906,7 @@ body {
   outline: none;
   box-sizing: border-box;
 }
-.etiq-custom-row input[type="text"]:focus {
-  border-color: var(--red);
-}
+.etiq-custom-row input[type="text"]:focus { border-color: var(--red); }
 .etiq-custom-row select {
   flex: 0 0 auto;
   padding: 9px 12px;
@@ -1902,9 +1918,59 @@ body {
   cursor: pointer;
   box-sizing: border-box;
 }
-.etiq-custom-row #etiqInsertCustom {
+.etiq-custom-row #etiqAddCustom {
   flex: 0 0 auto;
+  padding: 9px 14px;
+  font-size: 12px;
+  letter-spacing: .4px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1.5px solid var(--border2);
+}
+.etiq-custom-row #etiqAddCustom:hover {
+  background: var(--border);
+}
+
+/* Barra inferior · contador + acciones */
+.etiq-selected-bar {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.etiq-selected-info {
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.etiq-selected-info #etiqSelectedCount {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 8px;
+  margin-right: 4px;
+  background: var(--red-s);
+  color: var(--red);
+  border-radius: 999px;
+  font-weight: 900;
+  text-align: center;
+}
+.etiq-selected-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.etiq-selected-actions .modal-btn {
   padding: 9px 18px;
   font-size: 12px;
   letter-spacing: .4px;
+  flex: 0 0 auto;
+}
+.etiq-selected-actions #etiqInsertAll:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  background: var(--border2);
 }
