@@ -1,6 +1,7 @@
 /* ============================================================
    GENERADOR DE GUÍA DE EVALUACIÓN · CVC-CBCM · v2.0
-   Archivo independiente. No modifica app.js.
+   Archivo independiente. No modifica el núcleo del editor
+   (js/app/01…10).
    Cambios v2:
    - Datos: curso antes que módulo.
    - Coordinador de módulo en lugar de profesorado responsable.
