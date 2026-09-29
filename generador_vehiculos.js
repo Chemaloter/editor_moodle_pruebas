@@ -217,7 +217,7 @@ function GeneradorVehiculos(){
   const update=(k,v)=>setD(p=>({...p,[k]:v}));
   const tabs=['1 · Identificación','2 · Imágenes','3 · Compartimentos','4 · Manuales y enlaces','5 · Observaciones','⚡ Generar'];
   const generate=()=>{setHtml(renderVehicleHTML(d));setTab(5);setPreview(false);setInserted(false);};
-  const insert=()=>{if(!html)return;if(typeof window.insertHTMLAtCursor==='function'){window.insertHTMLAtCursor(html);setInserted(true);setTimeout(()=>{if(typeof window.closeVehiculosModal==='function')window.closeVehiculosModal();},700);}else{alert('No se ha encontrado insertHTMLAtCursor. Comprueba que app.js se carga correctamente.');}};
+  const insert=()=>{if(!html)return;if(typeof window.insertHTMLAtCursor==='function'){window.insertHTMLAtCursor(html);setInserted(true);setTimeout(()=>{if(typeof window.closeVehiculosModal==='function')window.closeVehiculosModal();},700);}else{alert('No se ha encontrado insertHTMLAtCursor. Comprueba que el editor está cargado correctamente.');}};
   const panels=[
     h('div',{style:{display:'flex',flexDirection:'column',gap:16}},h(Box,{title:'Identificación del vehículo'},h(Row,null,
       h('div',null,h(Label,null,'Parque'),h('select',{style:inputStyle,value:d.parque,onChange:e=>update('parque',e.target.value)},h('option',{value:''},'— Selecciona parque —'),PARQUES_CBCM.map(p=>h('option',{key:p,value:p},p)))),
