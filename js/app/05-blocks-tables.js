@@ -23,7 +23,6 @@ const BLOCK_CFG = {
   // ── GRUPO B · Componentes HTML/CSS puros (compatibles con Moodle) ──
   acordeon: { isAcordeon:true },
   timeline: { isTimeline:true },
-  insignia: { isInsignia:true },
   checklist:{ isChecklist:true },
   progreso: { isProgreso:true }
 };
@@ -147,10 +146,10 @@ function buildTimeline() {
     '</div>';
 }
 
-// ── 3 · Etiquetas de estado (chips) ──
-// Presets agrupados por categoría, con vocabulario orientado a formación
-// de bomberos. El botón del toolbar abre un modal (openEtiquetasModal)
-// en lugar de insertar 5 pastillas de serie.
+// ── 3 · Etiquetas de estado (chips) — selección múltiple ──
+// El botón del toolbar abre un modal donde se pueden marcar VARIAS
+// etiquetas a la vez y se insertan todas juntas en la MISMA línea.
+// Los presets están orientados a la formación de bomberos del CBCM.
 const ETIQUETAS_PRESETS = [
   { grupo:'Estado', items:[
     { texto:'NUEVO',       bg:'#C0272D' },
@@ -187,16 +186,44 @@ const ETIQUETAS_PRESETS = [
   ]}
 ];
 
+let _etiqSeleccion = []; // [{texto, bg}]
+
 function _buildEtiquetaSpan(texto, bg) {
   return '<span contenteditable="true" style="outline:none;display:inline-block;background:' + bg + ';color:#ffffff;padding:6px 16px;border-radius:999px;font-family:' + _GRUPOB_FONT + ';font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;">' + esc(texto) + '</span>';
 }
 
-function _buildEtiquetaWrapper(inner) {
-  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:14px auto;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;">' + inner + '</div>';
+function _buildEtiquetasWrapper(items) {
+  // Un ÚNICO wrapper flex para todas las etiquetas -> misma línea.
+  const spans = items.map(function(it){ return _buildEtiquetaSpan(it.texto, it.bg); }).join('');
+  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:14px auto;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;align-items:center;">' + spans + '</div>';
+}
+
+function _etiqKey(it) { return it.texto + '|' + it.bg; }
+
+function _renderEtiqSelectionUI() {
+  const root = document.getElementById('etiquetasModalBody');
+  const countEl = document.getElementById('etiqSelectedCount');
+  const insertBtn = document.getElementById('etiqInsertAll');
+  if (countEl) countEl.textContent = String(_etiqSeleccion.length);
+  if (insertBtn) insertBtn.disabled = _etiqSeleccion.length === 0;
+  if (!root) return;
+  const selected = new Set(_etiqSeleccion.map(_etiqKey));
+  root.querySelectorAll('.etiq-chip').forEach(function(btn){
+    const key = btn.getAttribute('data-texto') + '|' + btn.getAttribute('data-bg');
+    btn.classList.toggle('is-selected', selected.has(key));
+  });
+}
+
+function _etiqToggle(texto, bg) {
+  const idx = _etiqSeleccion.findIndex(function(it){ return it.texto === texto && it.bg === bg; });
+  if (idx >= 0) _etiqSeleccion.splice(idx, 1);
+  else _etiqSeleccion.push({ texto: texto, bg: bg });
+  _renderEtiqSelectionUI();
 }
 
 function openEtiquetasModal() {
   if (typeof captureEditorCursor === 'function') captureEditorCursor();
+  _etiqSeleccion = [];
   const root = document.getElementById('etiquetasModalBody');
   if (!root) return;
   let html = '';
@@ -210,28 +237,31 @@ function openEtiquetasModal() {
     html += '</div></div>';
   });
   root.innerHTML = html;
+  _renderEtiqSelectionUI();
   const modal = document.getElementById('etiquetasModal');
   if (modal) modal.classList.add('open');
 }
 
 function closeEtiquetasModal() {
+  _etiqSeleccion = [];
   const modal = document.getElementById('etiquetasModal');
   if (modal) modal.classList.remove('open');
 }
 
-function insertEtiquetaFromChip(btn) {
-  const texto = btn.getAttribute('data-texto') || '';
-  const bg = btn.getAttribute('data-bg') || '#C0272D';
+function _etiqInsertAll() {
+  if (!_etiqSeleccion.length) return;
   if (typeof saveBlockUndo === 'function') saveBlockUndo();
-  const html = _buildEtiquetaWrapper(_buildEtiquetaSpan(texto, bg));
+  const html = _buildEtiquetasWrapper(_etiqSeleccion.slice());
   if (typeof insertHTMLAtCursor === 'function') insertHTMLAtCursor(html);
+  const n = _etiqSeleccion.length;
   closeEtiquetasModal();
+  if (typeof showToast === 'function') showToast('✅ ' + n + ' etiqueta' + (n > 1 ? 's' : '') + ' insertada' + (n > 1 ? 's' : '') + ' en una sola línea');
   setTimeout(function(){
     if (typeof refreshOutput === 'function') refreshOutput();
   }, 0);
 }
 
-function insertEtiquetaPersonalizada() {
+function _etiqAddCustomToSelection() {
   const txtEl = document.getElementById('etiqCustomText');
   const colEl = document.getElementById('etiqCustomColor');
   const texto = txtEl ? txtEl.value.trim() : '';
@@ -240,13 +270,18 @@ function insertEtiquetaPersonalizada() {
     if (typeof showToast === 'function') showToast('⚠️ Escribe un texto para la etiqueta');
     return;
   }
-  if (typeof saveBlockUndo === 'function') saveBlockUndo();
-  const html = _buildEtiquetaWrapper(_buildEtiquetaSpan(texto, bg));
-  if (typeof insertHTMLAtCursor === 'function') insertHTMLAtCursor(html);
-  closeEtiquetasModal();
-  setTimeout(function(){
-    if (typeof refreshOutput === 'function') refreshOutput();
-  }, 0);
+  const already = _etiqSeleccion.some(function(it){ return it.texto === texto && it.bg === bg; });
+  if (!already) _etiqSeleccion.push({ texto: texto, bg: bg });
+  if (txtEl) txtEl.value = '';
+  _renderEtiqSelectionUI();
+  if (txtEl) txtEl.focus();
+}
+
+function _etiqClearSelection() {
+  _etiqSeleccion = [];
+  const txtEl = document.getElementById('etiqCustomText');
+  if (txtEl) txtEl.value = '';
+  _renderEtiqSelectionUI();
 }
 
 (function bindEtiquetasModal(){
@@ -255,11 +290,26 @@ function insertEtiquetaPersonalizada() {
   modal.addEventListener('click', function(e){
     if (e.target && e.target.id === 'etiquetasModal') { closeEtiquetasModal(); return; }
     const chip = e.target.closest && e.target.closest('.etiq-chip');
-    if (chip) { insertEtiquetaFromChip(chip); return; }
-    if (e.target && e.target.id === 'etiqInsertCustom') { insertEtiquetaPersonalizada(); }
+    if (chip) {
+      _etiqToggle(chip.getAttribute('data-texto') || '', chip.getAttribute('data-bg') || '#C0272D');
+      return;
+    }
+    if (e.target && e.target.id === 'etiqInsertAll') { _etiqInsertAll(); return; }
+    if (e.target && e.target.id === 'etiqClearSelection') { _etiqClearSelection(); return; }
+    if (e.target && e.target.id === 'etiqAddCustom') { _etiqAddCustomToSelection(); return; }
   });
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') closeEtiquetasModal();
+    if (e.key === 'Enter' && modal.classList.contains('open')) {
+      const active = document.activeElement;
+      if (active && active.id === 'etiqCustomText') {
+        e.preventDefault();
+        _etiqAddCustomToSelection();
+      } else if (active && active.id === 'etiqInsertAll') {
+        e.preventDefault();
+        _etiqInsertAll();
+      }
+    }
   });
 })();
 
@@ -389,8 +439,6 @@ function addBlock(type) {
   } else if (cfg.isTimeline) {
     html = buildTimeline();
     if (!html) return;
-  } else if (cfg.isInsignia) {
-    html = buildInsignia();
   } else if (cfg.isChecklist) {
     html = buildChecklist();
     if (!html) return;
