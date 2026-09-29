@@ -331,7 +331,7 @@
     </div>
     <div class="modal-pad">
       <p class="etiquetas-intro">
-        Las etiquetas son <strong>pequeñas pastillas de color</strong> que marcan el contenido de un vistazo: obligatoriedad, nivel, formato, seguridad… Úsalas al inicio de un apartado o título para que el alumnado identifique rápido su naturaleza.
+        Marca las etiquetas que quieras y pulsa <strong>Insertar seleccionadas</strong>. Se colocarán todas juntas en la misma línea del editor. Vuelve a pulsar un chip para desmarcarlo.
       </p>
       <div id="etiquetasModalBody"></div>
       <div class="etiq-custom">
@@ -350,11 +350,17 @@
             <option value="#7a1515">Marrón institucional</option>
             <option value="#6b7280">Gris</option>
           </select>
-          <button type="button" class="modal-btn modal-btn-red" id="etiqInsertCustom">Insertar</button>
+          <button type="button" class="modal-btn modal-btn-gray" id="etiqAddCustom">＋ Añadir a la selección</button>
         </div>
       </div>
-      <div class="modal-btns">
-        <button class="modal-btn modal-btn-gray" onclick="closeEtiquetasModal()">Cancelar</button>
+      <div class="etiq-selected-bar">
+        <div class="etiq-selected-info">
+          <span id="etiqSelectedCount">0</span> etiquetas seleccionadas
+        </div>
+        <div class="etiq-selected-actions">
+          <button type="button" class="modal-btn modal-btn-gray" id="etiqClearSelection">Limpiar</button>
+          <button type="button" class="modal-btn modal-btn-red" id="etiqInsertAll" disabled>Insertar seleccionadas</button>
+        </div>
       </div>
     </div>
   </div>
