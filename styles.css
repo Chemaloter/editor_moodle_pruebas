@@ -1643,3 +1643,126 @@ body {
   border-collapse:separate !important;
   border-spacing:0 !important;
 }
+
+
+/* ============================================================
+   BOTÓN + MODAL · SECCIONES / SUBSECCIONES MOODLE
+   Añadido: genera H1–H4 con los estilos exactos de plantilla.txt
+   ============================================================ */
+
+/* Botón dentro del panel de Títulos */
+.tools-titlelist .secciones-btn {
+  grid-column: 1 / -1 !important;
+  border-left-color: #7a1515 !important;
+  font-weight: 800 !important;
+  color: #7a1515 !important;
+}
+.tools-titlelist .secciones-btn:hover {
+  background: #fff5f5 !important;
+  border-color: #C0272D !important;
+}
+
+/* Modal */
+.secciones-modal {
+  max-width: 620px;
+}
+.secciones-modal-hdr {
+  background: #fff7f7;
+  border-bottom: 2px solid #C0272D;
+}
+.secciones-modal-hdr span {
+  color: #9b1e23;
+}
+.secciones-intro {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+.secciones-intro code {
+  background: #f1f3f7;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #7a1515;
+}
+
+.secciones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.seccion-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fafbfc;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all .15s ease;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+.seccion-item:hover {
+  border-color: var(--red);
+  background: #fff7f7;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(192,39,45,.10);
+}
+.seccion-item:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(192,39,45,.10);
+}
+
+.seccion-preview {
+  min-width: 0;
+  overflow: hidden;
+}
+.seccion-preview > div {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.seccion-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  text-align: right;
+  white-space: nowrap;
+}
+.seccion-info strong {
+  font-family: var(--font-hd);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--red);
+  letter-spacing: 1.2px;
+  line-height: 1;
+}
+.seccion-info span {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .seccion-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .seccion-info {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .seccion-preview > div {
+    font-size: 14px !important;
+    padding: 8px 14px !important;
+  }
+}
