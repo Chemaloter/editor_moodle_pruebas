@@ -66,7 +66,7 @@
 <span class="toolbar-label">Interacción · Visual</span>
 <button class="btn-el be-acordeon" onclick="addBlock('acordeon')" title="Preguntas plegables con respuesta oculta">Acordeón / FAQ</button>
 <button class="btn-el be-timeline" onclick="addBlock('timeline')" title="Línea de tiempo vertical con hitos">Timeline</button>
-<button class="btn-el be-insignia" onclick="addBlock('insignia')" title="Etiquetas de color estilo badge">Insignia</button>
+<button class="btn-el be-insignia" onclick="openEtiquetasModal()" title="Añadir etiquetas de color: OBLIGATORIO, VÍDEO, NIVEL AVANZADO, PELIGRO...">🏷 Etiquetas</button>
 <button class="btn-el be-checklist" onclick="addBlock('checklist')" title="Lista de verificación con casillas">Checklist</button>
 <button class="btn-el be-progreso" onclick="addBlock('progreso')" title="Barra de progreso decorativa">Progreso</button>
 </div>
@@ -322,7 +322,43 @@
     <div id="guia-evaluacion-root" style="flex:1;overflow:hidden;"></div>
   </div>
 </div>
-
+<!-- ── MODAL ETIQUETAS DE ESTADO ── -->
+<div class="modal-overlay" id="etiquetasModal">
+  <div class="modal etiquetas-modal">
+    <div class="modal-hdr etiquetas-modal-hdr">
+      <span>🏷 Etiquetas de estado</span>
+      <button class="modal-close" onclick="closeEtiquetasModal()">✕</button>
+    </div>
+    <div class="modal-pad">
+      <p class="etiquetas-intro">
+        Las etiquetas son <strong>pequeñas pastillas de color</strong> que marcan el contenido de un vistazo: obligatoriedad, nivel, formato, seguridad… Úsalas al inicio de un apartado o título para que el alumnado identifique rápido su naturaleza.
+      </p>
+      <div id="etiquetasModalBody"></div>
+      <div class="etiq-custom">
+        <div class="etiq-custom-title">Personalizada</div>
+        <div class="etiq-custom-row">
+          <input type="text" id="etiqCustomText" placeholder="Texto (ej. RECICLAJE 2026)" maxlength="40">
+          <select id="etiqCustomColor">
+            <option value="#C0272D">Rojo CBCM</option>
+            <option value="#b91c1c">Rojo peligro</option>
+            <option value="#d97706">Ámbar</option>
+            <option value="#16a34a">Verde</option>
+            <option value="#15803d">Verde oscuro</option>
+            <option value="#1d4ed8">Azul</option>
+            <option value="#7c3aed">Violeta</option>
+            <option value="#0f766e">Turquesa</option>
+            <option value="#7a1515">Marrón institucional</option>
+            <option value="#6b7280">Gris</option>
+          </select>
+          <button type="button" class="modal-btn modal-btn-red" id="etiqInsertCustom">Insertar</button>
+        </div>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-btn-gray" onclick="closeEtiquetasModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- ── MODAL SECCIONES / SUBSECCIONES MOODLE ── -->
 <div class="modal-overlay" id="seccionesModal">
   <div class="modal secciones-modal">
