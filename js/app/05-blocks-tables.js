@@ -19,9 +19,78 @@ const BLOCK_CFG = {
   divider:{ isSep:true },
   list:   { isList:true },
   def:    { isDef:true },
-sequence: { isSequence:true }, // <--- LÍNEA NUEVA
+sequence: { isSequence:true },
 };
 
+// ══════════════════════════════════════════════════════════════
+//  SECCIONES / SUBSECCIONES MOODLE · Estilos de plantilla.txt
+//  Genera H1-H4 con las propiedades EXACTAS del fichero plantilla.txt
+// ══════════════════════════════════════════════════════════════
+const SECCIONES_CFG = {
+  h1: { defaultText: '🚒 [ESCRIBE AQUÍ EL TEXTO H1]' },
+  h2: { defaultText: '⛑️ [ESCRIBE AQUÍ EL TEXTO H2]' },
+  h3: { defaultText: '🪓 [ESCRIBE AQUÍ EL TEXTO H3]' },
+  h4: { defaultText: '🔥 [ESCRIBE AQUÍ EL TEXTO H4]' }
+};
+
+function openSeccionesModal() {
+  if (typeof captureEditorCursor === 'function') captureEditorCursor();
+  const modal = document.getElementById('seccionesModal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeSeccionesModal() {
+  const modal = document.getElementById('seccionesModal');
+  if (modal) modal.classList.remove('open');
+}
+
+function insertSeccion(tipo) {
+  const cfg = SECCIONES_CFG[tipo];
+  if (!cfg) return;
+  if (typeof saveBlockUndo === 'function') saveBlockUndo();
+
+  // Estructura IDÉNTICA a plantilla.txt:
+  // wrapper con data-editor-block="text" y div interno con EX[tipo]
+  const innerStyle = (typeof EX !== 'undefined' && EX[tipo]) ? EX[tipo] : '';
+  const html =
+    '<div data-editor-block="text" style="width:100%;margin:14px 0;box-sizing:border-box;text-align:left;">' +
+      '<div style="' + innerStyle + '" contenteditable="true">' + esc(cfg.defaultText) + '</div>' +
+    '</div>';
+
+  if (typeof insertHTMLAtCursor === 'function') {
+    insertHTMLAtCursor(html);
+  }
+  closeSeccionesModal();
+
+  setTimeout(() => {
+    if (typeof normalizeEditorVisualGrid === 'function') normalizeEditorVisualGrid(editor);
+    if (typeof refreshOutput === 'function') refreshOutput();
+  }, 0);
+}
+
+// Delegación de eventos dentro del modal
+(function bindSeccionesModal() {
+  const modal = document.getElementById('seccionesModal');
+  if (!modal) return;
+  modal.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'seccionesModal') {
+      closeSeccionesModal();
+      return;
+    }
+    const item = e.target.closest && e.target.closest('.seccion-item');
+    if (item) {
+      const tipo = item.getAttribute('data-seccion');
+      if (tipo) insertSeccion(tipo);
+    }
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSeccionesModal();
+  });
+})();
+
+// ══════════════════════════════════════════════════════════════
+//  UTILIDADES DE LISTAS
+// ══════════════════════════════════════════════════════════════
 function getSelectedLinesForList(range) {
   if (!range || range.collapsed || !editor.contains(range.commonAncestorContainer)) return [];
 
@@ -100,19 +169,17 @@ function addBlock(type) {
     if (listRange && convertSelectionToList(listRange)) return;
   }
 
-  saveBlockUndo(); // Guardamos el estado para que funcione el Ctrl+Z (Deshacer)
+  saveBlockUndo();
   let html = '';
 
   if (cfg.isSequence) {
-    // 1. Preguntamos el número de pasos
     const numSteps = prompt("¿Cuántos pasos tiene la secuencia operativa?", "Escribe número de pasos de tu secuencia");
     if (!numSteps || isNaN(numSteps) || numSteps < 1) return;
 
-    // 2. Generamos los pasos dinámicamente
     let stepsHtml = '';
     for (let i = 1; i <= parseInt(numSteps); i++) {
       const isOdd = i % 2 !== 0;
-      const color = isOdd ? '#c0272d' : '#1a1a1a'; // Rojo para impares, negro para pares
+      const color = isOdd ? '#c0272d' : '#1a1a1a';
       const shadow = isOdd ? 'box-shadow: 0 3px 6px rgba(192,39,45,0.2);' : '';
 
       stepsHtml += `
@@ -125,7 +192,6 @@ function addBlock(type) {
         </div>`;
     }
 
-    // 3. Montamos el bloque completo
     html = `
       <div class="sequence-block" data-editor-block="text" style="max-width:800px;width:100%;margin:30px auto;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;">
         <div style="width:100%;max-width:none;margin:0;background-color: #ffffff; padding: 10px;">
