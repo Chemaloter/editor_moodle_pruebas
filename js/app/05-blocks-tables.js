@@ -19,16 +19,19 @@ const BLOCK_CFG = {
   divider:{ isSep:true },
   list:   { isList:true },
   def:    { isDef:true },
-sequence: { isSequence:true },
+  sequence: { isSequence:true },
+  // ── GRUPO B · Componentes HTML/CSS puros (compatibles con Moodle) ──
+  acordeon: { isAcordeon:true },
+  timeline: { isTimeline:true },
+  insignia: { isInsignia:true },
+  checklist:{ isChecklist:true },
+  progreso: { isProgreso:true }
 };
 
 // ══════════════════════════════════════════════════════════════
 //  SECCIONES / SUBSECCIONES MOODLE
 //  Genera H1–H4 con la estructura EXACTA de plantilla.txt.
-//  Los bloques se anclan a la IZQUIERDA del editor: no se centran
-//  ni respetan la retícula 800/1000.
-//  Se marcan con la clase .moodle-seccion-block para que las capas
-//  de normalización (preview y export) los ignoren.
+//  Ancladas a la IZQUIERDA del editor (no respetan retícula 800/1000).
 // ══════════════════════════════════════════════════════════════
 const SECCIONES_CFG = {
   h1: { defaultText: '🚒 [ESCRIBE AQUÍ EL TEXTO H1]' },
@@ -55,8 +58,6 @@ function insertSeccion(tipo) {
 
   const innerStyle = (typeof EX !== 'undefined' && EX[tipo]) ? EX[tipo] : '';
 
-  // Estructura EXACTA de plantilla.txt, con clase marcadora
-  // y contenteditable para poder editar en el editor.
   const html =
     '<div class="moodle-seccion-block" data-editor-block="text" ' +
     'style="width:100%;margin:14px 0;box-sizing:border-box;text-align:left;">' +
@@ -75,7 +76,6 @@ function insertSeccion(tipo) {
   }, 0);
 }
 
-// Delegación de eventos del modal
 (function bindSeccionesModal() {
   const modal = document.getElementById('seccionesModal');
   if (!modal) return;
@@ -94,6 +94,111 @@ function insertSeccion(tipo) {
     if (e.key === 'Escape') closeSeccionesModal();
   });
 })();
+
+// ══════════════════════════════════════════════════════════════
+//  GRUPO B · CONSTRUCTORES DE COMPONENTES HTML/CSS PUROS
+// ══════════════════════════════════════════════════════════════
+
+const _GRUPOB_FONT = "Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+
+// ── 1 · Acordeón / FAQ con <details> + <summary> ──
+function buildAcordeon() {
+  const raw = prompt("¿Cuántas preguntas tendrá el acordeón? (1–20)", "3");
+  if (raw === null) return '';
+  const n = Math.max(1, Math.min(20, parseInt(raw, 10) || 3));
+  const items = [];
+  for (let i = 1; i <= n; i++) {
+    items.push(
+      '<details style="background:#ffffff;border:1px solid #e4e7ec;border-left:5px solid #C0272D;border-radius:0 8px 8px 0;margin-bottom:10px;overflow:hidden;">' +
+        '<summary style="cursor:pointer;padding:14px 18px;font-family:' + _GRUPOB_FONT + ';font-size:15px;font-weight:700;color:#6b1215;background:#fff7f7;list-style:none;">' +
+          '<span style="display:inline-block;width:22px;color:#C0272D;font-weight:800;">▶</span>' +
+          '<span contenteditable="true" style="outline:none;">Pregunta ' + i + '</span>' +
+        '</summary>' +
+        '<div style="padding:14px 18px;font-family:' + _GRUPOB_FONT + ';font-size:15px;line-height:1.7;color:#2d2d2d;">' +
+          '<span contenteditable="true" style="outline:none;">Respuesta ' + i + '.</span>' +
+        '</div>' +
+      '</details>'
+    );
+  }
+  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:16px auto;box-sizing:border-box;">' +
+    items.join('') +
+    '</div>';
+}
+
+// ── 2 · Timeline vertical con dots y línea CSS ──
+function buildTimeline() {
+  const raw = prompt("¿Cuántos hitos tendrá la línea de tiempo? (1–20)", "3");
+  if (raw === null) return '';
+  const n = Math.max(1, Math.min(20, parseInt(raw, 10) || 3));
+  const milestones = [];
+  for (let i = 1; i <= n; i++) {
+    milestones.push(
+      '<div style="position:relative;margin-bottom:24px;">' +
+        '<div style="position:absolute;left:-24px;top:4px;width:16px;height:16px;border-radius:50%;background:#C0272D;box-shadow:0 0 0 2px #ffffff;box-sizing:border-box;"></div>' +
+        '<div style="font-family:' + _GRUPOB_FONT + ';font-size:12px;font-weight:800;color:#C0272D;text-transform:uppercase;letter-spacing:.7px;">FASE ' + i + '</div>' +
+        '<div contenteditable="true" style="outline:none;font-family:' + _GRUPOB_FONT + ';font-size:16px;font-weight:700;color:#1f2937;margin:4px 0 6px 0;">Título del hito ' + i + '</div>' +
+        '<div contenteditable="true" style="outline:none;font-family:' + _GRUPOB_FONT + ';font-size:15px;line-height:1.7;color:#2d2d2d;">Descripción del hito ' + i + '.</div>' +
+      '</div>'
+    );
+  }
+  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:24px auto;box-sizing:border-box;position:relative;padding-left:32px;">' +
+    '<div style="position:absolute;left:14px;top:8px;bottom:8px;width:2px;background:#e4e7ec;"></div>' +
+    milestones.join('') +
+    '</div>';
+}
+
+// ── 3 · Insignia / Badge (5 presets de color) ──
+function buildInsignia() {
+  const badges = [
+    { bg: '#C0272D', text: 'NUEVO' },
+    { bg: '#16a34a', text: 'COMPLETADO' },
+    { bg: '#1d4ed8', text: 'INFO' },
+    { bg: '#d97706', text: 'ATENCIÓN' },
+    { bg: '#6b7280', text: 'BORRADOR' }
+  ];
+  const spans = badges.map(function(b) {
+    return '<span contenteditable="true" style="outline:none;display:inline-block;background:' + b.bg + ';color:#ffffff;padding:6px 16px;border-radius:999px;font-family:' + _GRUPOB_FONT + ';font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;">' + b.text + '</span>';
+  }).join('');
+  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:14px auto;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;">' +
+    spans +
+    '</div>';
+}
+
+// ── 4 · Checklist interactivo con <input type="checkbox"> ──
+function buildChecklist() {
+  const raw = prompt("¿Cuántos ítems tendrá el checklist? (1–30)", "4");
+  if (raw === null) return '';
+  const n = Math.max(1, Math.min(30, parseInt(raw, 10) || 4));
+  const items = [];
+  for (let i = 1; i <= n; i++) {
+    items.push(
+      '<label style="display:flex;align-items:flex-start;gap:10px;font-family:' + _GRUPOB_FONT + ';font-size:15px;line-height:1.65;color:#2d2d2d;margin-bottom:8px;cursor:pointer;">' +
+        '<input type="checkbox" contenteditable="false" style="margin-top:5px;width:16px;height:16px;accent-color:#0f766e;flex-shrink:0;cursor:pointer;">' +
+        '<span contenteditable="true" style="outline:none;flex:1;min-width:0;">Elemento ' + i + ' del checklist</span>' +
+      '</label>'
+    );
+  }
+  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:16px auto;box-sizing:border-box;background:#f0fdfa;border-left:5px solid #0f766e;border-radius:0 6px 6px 0;padding:16px 20px;">' +
+    '<div contenteditable="true" style="outline:none;font-family:' + _GRUPOB_FONT + ';font-size:13px;font-weight:800;color:#0f766e;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;">Checklist</div>' +
+    items.join('') +
+    '</div>';
+}
+
+// ── 5 · Barra de progreso decorativa ──
+function buildProgreso() {
+  const raw = prompt("¿Qué porcentaje de progreso mostrar? (0–100)", "50");
+  if (raw === null) return '';
+  const pct = Math.max(0, Math.min(100, parseInt(raw, 10) || 0));
+  return '<div data-editor-block="text" style="max-width:800px;width:100%;margin:16px auto;box-sizing:border-box;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;font-family:' + _GRUPOB_FONT + ';font-size:13px;font-weight:700;color:#374151;margin-bottom:6px;">' +
+      '<span contenteditable="true" style="outline:none;">Progreso del módulo</span>' +
+      '<span contenteditable="true" style="outline:none;font-weight:800;color:#C0272D;">' + pct + '%</span>' +
+    '</div>' +
+    '<div style="width:100%;height:14px;background:#e5e7eb;border-radius:999px;overflow:hidden;box-sizing:border-box;">' +
+      '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#C0272D 0%,#8E1B1F 100%);border-radius:999px;"></div>' +
+    '</div>' +
+    '</div>';
+}
 
 // ══════════════════════════════════════════════════════════════
 //  UTILIDADES DE LISTAS
@@ -179,7 +284,21 @@ function addBlock(type) {
   saveBlockUndo();
   let html = '';
 
-  if (cfg.isSequence) {
+  if (cfg.isAcordeon) {
+    html = buildAcordeon();
+    if (!html) return;
+  } else if (cfg.isTimeline) {
+    html = buildTimeline();
+    if (!html) return;
+  } else if (cfg.isInsignia) {
+    html = buildInsignia();
+  } else if (cfg.isChecklist) {
+    html = buildChecklist();
+    if (!html) return;
+  } else if (cfg.isProgreso) {
+    html = buildProgreso();
+    if (!html) return;
+  } else if (cfg.isSequence) {
     const numSteps = prompt("¿Cuántos pasos tiene la secuencia operativa?", "Escribe número de pasos de tu secuencia");
     if (!numSteps || isNaN(numSteps) || numSteps < 1) return;
 
@@ -223,7 +342,8 @@ function addBlock(type) {
   } else {
     html = '<div data-editor-block="text" style="max-width:' + EXPORT_CONTENT_MAX + ';width:100%;margin:12px auto 8px auto;box-sizing:border-box;text-align:left;"><div style="' + EX[type] + '" contenteditable="true">' + esc(cfg.defaultText) + '</div></div>';
   }
-  
+
+  if (!html) return;
   insertHTMLAtCursor(html);
   setTimeout(() => { if (typeof normalizeEditorVisualGrid === 'function') normalizeEditorVisualGrid(editor); }, 0);
 }
@@ -257,3 +377,14 @@ document.getElementById('tableModal').addEventListener('click', e => {
 });
 
 // ══════════════════════════════════════════════════════════════
+//  GRUPO B · SINCRONIZACIÓN DEL ESTADO "checked" DE LOS CHECKBOX
+//  El atributo `checked` persiste al exportar; la propiedad no.
+//  Al marcar/desmarcar un checkbox, sincronizamos el atributo.
+// ══════════════════════════════════════════════════════════════
+editor.addEventListener('change', function(e) {
+  const t = e.target;
+  if (t && t.tagName === 'INPUT' && t.type === 'checkbox') {
+    if (t.checked) t.setAttribute('checked', '');
+    else t.removeAttribute('checked');
+  }
+}, true);
