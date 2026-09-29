@@ -27,7 +27,7 @@
 
   function isManagedEditableBlock(host) {
     if (!host || host === editor) return false;
-    if (host.closest('li')) return false; // Las listas mantienen Enter nativo para nuevos elementos.
+    if (host.closest('li')) return false;
     if (host.closest('td,th')) return true;
     const style = (host.getAttribute('style') || '').toLowerCase();
     const parentStyle = (host.parentElement && host.parentElement.getAttribute('style') || '').toLowerCase();
@@ -55,8 +55,6 @@
     const br = document.createElement('br');
     range.insertNode(br);
 
-    // Si el salto se inserta al final del bloque, un segundo <br> garantiza
-    // que el cursor quede en una línea visible en Chrome/Edge.
     const afterRange = document.createRange();
     afterRange.setStartAfter(br);
     afterRange.collapse(true);
@@ -106,9 +104,6 @@
     if (typeof refreshOutput === 'function') refreshOutput();
   }, true);
 
-  // Limpieza preventiva: si el navegador o un pegado genera divs/p internos
-  // dentro de un bloque editable, los convertimos a saltos <br> para mantener
-  // el bloque como una sola unidad visual.
   function normalizeNestedBlocksInsideEditable(host) {
     if (!isManagedEditableBlock(host) || host.closest('td,th,li')) return;
     const nested = Array.from(host.querySelectorAll(':scope > div, :scope > p'));
@@ -127,13 +122,9 @@
   }, true);
 })();
 
-// v6.7: Intro uniforme dentro de bloques editables.
-
 
 /* ============================================================
    PARCHE v6.8 · TABLAS MOODLE SIN BORDES NEGROS
-   - El generador de maniobras ya no usa tablas reales para pasos/riesgos.
-   - Si queda alguna tabla antigua o importada, se fuerza borde suave inline.
    ============================================================ */
 (function(){
   if (typeof buildFinalHTML !== 'function') return;
@@ -192,9 +183,6 @@
 
 /* ============================================================
    PARCHE v6.9 · SALIR DE BLOQUE CON ALT + ENTER
-   - Enter mantiene el comportamiento actual: salto dentro del bloque.
-   - Alt+Enter crea o reutiliza una línea editable justo después del bloque actual.
-   - Funciona desde bloques de texto, recursos multimedia, pies de foto y tablas.
    ============================================================ */
 (function(){
   if (!window.editor) return;
@@ -265,11 +253,8 @@
 })();
 
 
-
 /* ============================================================
    PARCHE v7.5 · NORMALIZADOR DEFENSIVO DE IMÁGENES IMPORTADAS
-   Si Moodle devuelve tarjetas de imagen anidadas, las aplana en
-   una única estructura canónica antes de redimensionar o exportar.
    ============================================================ */
 (function(){
   if (!window.editor) return;
@@ -328,7 +313,6 @@
       if (!root.contains(img) || isEscudo(img)) return;
       const visualRoot=findVisualRoot(img);
       if (!visualRoot) return;
-      // Si ya es canónico y no está dentro de otro panel visual, no tocar.
       if (visualRoot.classList && visualRoot.classList.contains('moodle-media-block') && !looksLikeImagePanel(visualRoot.parentElement)) return;
       const width=readWidth(img, visualRoot);
       visualRoot.replaceWith(build(img,width));
@@ -341,13 +325,6 @@
 
 /* ============================================================
    PARCHE v7.6 · PEGADO NEUTRO DENTRO DE BLOQUES DEL EDITOR
-   Objetivo:
-   - Si se pega texto/HTML dentro de un bloque contenteditable del editor
-     (H1-H6, objetivo, aviso, info, consejo, paso, cita, extra,
-     práctica, definición, pies de recurso, etc.), se pega como texto
-     limpio y hereda SIEMPRE el estilo del bloque contenedor.
-   - También limpia estilos inline residuales que el navegador pueda crear
-     al escribir/pegar dentro de esos bloques.
    ============================================================ */
 (function(){
   if (!window.editor) return;
@@ -373,7 +350,6 @@
 
   function isEditorManagedTextBlock(host) {
     if (!host || host === editor || !editor.contains(host)) return false;
-    // Tablas y listas mantienen comportamiento propio: nuevos <li>, celdas, etc.
     if (host.closest('td,th,li')) return false;
     if (host.closest('.sequence-block') && /^(H4|P)$/.test(host.tagName || '')) return true;
     return host.getAttribute('contenteditable') === 'true';
@@ -478,7 +454,7 @@
         if (tag === 'br') {
           frag.appendChild(document.createElement('br'));
         } else if (child.matches('img,iframe,video,audio,table')) {
-          // No se permiten recursos dentro de bloques de texto: se descartan.
+          // sin recursos dentro de bloques de texto
         } else {
           frag.appendChild(plainFragmentFromNode(child, false));
           if (/^(div|p|section|article|header|footer|h1|h2|h3|h4|h5|h6|li)$/i.test(tag)) {
@@ -505,7 +481,6 @@
       }
     });
     host.replaceChildren(frag);
-    // Evita acumulación de <br> al final tras convertir bloques pegados.
     while (host.lastChild && host.lastChild.nodeType === 1 && host.lastChild.tagName === 'BR' &&
            host.lastChild.previousSibling && host.lastChild.previousSibling.nodeType === 1 && host.lastChild.previousSibling.tagName === 'BR') {
       host.lastChild.remove();
@@ -542,10 +517,11 @@
 
 /* ============================================================
    PARCHE v7.7 · RETÍCULA VISUAL UNIVERSAL DEL EDITOR
-   Garantiza que absolutamente todos los elementos insertables del editor
-   respeten el mismo carril visual:
-   - Texto, encabezados, listas, separadores, definiciones y bloques didácticos: 800px.
-   - Imágenes, tablas, vídeos, PDF, presentaciones y audio: 1000px.
+   Garantiza que todos los elementos insertables respeten el carril:
+   - Texto / bloques: 800px centrado.
+   - Multimedia: 1000px centrado.
+   EXCEPCIÓN: los bloques .moodle-seccion-block NO se centran
+   y quedan anclados al borde izquierdo del editor.
    ============================================================ */
 (function(){
   if (!window.editor) return;
@@ -556,6 +532,7 @@
   function norm(el){ return String((el && el.getAttribute && el.getAttribute('style')) || '').toLowerCase().replace(/\s+/g,''); }
   function hasMedia(el){ return !!(el && el.querySelector && el.querySelector('img,iframe,video,audio,table')); }
   function isPureImageBlock(el){ return el && el.classList && el.classList.contains('moodle-media-block') && el.querySelector('img') && !el.querySelector('iframe,video,audio,table'); }
+  function isSeccionBlock(el){ return !!(el && el.classList && el.classList.contains('moodle-seccion-block')); }   // <-- NUEVO
   function isHeadingInner(el){
     const s = norm(el);
     return s.includes('background-color:#c0272d') || s.includes('background:#c0272d') ||
@@ -608,6 +585,14 @@
       root = root || editor;
       Array.from(root.children).forEach(el => {
         if (!el || el.nodeType !== 1) return;
+
+        // ⬇️ NUEVO: bloques "Secciones / subsecciones" → NO se centran,
+        //    se quedan anclados a la izquierda con su propio estilo inline.
+        if (isSeccionBlock(el)) {
+          el.classList.remove('moodle-content-block', 'moodle-media-block-preview');
+          return;
+        }
+
         el.classList.remove('moodle-content-block','moodle-media-block-preview');
         const tag = el.tagName.toLowerCase();
         const media = hasMedia(el) || tag === 'table' || el.classList.contains('moodle-media-block');
@@ -645,4 +630,3 @@
   editor.addEventListener('input', () => window.normalizeEditorVisualGrid(editor), true);
   setTimeout(() => window.normalizeEditorVisualGrid(editor), 0);
 })();
-
