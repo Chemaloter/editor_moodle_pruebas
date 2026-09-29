@@ -1,12 +1,42 @@
 // ══════════════════════════════════════════════════════════════
-//  01-export-styles.js · v2.1
+//  01-export-styles.js · v2.0
 //
-//  Cambios v2.1:
-//  ✅ Añadida excepción para los bloques .moodle-seccion-block:
-//     no se centran, no se limitan a 800px, se exportan tal cual
-//     (anclados a la izquierda con su propio style inline).
+//  Cambios respecto a v1.x:
+//
+//  ✅ FIX E1 · Merge de estilos en lugar de sobrescritura
+//     - Antes: el.setAttribute('style', EXPORT_*_STYLE) machacaba
+//       TODOS los estilos inline existentes (color, font-weight,
+//       padding-left, list-style, etc.) al exportar.
+//     - Ahora: se conservan los estilos inline originales y sólo
+//       se añaden las propiedades por defecto que falten.
+//     - Las restricciones de layout institucional (max-width, width,
+//       margin-left/right auto, box-sizing) sí se siguen forzando,
+//       porque son las que garantizan el ancho 800/1000px.
+//
+//  ✅ FIX E2 · Los <p> dentro de <li> ya no se reescriben
+//     - Antes el selector excluía sólo td/th. Si un <li> contenía
+//       un <p>, se le aplicaba EXPORT_TEXT_STYLE y perdía estilos.
+//     - Ahora se excluye también li.
+//
+//  ✅ FIX E3 · Los <ul>/<ol> anidados dentro de <li> se respetan
+//     - Se sigue aplicando el merge (no la sustitución), así que
+//       listas anidadas conservan sus estilos propios.
+//
+//  Nota: FIX 7 (deduplicación de wrappers multimedia) se conserva
+//  intacto y sigue funcionando igual que antes.
+//
+//  ──────────────────────────────────────────────────────────────
+//  ✅ v2.1 · EXCEPCIÓN SECCIONES MOODLE
+//     - Los bloques marcados con la clase .moodle-seccion-block
+//       (generados por el botón "Secciones / subsecciones Moodle")
+//       NO se centran, NO se limitan a 800px y se exportan tal cual,
+//       anclados a la izquierda con su propio style inline.
+//     - El resto del archivo permanece intacto.
 // ══════════════════════════════════════════════════════════════
 
+// ══════════════════════════════════════════════════════════════
+//  ESTILOS DE EXPORTACIÓN MOODLE (inline, TinyMCE/Atto compatible)
+// ══════════════════════════════════════════════════════════════
 const EX = {
   h1:   "display:inline-block;background-color:#C0272D;color:#ffffff;padding:12px 24px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;line-height:1.3;",
   h2:   "display:inline-block;background-color:#8E1B1F;color:#ffffff;padding:10px 20px;border-radius:6px;font-family:Montserrat,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2px;line-height:1.3;",
@@ -38,6 +68,13 @@ const EX = {
   divider:"display:block;border:none;border-top:2px solid #e5e7eb;margin:16px 0;"
 };
 
+// ══════════════════════════════════════════════════════════════
+//  ✅ FIX E1 · Utilidades de merge de estilos inline
+//
+//  Objetivo: combinar estilos existentes con estilos por defecto
+//  respetando lo que ya venía en el elemento. Nunca sustituye por
+//  completo el atributo style (eso borraba negritas, colores, etc.).
+// ══════════════════════════════════════════════════════════════
 function _parseStyleAttr(styleStr) {
   const map = new Map();
   String(styleStr || '').split(';').forEach(part => {
@@ -54,6 +91,11 @@ function _serializeStyleMap(map) {
   map.forEach((v, k) => parts.push(k + ':' + v));
   return parts.join(';');
 }
+/**
+ * Combina estilos: parte de `defaults`, deja que `existing` los sobrescriba.
+ * Si `forced` viene con propiedades, se aplican AL FINAL (ganan siempre).
+ * Devuelve un string listo para setAttribute('style', …).
+ */
 function _mergeStyles(existing, defaults, forced) {
   const out = _parseStyleAttr(defaults);
   _parseStyleAttr(existing).forEach((v, k) => out.set(k, v));
@@ -61,11 +103,16 @@ function _mergeStyles(existing, defaults, forced) {
   return _serializeStyleMap(out);
 }
 
-// ✅ NUEVO · Detecta bloques "Secciones / subsecciones"
+// ✅ v2.1 · Detecta bloques "Secciones / subsecciones Moodle".
+// Estos bloques NO deben ser re-centrados ni limitados a 800/1000px
+// al exportar; se exportan tal cual los inserta el generador.
 function _isSeccionBlock(el) {
   return !!(el && el.nodeType === 1 && el.classList && el.classList.contains('moodle-seccion-block'));
 }
 
+// ══════════════════════════════════════════════════════════════
+//  DETECCIÓN DE ENCABEZADOS WORD
+// ══════════════════════════════════════════════════════════════
 function detectHeading(el) {
   if (!el || el.nodeType !== 1) return 0;
   const tag = el.tagName.toLowerCase();
@@ -87,6 +134,9 @@ function isWordList(el) {
   return cls.includes('MsoListParagraph') || cls.includes('ListParagraph') || cls.includes('MsoList');
 }
 
+// ══════════════════════════════════════════════════════════════
+//  ANCHO INSTITUCIONAL SOLO EN EXPORTACIÓN MOODLE
+// ══════════════════════════════════════════════════════════════
 const EXPORT_CONTENT_MAX = "800px";
 const EXPORT_MEDIA_MAX   = "1000px";
 const EXPORT_TEXT_MAX    = "800px";
@@ -126,7 +176,7 @@ function applyOptimizedReadingWidthForExport(clone) {
   }
   function isTextual(el) {
     if (!el || el.nodeType !== 1 || el.closest('td,th')) return false;
-    if (_isSeccionBlock(el)) return false;                  // ✅ NUEVO
+    if (_isSeccionBlock(el)) return false;                 // ✅ v2.1 · excepción
     const tag = el.tagName.toLowerCase();
     if (tag === 'p' || tag === 'ul' || tag === 'ol' || tag === 'hr') return true;
     if (tag === 'div') {
@@ -154,23 +204,25 @@ function applyOptimizedReadingWidthForExport(clone) {
     el.style.boxSizing = 'border-box';
   });
 
+  // ✅ FIX E1 + E2 · <p> con merge de estilos y exclusión de <li>
   clone.querySelectorAll('p').forEach(el => {
-    if (el.closest('td,th,li')) return;
-    if (_isSeccionBlock(el)) return;
+    if (el.closest('td,th,li')) return;                    // ✅ FIX E2: no tocar <p> dentro de <li>
+    if (_isSeccionBlock(el)) return;                       // ✅ v2.1
     if (el.querySelector('img,iframe,video,audio,table,div,section,article,figure,blockquote,ul,ol,hr')) return;
     el.setAttribute('style', _mergeStyles(el.getAttribute('style'), EXPORT_TEXT_STYLE, ''));
   });
 
+  // ✅ FIX E1 + E3 · <ul>/<ol> con merge (conserva list-style, colores, etc.)
   clone.querySelectorAll('ul,ol').forEach(el => {
     if (el.closest('td,th')) return;
-    if (_isSeccionBlock(el)) return;
+    if (_isSeccionBlock(el)) return;                       // ✅ v2.1
     el.setAttribute('style', _mergeStyles(el.getAttribute('style'), EXPORT_UL_STYLE, ''));
     setBox(el, CONTENT_MAX, '18px');
   });
 
   clone.querySelectorAll('div').forEach(el => {
     if (el.closest('td,th')) return;
-    if (_isSeccionBlock(el)) return;                        // ✅ NUEVO
+    if (_isSeccionBlock(el)) return;                       // ✅ v2.1
     const first = el.firstElementChild;
     if (first && isHeadingInner(first)) setBox(el, CONTENT_MAX, '12px');
     if (isSpecialText(el) && !hasMedia(el)) setBox(el, CONTENT_MAX, '14px');
@@ -179,7 +231,7 @@ function applyOptimizedReadingWidthForExport(clone) {
 
   Array.from(clone.children).forEach(el => {
     if (!el || el.nodeType !== 1) return;
-    if (_isSeccionBlock(el)) return;                        // ✅ NUEVO
+    if (_isSeccionBlock(el)) return;                       // ✅ v2.1
     const tag = el.tagName.toLowerCase();
     if (hasMedia(el) || tag === 'table' || el.classList.contains('moodle-media-block')) {
       setBox(el, MEDIA_MAX, '24px');
@@ -193,7 +245,13 @@ function applyOptimizedReadingWidthForExport(clone) {
     if (tag === 'div' || tag === 'p' || tag === 'section' || tag === 'article' || tag === 'blockquote') setBox(el, CONTENT_MAX, '14px');
   });
 
-  // FIX 7: neutraliza wrappers anidados alrededor de .moodle-media-block
+  // ✅ FIX 7 (conservado): evita el doble anidamiento a 1000px en bloques
+  // multimedia (especialmente PDF e imágenes extraídas). Recorre la cadena
+  // de ancestros: cualquier wrapper que contenga ÚNICAMENTE un
+  // .moodle-media-block (con o sin <hr> y nodos vacíos) se neutraliza
+  // (max-width:none, sin márgenes laterales auto) para que sea el propio
+  // .moodle-media-block quien fije el ancho real (1000px) sin crear cajas
+  // anidadas.
   Array.from(clone.querySelectorAll('.moodle-media-block')).forEach(mediaEl => {
     let parent = mediaEl.parentElement;
     while (parent && parent !== clone) {
