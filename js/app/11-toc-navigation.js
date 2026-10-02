@@ -191,7 +191,25 @@
     const minLevel = Math.min.apply(null, headings.map(h => h.level));
     const topHeadings = headings.filter(h => h.level === minLevel);
 
-    topHeadings.forEach((h, idx) => {
+   const headings = findHeadingWrappers();
+if (!headings.length) return;
+
+let minLevel = Math.min.apply(null, headings.map(h => h.level));
+let topHeadings = headings.filter(h => h.level === minLevel);
+
+// FIX: si solo hay UN encabezado en el nivel mínimo, casi siempre es el
+// título global del documento (H1 único al principio). En ese caso, los
+// apartados reales están un nivel por debajo y es ahí donde deben ir los
+// botones "Volver al índice".
+if (topHeadings.length < 2 && minLevel < 4) {
+  const candidateLevel = minLevel + 1;
+  const candidates = headings.filter(h => h.level === candidateLevel);
+  if (candidates.length >= 2) {
+    minLevel = candidateLevel;
+    topHeadings = candidates;
+  }
+}
+     topHeadings.forEach((h, idx) => {
       const nextH = topHeadings[idx + 1];
       const block = document.createElement('div');
       block.innerHTML = buildBackLink();
