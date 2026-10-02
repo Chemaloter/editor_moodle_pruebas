@@ -143,10 +143,22 @@
         + '</div>';
     }).join('');
 
+    const count = entries.length;
+    const countLabel = count + ' apartado' + (count === 1 ? '' : 's');
+
     return '<div id="' + TOC_CONTAINER_ID + '" style="max-width:800px;width:100%;margin:18px auto 28px auto;box-sizing:border-box;font-family:' + FONT + ';scroll-margin-top:' + SCROLL_MARGIN + ';">'
-      +   '<details open style="border:1px solid ' + COLORS.border + ';border-left:6px solid ' + COLORS.red + ';border-radius:10px;background:#ffffff;box-shadow:0 3px 12px rgba(192,39,45,.08);overflow:hidden;">'
-      +     '<summary style="cursor:pointer;display:block;padding:14px 20px;background-color:' + COLORS.redDark + ';color:#ffffff;font-size:16px;line-height:1.3;font-weight:800;letter-spacing:.4px;font-family:' + FONT + ';list-style:none;">'
-      +       '📑 CONTENIDO'
+      +   '<details open style="border:1px solid ' + COLORS.border + ';border-left:6px solid ' + COLORS.red + ';border-radius:10px;background:#ffffff;box-shadow:0 3px 12px rgba(15,23,42,.06);overflow:hidden;">'
+      +     '<summary style="cursor:pointer;display:block;padding:13px 20px 12px 20px;'
+      +                'background:linear-gradient(180deg,#fff7f7 0%,#ffffff 100%);'
+      +                'border-bottom:2px solid ' + COLORS.red + ';'
+      +                'color:' + COLORS.redDark + ';'
+      +                'font-family:' + FONT + ';'
+      +                'font-size:12.5px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;'
+      +                'line-height:1.3;list-style:none;">'
+      +       'Contenido'
+      +       '<span style="display:inline-block;margin-left:10px;padding:2px 9px;background:' + COLORS.redSoft + ';color:' + COLORS.red + ';border-radius:999px;font-size:10.5px;font-weight:800;letter-spacing:.6px;vertical-align:middle;">'
+      +         countLabel
+      +       '</span>'
       +     '</summary>'
       +     '<div style="padding:16px 20px 14px 20px;background:#ffffff;">' + itemsHtml + '</div>'
       +   '</details>'
