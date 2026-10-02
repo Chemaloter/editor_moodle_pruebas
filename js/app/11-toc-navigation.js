@@ -188,8 +188,20 @@
     const headings = findHeadingWrappers();
     if (!headings.length) return;
 
-    const minLevel = Math.min.apply(null, headings.map(h => h.level));
-    const topHeadings = headings.filter(h => h.level === minLevel);
+        let minLevel = Math.min.apply(null, headings.map(h => h.level));
+    let topHeadings = headings.filter(h => h.level === minLevel);
+
+    // FIX v2.1 · Si solo hay UN encabezado en el nivel mínimo (caso típico:
+    // un único H1 de título global), bajamos un nivel para que los H2 sean
+    // las secciones reales y ahí se inserten los botones "Volver al índice".
+    if (topHeadings.length < 2 && minLevel < 4) {
+      const candidateLevel = minLevel + 1;
+      const candidates = headings.filter(h => h.level === candidateLevel);
+      if (candidates.length >= 2) {
+        minLevel = candidateLevel;
+        topHeadings = candidates;
+      }
+    }
 
    const headings = findHeadingWrappers();
 if (!headings.length) return;
