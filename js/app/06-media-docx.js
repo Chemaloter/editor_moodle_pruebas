@@ -500,6 +500,8 @@ const PDF_BLACKLIST_LINES = [
   /^\s*instructor\s+sfb\s+.+$/i,
   /^\s*direcci[oó]n\s+general\s+de\s+emergencias\s*$/i,
   /^\s*cuerpo\s+de\s+bomberos\s+de\s+la\s+c\.?\s*m\.?\s*$/i,
+    /^\s*cuerpo\s+de\s+bomberos\s+de\s+la\s+comunidad\s+de\s+madrid\s*$/i,
+  /^\s*programa\s+oposici[oó]n\s+bombero\s+especialista\s+conductor\s*$/i,
   /^\s*curso\s+nuevo\s+ingreso\s+\d{4}\s*[-–]\s*\d{4}\s*$/i,
   /^\s*sfb\s+m[oó]dulo\s+0?\d+\s+.*$/i,
   /^\s*conceptos\s+b[aá]sicos\s+en\s+incendios\s+forestales\s*$/i,
@@ -530,14 +532,20 @@ function _pdfIsPageNumber(text) {
 }
 
 function _pdfIsGarbageLine(text) {
-  if (!text || text.length < 3) return false;
-  if (text.trim().length <= 1) return true;
-  const suspicious = (text.match(/[\u00A0-\u00BF\u00C0-\u00FF]/g) || []);
-  const validES = (text.match(/[áéíóúüñÁÉÍÓÚÜÑ¿¡«»]/g) || []);
+  if (!text) return false;
+  const t = String(text);
+
+  // Líneas de 1-2 caracteres: solo sobreviven si contienen letra/número útil.
+  if (t.trim().length <= 2) {
+    return !/[a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ]/.test(t);
+  }
+
+  const suspicious = (t.match(/[\u00A0-\u00BF\u00C0-\u00FF]/g) || []);
+  const validES = (t.match(/[áéíóúüñÁÉÍÓÚÜÑ¿¡«»]/g) || []);
   const garbage = suspicious.length - validES.length;
-  const letters = (text.match(/[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/g) || []).length;
-  if (letters === 0) return text.length > 5;
-  return garbage > letters * 0.4;
+  const letters = (t.match(/[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ]/g) || []).length;
+  if (letters === 0) return t.length > 3;
+  return garbage > letters * 0.35;
 }
 
 function _pdfNormalizeLine(text) {
@@ -694,7 +702,7 @@ function _pdfGroupItemsIntoLines(items, medianHeight, boldMap) {
       groups.push(line);
     }
     line.height = Math.max(line.height, h);
-    line.parts.push({ text:original, x, xEnd:x+w, width:w, bold });
+    line.parts.push({ text:original, x, xEnd:x+w, width:w, bold, fontName: it.fontName || '' });
   });
   groups.sort((a,b) => b.y-a.y);
   return groups.map(line => {
@@ -722,8 +730,13 @@ function _pdfGroupItemsIntoLines(items, medianHeight, boldMap) {
           /^[a-záéíóúüñ]{2,}/.test(raw) &&
           gap <= Math.max(2.4, line.height * 0.18);
 
+              const sameFont = prev.fontName && part.fontName && prev.fontName === part.fontName;
+        const looksLikeCellBoundary = !sameFont && gap > Math.max(0.4, line.height * 0.04);
+
         if (!punctuationJoin && !singleLetterContinuation &&
-            (explicitSpace || gap > Math.max(1.2, line.height * 0.09))) {
+            (explicitSpace
+             || gap > Math.max(0.4, line.height * 0.04)
+             || looksLikeCellBoundary)) {
           sep = ' ';
         }
       }
@@ -810,6 +823,21 @@ function _pdfNumberingInfo(text) {
 function _pdfLooksLikeTocLine(text) {
   const t = String(text || '').trim();
   return /\.{4,}\s*\d{1,4}\s*$/.test(t) || /\s{3,}\d{1,4}\s*$/.test(t);
+}
+function _pdfLooksLikeTocLineDeep(text) {
+  const t = String(text || '');
+  const numRefs  = (t.match(/\b\d+(?:\.\d+)*\.?\s+[A-ZÁÉÍÓÚÑ][a-záéíóúüñA-ZÁÉÍÓÚÑ\s]+/g) || []);
+  const pageRefs = (t.match(/\s\d{1,4}\s/g) || []);
+  return numRefs.length >= 2 && pageRefs.length >= 2;
+}
+
+function _pdfIsIndexPage(lines) {
+  if (!lines.length) return false;
+  const joined = lines.map(l => l.text).join(' ');
+  if (joined.length < 200) return false;
+  const numRefs  = (joined.match(/\b\d+(?:\.\d+)*\.?\s+[A-ZÁÉÍÓÚÑ]/g) || []).length;
+  const pageRefs = (joined.match(/\s\d{1,4}\s/g) || []).length;
+  return numRefs >= 10 && pageRefs >= 10;
 }
 function _pdfMergeAdjacentStrong(html) {
   if (!html || html.indexOf('<strong') === -1) return html || '';
@@ -904,6 +932,11 @@ function _pdfBuildBlocks(lines, medianHeight, medianLineGap) {
       j++;
     }
     const paragraphText = paragraphLines.join(' ').replace(/(\w)-\s+([a-záéíóúüñ])/gi,'$1$2');
+        // Descartar líneas de índice que se colaron como párrafo.
+    if (_pdfLooksLikeTocLineDeep(paragraphText)) {
+      i = j;
+      continue;
+    }
     let paragraphHtml = paragraphHtmls.join(' ');
     paragraphHtml = paragraphHtml.replace(/([a-záéíóúüñ])-\s+(?=(?:<\/?(?:strong|em|b|i|u|span|sub|sup)[^>]*>)*[a-záéíóúüñ])/gi,'$1');
     const repaired = _pdfRepairSplitTokens(paragraphText, paragraphHtml);
@@ -1281,6 +1314,11 @@ async function handlePdfFile(file) {
 
     for (const pd of pagesData) {
       const { pageNum, lines, medianHeight, medianLineGap, textChars, pageImages, usedFallback } = pd;
+            // Descartar páginas completas que son índice.
+      if (_pdfIsIndexPage(lines)) {
+        if (window.PDF_DEBUG) console.log('[PDF p' + pageNum + '] página de índice ignorada');
+        continue;
+      }
 
       const filteredLines = lines.filter(line => {
         const norm = _pdfNormalizeLine(line.text);
