@@ -1,6 +1,6 @@
 /* ============================================================
    GENERADOR DE CUADROS DE COLOR · CBCM
-   Añade cuadros negro, gris, rojo y amarillo al editor.
+   Añade un generador versátil de cuadros con 6 colores.
    ============================================================ */
 (function(){
   'use strict';
@@ -36,6 +36,20 @@
       border: '#f59e0b',
       title: '#92400e',
       text: '#78350f'
+    },
+    verde: {
+      label: '🟩 Verde',
+      bg: '#ecfdf5',
+      border: '#10b981',
+      title: '#065f46',
+      text: '#064e3b'
+    },
+    azul: {
+      label: '🟦 Azul',
+      bg: '#eff6ff',
+      border: '#3b82f6',
+      title: '#1e3a8a',
+      text: '#1e40af'
     }
   };
 
@@ -123,7 +137,7 @@
         </div>
         <div class="modal-pad" style="gap:14px;">
           <div>
-            <label class="modal-label">Tipo de cuadro</label>
+            <label class="modal-label">Color del cuadro</label>
             <select id="cq-tipo" class="modal-input">
               ${Object.keys(TIPOS).map(k => '<option value="' + k + '">' + TIPOS[k].label + '</option>').join('')}
             </select>
@@ -160,9 +174,14 @@
     }
     ensureModal();
     const modal = byId('cuadrosColorModal');
-    if (byId('cq-tipo')) byId('cq-tipo').value = TIPOS[tipo] ? tipo : 'gris';
+    
+    // Si se pasa un tipo válido lo selecciona, si no, deja el primero o gris por defecto
+    if (byId('cq-tipo')) {
+        byId('cq-tipo').value = TIPOS[tipo] ? tipo : 'gris';
+    }
     if (byId('cq-titulo')) byId('cq-titulo').value = '';
     if (byId('cq-texto')) byId('cq-texto').value = '';
+    
     modal.classList.add('open');
     setTimeout(() => { if (byId('cq-titulo')) byId('cq-titulo').focus(); }, 100);
   }
